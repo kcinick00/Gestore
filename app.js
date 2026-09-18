@@ -2,7 +2,6 @@
 // GESTORE PWA - Lógica principal
 // ============================================
 
-// ⚠️ CONFIGURACIÓN DE SUPABASE
 const SUPABASE_URL = "https://kpsurjxypipxtjizlyon.supabase.co";
 const SUPABASE_KEY = "sb_publishable_sA8BVuihO3RaIcZrqTPzyA_HkYahfV5";
 
@@ -39,6 +38,9 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarTasa();
     cargarDatos();
     configurarFotoFactura();
+
+    // ✅ FIX: Mostrar el FAB desde el inicio
+    document.getElementById('fabNuevaFactura').classList.remove('hidden');
 });
 
 function configurarEventos() {
@@ -132,6 +134,16 @@ function configurarEventos() {
     document.getElementById('btnCerrarDetalle').addEventListener('click', () => {
         document.getElementById('modalDetalle').classList.add('hidden');
     });
+
+    // Modal de edición de producto
+    document.getElementById('btnCerrarEditarProducto').addEventListener('click', cerrarModalEditarProducto);
+    document.getElementById('btnCancelarEditarProducto').addEventListener('click', cerrarModalEditarProducto);
+    document.getElementById('btnGuardarEditarProducto').addEventListener('click', guardarEditarProducto);
+
+    // Cálculo automático del precio de venta al editar
+    document.getElementById('editPrecioCompra').addEventListener('input', recalcularPrecioVenta);
+    document.getElementById('editMargen').addEventListener('input', recalcularPrecioVenta);
+    document.getElementById('editUnidadesCaja').addEventListener('input', recalcularPrecioVenta);
 
     document.getElementById('formSinNumero').addEventListener('change', (e) => {
         const input = document.getElementById('formNumeroFactura');
@@ -242,6 +254,9 @@ function dbToProducto(row) {
         codigoBarras: row.codigo_barras || '',
         stock: parseFloat(row.stock) || 0,
         unidad: row.unidad || 'UND',
+        // ✅ NUEVO: unidades por caja
+        unidadesCaja: parseFloat(row.unidades_caja) || 0,
+        precioCajaUSD: parseFloat(row.precio_caja_usd) || 0,
         precioCompraUSD: parseFloat(row.precio_compra_usd) || 0,
         precioVentaUSD: parseFloat(row.precio_venta_usd) || 0,
         margen: parseFloat(row.margen) || 30,
@@ -564,29 +579,36 @@ function renderizarProductos() {
         return;
     }
 
-    lista.innerHTML = filtrados.map(p => `
-        <div class="card-item" data-id="${p.id}">
-            <div class="card-header">
-                <div class="card-titulo">${escapeHtml(p.nombre)}</div>
-                <span class="card-estatus" style="background:#e7f3ff; color:#0056b3;">${p.stock} ${p.unidad}</span>
+    lista.innerHTML = filtrados.map(p => {
+        const infoCaja = p.unidadesCaja > 0 && p.precioCajaUSD > 0 
+            ? `<span class="card-fecha">📦 Caja: $${p.precioCajaUSD.toFixed(2)} (${p.unidadesCaja} und)</span>` 
+            : '';
+        
+        return `
+            <div class="card-item" data-id="${p.id}">
+                <div class="card-header">
+                    <div class="card-titulo">${escapeHtml(p.nombre)}</div>
+                    <span class="card-estatus" style="background:#e7f3ff; color:#0056b3;">${p.stock} ${p.unidad}</span>
+                </div>
+                <div class="card-info">
+                    <span class="card-fecha">💵 Compra: $${p.precioCompraUSD.toFixed(2)}</span>
+                    <span class="card-fecha" style="color:#28a745; font-weight:700;">💰 Venta: $${p.precioVentaUSD.toFixed(2)}</span>
+                </div>
+                <div class="card-info">
+                    <span class="card-fecha">📊 Margen: ${p.margen}%</span>
+                    <span class="card-fecha">${p.exento ? '🚫 Exento' : `IVA: ${p.iva}%`}</span>
+                </div>
+                ${infoCaja ? `<div class="card-info">${infoCaja}</div>` : ''}
+                ${p.ultimoProveedor ? `<div class="card-info"><span class="card-fecha">🏢 ${escapeHtml(p.ultimoProveedor)}</span></div>` : ''}
             </div>
-            <div class="card-info">
-                <span class="card-fecha">💵 Compra: $${p.precioCompraUSD.toFixed(2)}</span>
-                <span class="card-fecha" style="color:#28a745; font-weight:700;">💰 Venta: $${p.precioVentaUSD.toFixed(2)}</span>
-            </div>
-            <div class="card-info">
-                <span class="card-fecha">📊 Margen: ${p.margen}%</span>
-                <span class="card-fecha">${p.exento ? '🚫 Exento' : `IVA: ${p.iva}%`}</span>
-            </div>
-            ${p.ultimoProveedor ? `<div class="card-info"><span class="card-fecha">🏢 ${escapeHtml(p.ultimoProveedor)}</span></div>` : ''}
-        </div>
-    `).join('');
+        `;
+    }).join('');
 
     lista.querySelectorAll('.card-item').forEach(card => {
         card.addEventListener('click', () => {
             const id = parseInt(card.dataset.id);
             const producto = datos.productos.find(p => p.id === id);
-            if (producto) abrirDetalleProducto(producto);
+            if (producto) abrirModalEditarProducto(producto);
         });
     });
 }
@@ -690,40 +712,14 @@ function abrirDetalleFactura(f) {
 
     const html = `
         <div class="detalle-grid">
-            <div class="detalle-row">
-                <div class="detalle-label">Proveedor</div>
-                <div class="detalle-valor">${escapeHtml(f.proveedor)}</div>
-            </div>
-            <div class="detalle-row">
-                <div class="detalle-label">Monto USD</div>
-                <div class="detalle-valor destacado">$${f.montoUSD || '0.00'}</div>
-            </div>
-            <div class="detalle-row">
-                <div class="detalle-label">Monto en Bs</div>
-                <div class="detalle-valor">${formatearMontoBs(f.montoBs)} Bs</div>
-            </div>
-            <div class="detalle-row">
-                <div class="detalle-label">Fecha</div>
-                <div class="detalle-valor">${f.fecha} (hace ${dias} días)</div>
-            </div>
-            <div class="detalle-row">
-                <div class="detalle-label">N° Factura</div>
-                <div class="detalle-valor">${f.numeroFactura || 'S/N'}</div>
-            </div>
-            <div class="detalle-row">
-                <div class="detalle-label">Estatus</div>
-                <div class="detalle-valor">${getIconoEstatus(estatusReal)} ${estatusReal}</div>
-            </div>
-            <div class="detalle-row">
-                <div class="detalle-label">Tasa BCV usada</div>
-                <div class="detalle-valor">${f.tasaBCV ? f.tasaBCV.toFixed(2) + ' Bs/USD' : 'N/A'}</div>
-            </div>
-            ${f.notas ? `
-                <div class="detalle-row">
-                    <div class="detalle-label">Notas</div>
-                    <div class="detalle-notas">${escapeHtml(f.notas)}</div>
-                </div>
-            ` : ''}
+            <div class="detalle-row"><div class="detalle-label">Proveedor</div><div class="detalle-valor">${escapeHtml(f.proveedor)}</div></div>
+            <div class="detalle-row"><div class="detalle-label">Monto USD</div><div class="detalle-valor destacado">$${f.montoUSD || '0.00'}</div></div>
+            <div class="detalle-row"><div class="detalle-label">Monto en Bs</div><div class="detalle-valor">${formatearMontoBs(f.montoBs)} Bs</div></div>
+            <div class="detalle-row"><div class="detalle-label">Fecha</div><div class="detalle-valor">${f.fecha} (hace ${dias} días)</div></div>
+            <div class="detalle-row"><div class="detalle-label">N° Factura</div><div class="detalle-valor">${f.numeroFactura || 'S/N'}</div></div>
+            <div class="detalle-row"><div class="detalle-label">Estatus</div><div class="detalle-valor">${getIconoEstatus(estatusReal)} ${estatusReal}</div></div>
+            <div class="detalle-row"><div class="detalle-label">Tasa BCV usada</div><div class="detalle-valor">${f.tasaBCV ? f.tasaBCV.toFixed(2) + ' Bs/USD' : 'N/A'}</div></div>
+            ${f.notas ? `<div class="detalle-row"><div class="detalle-label">Notas</div><div class="detalle-notas">${escapeHtml(f.notas)}</div></div>` : ''}
             ${productosHtml}
         </div>
     `;
@@ -775,75 +771,112 @@ function abrirDetallePago(p) {
 }
 
 // ============================================
-// DETALLE PRODUCTO
+// MODAL EDITAR PRODUCTO
 // ============================================
-function abrirDetalleProducto(p) {
-    const html = `
-        <div class="detalle-grid">
-            <div class="detalle-row"><div class="detalle-label">Nombre</div><div class="detalle-valor">${escapeHtml(p.nombre)}</div></div>
-            <div class="detalle-row"><div class="detalle-label">Stock</div><div class="detalle-valor destacado">${p.stock} ${p.unidad}</div></div>
-            <div class="detalle-row"><div class="detalle-label">Precio Compra USD</div><div class="detalle-valor">$${p.precioCompraUSD.toFixed(2)}</div></div>
-            <div class="detalle-row"><div class="detalle-label">Precio Venta USD</div><div class="detalle-valor destacado">$${p.precioVentaUSD.toFixed(2)}</div></div>
-            <div class="detalle-row"><div class="detalle-label">Margen</div><div class="detalle-valor">${p.margen}%</div></div>
-            <div class="detalle-row"><div class="detalle-label">IVA</div><div class="detalle-valor">${p.exento ? '🚫 Exento' : p.iva + '%'}</div></div>
-            ${p.ultimoProveedor ? `<div class="detalle-row"><div class="detalle-label">Último Proveedor</div><div class="detalle-valor">${escapeHtml(p.ultimoProveedor)}</div></div>` : ''}
-            ${p.ultimaFactura ? `<div class="detalle-row"><div class="detalle-label">Última Factura</div><div class="detalle-valor">${p.ultimaFactura}</div></div>` : ''}
-        </div>
-    `;
+let productoEditando = null;
 
-    document.getElementById('detalleTitulo').textContent = 'Detalle de Producto';
-    document.getElementById('detalleContenido').innerHTML = html;
-    document.getElementById('detalleAcciones').innerHTML = `
-        <button class="btn btn-secondary" id="btnEditarProducto">✏️ Editar</button>
-        <button class="btn btn-danger" id="btnEliminarProducto">🗑️</button>
-    `;
-    document.getElementById('btnEditarProducto').addEventListener('click', () => editarProducto(p));
-    document.getElementById('btnEliminarProducto').addEventListener('click', () => eliminarProducto(p));
-    document.getElementById('modalDetalle').classList.remove('hidden');
+function abrirModalEditarProducto(p) {
+    productoEditando = p;
+
+    document.getElementById('editNombre').value = p.nombre || '';
+    document.getElementById('editUnidad').value = p.unidad || 'UND';
+    document.getElementById('editStock').value = p.stock || 0;
+    document.getElementById('editPrecioCompra').value = p.precioCompraUSD || 0;
+    document.getElementById('editMargen').value = p.margen || 30;
+    document.getElementById('editIva').value = p.exento ? 'E' : (p.iva || 16);
+    document.getElementById('editUnidadesCaja').value = p.unidadesCaja || 0;
+    document.getElementById('editPrecioCaja').value = p.precioCajaUSD || 0;
+    document.getElementById('editNotas').value = p.notas || '';
+
+    recalcularPrecioVenta();
+
+    document.getElementById('modalEditarProducto').classList.remove('hidden');
 }
 
-function editarProducto(p) {
-    const nuevoNombre = prompt(`Nombre del producto:`, p.nombre);
-    if (nuevoNombre === null) return;
-    const nuevoStock = prompt(`Stock (${p.unidad}):`, p.stock);
-    if (nuevoStock === null) return;
-    const nuevoPrecioCompra = prompt(`Precio Compra USD:`, p.precioCompraUSD);
-    if (nuevoPrecioCompra === null) return;
-    const nuevoMargen = prompt(`Margen (%):`, p.margen);
-    if (nuevoMargen === null) return;
-
-    const margenNum = parseFloat(nuevoMargen) || 30;
-    const precioCompraNum = parseFloat(nuevoPrecioCompra) || 0;
-    const precioVenta = precioCompraNum * (1 + margenNum / 100);
-
-    supabaseClient.from('productos').update({
-        nombre: nuevoNombre,
-        nombre_normalizado: normalizarNombre(nuevoNombre),
-        stock: parseFloat(nuevoStock) || 0,
-        precio_compra_usd: precioCompraNum,
-        margen: margenNum,
-        precio_venta_usd: parseFloat(precioVenta.toFixed(4)),
-        updated_at: new Date().toISOString()
-    }).eq('id', p.id).then(({ error }) => {
-        if (error) {
-            mostrarToast('Error al actualizar', 'error');
-        } else {
-            mostrarToast('✅ Producto actualizado', 'success');
-            document.getElementById('modalDetalle').classList.add('hidden');
-            cargarDatos();
-        }
-    });
+function cerrarModalEditarProducto() {
+    document.getElementById('modalEditarProducto').classList.add('hidden');
+    productoEditando = null;
 }
 
-async function eliminarProducto(p) {
-    if (!confirm(`¿Eliminar "${p.nombre}" del inventario?`)) return;
-    const { error } = await supabaseClient.from('productos').delete().eq('id', p.id);
-    if (error) {
-        mostrarToast('Error al eliminar', 'error');
+function recalcularPrecioVenta() {
+    const precioCompra = parseFloat(document.getElementById('editPrecioCompra').value) || 0;
+    const margen = parseFloat(document.getElementById('editMargen').value) || 0;
+    const unidadesCaja = parseFloat(document.getElementById('editUnidadesCaja').value) || 0;
+
+    // ✅ FIX: Si unidadesCaja es 0 o 1, el precio es por unidad. Si es mayor, dividimos.
+    let precioCompraPorUnidad = precioCompra;
+    let nota = '';
+
+    if (unidadesCaja > 1) {
+        precioCompraPorUnidad = precioCompra / unidadesCaja;
+        nota = ` ($${precioCompraPorUnidad.toFixed(4)} por unidad × ${unidadesCaja})`;
+    }
+
+    const precioVenta = precioCompraPorUnidad * (1 + margen / 100);
+
+    document.getElementById('editPrecioVenta').value = precioVenta.toFixed(2);
+
+    const info = document.getElementById('infoCalculo');
+    if (unidadesCaja > 1) {
+        info.innerHTML = `📦 Caja de ${unidadesCaja} unidades<br>💵 Compra caja: $${precioCompra.toFixed(2)}<br>💵 Compra por unidad: $${precioCompraPorUnidad.toFixed(4)}${nota}<br>💰 Venta por unidad: $${precioVenta.toFixed(2)}`;
+        info.style.display = 'block';
     } else {
-        mostrarToast('✅ Producto eliminado', 'success');
-        document.getElementById('modalDetalle').classList.add('hidden');
+        info.style.display = 'none';
+    }
+}
+
+async function guardarEditarProducto() {
+    if (!productoEditando) return;
+
+    const nombre = document.getElementById('editNombre').value.trim();
+    if (!nombre) {
+        mostrarToast('El nombre es obligatorio', 'error');
+        return;
+    }
+
+    const unidad = document.getElementById('editUnidad').value.trim() || 'UND';
+    const stock = parseFloat(document.getElementById('editStock').value) || 0;
+    const precioCompra = parseFloat(document.getElementById('editPrecioCompra').value) || 0;
+    const margen = parseFloat(document.getElementById('editMargen').value) || 30;
+    const ivaInput = document.getElementById('editIva').value.toUpperCase();
+    const exento = ivaInput === 'E';
+    const iva = exento ? 0 : (parseFloat(ivaInput) || 16);
+    const unidadesCaja = parseFloat(document.getElementById('editUnidadesCaja').value) || 0;
+    const precioCaja = parseFloat(document.getElementById('editPrecioCaja').value) || 0;
+    const notas = document.getElementById('editNotas').value.trim();
+
+    // Calcular precio venta por unidad
+    let precioCompraPorUnidad = precioCompra;
+    if (unidadesCaja > 1) {
+        precioCompraPorUnidad = precioCompra / unidadesCaja;
+    }
+    const precioVenta = precioCompraPorUnidad * (1 + margen / 100);
+
+    try {
+        const { error } = await supabaseClient.from('productos').update({
+            nombre: nombre,
+            nombre_normalizado: normalizarNombre(nombre),
+            unidad: unidad,
+            stock: stock,
+            precio_compra_usd: precioCompra,
+            margen: margen,
+            precio_venta_usd: parseFloat(precioVenta.toFixed(4)),
+            iva: iva,
+            exento: exento,
+            unidades_caja: unidadesCaja,
+            precio_caja_usd: precioCaja,
+            notas: notas,
+            updated_at: new Date().toISOString()
+        }).eq('id', productoEditando.id);
+
+        if (error) throw error;
+
+        mostrarToast('✅ Producto actualizado', 'success');
+        cerrarModalEditarProducto();
         cargarDatos();
+    } catch (error) {
+        console.error('Error al guardar producto:', error);
+        mostrarToast('Error al guardar: ' + error.message, 'error');
     }
 }
 
@@ -1057,6 +1090,11 @@ async function extraerDatosConDeepSeek(base64Image) {
 3. El número de factura.
 4. La LISTA COMPLETA DE PRODUCTOS con: nombre, cantidad, unidad, precio unitario, IVA (16 o "E" si es exento).
 
+IMPORTANTE sobre el precio:
+- Si la factura dice "CAJA x 12" o "CAJA x 24" o similar, el precio unitario que debes reportar es el PRECIO POR UNIDAD (dividir el precio de caja entre las unidades).
+- Ejemplo: si dice "CAJA x 24 - $60.00", el precio unitario es 60/24 = $2.50.
+- El campo "unidad" debe indicar "UND" (unidad suelta), "CAJA", "KG", "LT", etc.
+
 Responde EXACTAMENTE en este formato JSON (sin texto adicional, sin markdown):
 
 {
@@ -1073,9 +1111,9 @@ Responde EXACTAMENTE en este formato JSON (sin texto adicional, sin markdown):
       "exento": false
     },
     {
-      "nombre": "QUESO BLANCO 500G",
-      "cantidad": 12,
-      "unidad": "KG",
+      "nombre": "QUESO BLANCO",
+      "cantidad": 2,
+      "unidad": "CAJA",
       "precio_unitario": 4.20,
       "iva": "E",
       "exento": true
@@ -1092,7 +1130,7 @@ Reglas:
   - "nombre": descripción del producto en MAYÚSCULAS.
   - "cantidad": número decimal (ej: 24, 1.5).
   - "unidad": "UND" (unidad), "KG" (kilogramo), "LT" (litro), "CAJ" (caja), "PAQ" (paquete), "DOC" (docena), etc.
-  - "precio_unitario": precio unitario en USD (sin IVA).
+  - "precio_unitario": PRECIO POR UNIDAD en USD (si la factura dice CAJA x N, debes dividir el precio total entre N).
   - "iva": 16 si tiene IVA, "E" si es exento.
   - "exento": true si el producto está exento de IVA, false si no.
 - Si NO puedes leer algún campo, usa null.
@@ -1138,7 +1176,6 @@ Reglas:
     }
 }
 
-// ✅ ESTA ES LA FUNCIÓN CORREGIDA - AHORA SÍ ABRE EL MODAL
 function configurarFotoFactura() {
     const btn = document.getElementById('btnTomarFoto');
     const input = document.getElementById('inputFoto');
@@ -1146,10 +1183,7 @@ function configurarFotoFactura() {
     const previewDiv = document.getElementById('previewFoto');
     const imgPreview = document.getElementById('imgPreview');
 
-    if (!btn) {
-        console.warn("⚠️ Botón de foto no encontrado");
-        return;
-    }
+    if (!btn) return;
 
     btn.addEventListener('click', () => input.click());
 
@@ -1166,15 +1200,9 @@ function configurarFotoFactura() {
         estado.style.color = '#17a2b8';
 
         try {
-            console.log("📸 Imagen seleccionada:", file.name, file.size, "bytes");
-            
             const base64 = await archivoABase64(file);
-            console.log("🔄 Imagen convertida a base64, enviando a DeepSeek...");
-            
             const datos = await extraerDatosConDeepSeek(base64);
-            console.log('📦 Datos extraídos:', datos);
 
-            // Rellenar campos básicos
             if (datos.proveedor) document.getElementById('formProveedor').value = datos.proveedor;
             if (datos.monto_usd) {
                 document.getElementById('formMontoUSD').value = parseFloat(datos.monto_usd).toFixed(2);
@@ -1188,20 +1216,36 @@ function configurarFotoFactura() {
                 check.checked = false;
             }
 
-            // Guardar productos detectados
-            productosDetectados = (datos.productos || []).map(p => ({
-                nombre: p.nombre || '',
-                cantidad: parseFloat(p.cantidad) || 1,
-                unidad: p.unidad || 'UND',
-                precio_unitario: parseFloat(p.precio_unitario) || 0,
-                iva: p.iva === 'E' ? 'E' : (parseFloat(p.iva) || 16),
-                exento: p.exento || p.iva === 'E' || false,
-                margen: 30
-            }));
+            // ✅ Procesar productos con lógica de caja/unidad
+            productosDetectados = (datos.productos || []).map(p => {
+                const unidad = (p.unidad || 'UND').toUpperCase();
+                const precioUnitario = parseFloat(p.precio_unitario) || 0;
+                let unidadesCaja = 0;
+                let precioCaja = 0;
 
-            console.log(`✅ ${productosDetectados.length} productos detectados`);
+                // Detectar si es CAJA y extraer unidades del nombre
+                if (unidad.includes('CAJ') || unidad.includes('BOX')) {
+                    // Buscar "x N" o "X N" en el nombre
+                    const match = (p.nombre || '').match(/[xX]\s*(\d+)/);
+                    if (match) {
+                        unidadesCaja = parseInt(match[1]);
+                        precioCaja = precioUnitario; // El precio era por caja
+                    }
+                }
 
-            // Mostrar preview de productos en el modal de factura
+                return {
+                    nombre: p.nombre || '',
+                    cantidad: parseFloat(p.cantidad) || 1,
+                    unidad: unidad.includes('CAJ') ? 'CAJA' : (unidad.includes('KG') ? 'KG' : (unidad.includes('LT') ? 'LT' : 'UND')),
+                    precio_unitario: precioUnitario,
+                    unidades_caja: unidadesCaja,
+                    precio_caja: precioCaja,
+                    iva: p.iva === 'E' ? 'E' : (parseFloat(p.iva) || 16),
+                    exento: p.exento || p.iva === 'E' || false,
+                    margen: 30
+                };
+            });
+
             if (productosDetectados.length > 0) {
                 const previewProd = document.getElementById('previewProductos');
                 const listaPrev = document.getElementById('listaProductosPreview');
@@ -1226,17 +1270,11 @@ function configurarFotoFactura() {
                 estado.style.color = '#dc3545';
             }
 
-            // ✅ ABRIR EL MODAL DE PRODUCTOS AUTOMÁTICAMENTE
             if (productosDetectados.length > 0) {
-                console.log("🔓 Abriendo modal de productos...");
-                setTimeout(() => {
-                    abrirModalProductos();
-                }, 1000);
+                setTimeout(() => { abrirModalProductos(); }, 1000);
             } else {
-                console.warn("⚠️ No se detectaron productos, no se abre el modal");
                 setTimeout(() => { estado.style.display = 'none'; }, 5000);
             }
-
         } catch (error) {
             console.error('❌ Error completo:', error);
             estado.textContent = `❌ ${error.message}`;
@@ -1249,25 +1287,21 @@ function configurarFotoFactura() {
 }
 
 // ============================================
-// MODAL PRODUCTOS (Revisión antes de guardar)
+// MODAL PRODUCTOS
 // ============================================
 function abrirModalProductos() {
-    console.log("📦 abrirModalProductos() llamada con", productosDetectados.length, "productos");
-    
-    if (productosDetectados.length === 0) {
-        console.warn("⚠️ No hay productos para mostrar");
-        return;
-    }
+    if (productosDetectados.length === 0) return;
 
     const container = document.getElementById('tablaProductosEdit');
     container.innerHTML = `
         <table class="tabla-productos-edit">
             <thead>
                 <tr>
-                    <th style="width: 35%;">Producto</th>
-                    <th style="width: 12%;">Cant.</th>
-                    <th style="width: 12%;">Unid.</th>
-                    <th style="width: 13%;">P.Compra</th>
+                    <th style="width: 30%;">Producto</th>
+                    <th style="width: 10%;">Cant.</th>
+                    <th style="width: 10%;">Unid.</th>
+                    <th style="width: 12%;">P.Compra</th>
+                    <th style="width: 10%;">Unid/Caja</th>
                     <th style="width: 10%;">IVA</th>
                     <th style="width: 13%;">P.Venta</th>
                     <th style="width: 5%;"></th>
@@ -1281,7 +1315,6 @@ function abrirModalProductos() {
 
     adjuntarEventosProductos();
     document.getElementById('modalProductos').classList.remove('hidden');
-    console.log("✅ Modal de productos abierto");
 }
 
 function filaProductoEditable(p, index) {
@@ -1292,6 +1325,7 @@ function filaProductoEditable(p, index) {
             <td><input type="number" class="input-corto" data-field="cantidad" value="${p.cantidad}" step="0.01" min="0"></td>
             <td><input type="text" class="input-corto" data-field="unidad" value="${p.unidad}"></td>
             <td><input type="number" class="input-corto" data-field="precio_unitario" value="${p.precio_unitario}" step="0.01" min="0"></td>
+            <td><input type="number" class="input-corto" data-field="unidades_caja" value="${p.unidades_caja || 0}" step="1" min="0" placeholder="0"></td>
             <td><input type="text" class="input-corto" data-field="iva" value="${p.iva}" style="text-align:center;"></td>
             <td><input type="number" class="input-corto precio-venta" data-field="precio_venta" value="${precioVenta.toFixed(2)}" step="0.01" min="0" readonly></td>
             <td style="text-align:center;"><button class="btn-eliminar-prod" data-eliminar="${index}">✕</button></td>
@@ -1311,7 +1345,7 @@ function adjuntarEventosProductos() {
                 const field = e.target.dataset.field;
                 let valor = e.target.value;
 
-                if (field === 'cantidad' || field === 'precio_unitario') {
+                if (field === 'cantidad' || field === 'precio_unitario' || field === 'unidades_caja') {
                     valor = parseFloat(valor) || 0;
                 } else if (field === 'iva') {
                     if (valor.toUpperCase() === 'E') {
@@ -1325,9 +1359,17 @@ function adjuntarEventosProductos() {
 
                 productosDetectados[index][field] = valor;
 
-                if (field === 'precio_unitario') {
+                // Recalcular precio de venta con lógica de caja
+                if (field === 'precio_unitario' || field === 'unidades_caja') {
+                    const precioCompra = productosDetectados[index].precio_unitario || 0;
+                    const unidadesCaja = productosDetectados[index].unidades_caja || 0;
                     const margen = productosDetectados[index].margen || 30;
-                    const pv = productosDetectados[index].precio_unitario * (1 + margen / 100);
+
+                    let precioPorUnidad = precioCompra;
+                    if (unidadesCaja > 1) {
+                        precioPorUnidad = precioCompra / unidadesCaja;
+                    }
+                    const pv = precioPorUnidad * (1 + margen / 100);
                     tr.querySelector('[data-field="precio_venta"]').value = pv.toFixed(2);
                 }
             });
@@ -1350,7 +1392,7 @@ function aplicarMargenGlobal() {
     const tbody = document.getElementById('tbodyProductosEdit');
     tbody.innerHTML = productosDetectados.map((p, i) => filaProductoEditable(p, i)).join('');
     adjuntarEventosProductos();
-    mostrarToast(`✅ Margen ${margen}% aplicado a ${productosDetectados.length} productos`, 'success');
+    mostrarToast(`✅ Margen ${margen}% aplicado`, 'success');
 }
 
 function cerrarModalProductos() {
@@ -1367,7 +1409,6 @@ async function confirmarProductos() {
     const numeroFactura = document.getElementById('formNumeroFactura').value.trim();
 
     mostrarToast('⏳ Guardando productos...', 'info');
-    console.log("💾 Guardando", productosDetectados.length, "productos en Supabase...");
 
     let agregados = 0, actualizados = 0, errores = 0;
 
@@ -1375,7 +1416,14 @@ async function confirmarProductos() {
         if (!prod.nombre || prod.nombre.trim() === '') continue;
 
         const nombreNorm = normalizarNombre(prod.nombre);
-        const precioVenta = prod.precio_unitario * (1 + (prod.margen || 30) / 100);
+        
+        // ✅ FIX: Calcular precio unitario real (si es caja con unidades, dividir)
+        let precioUnitarioReal = prod.precio_unitario;
+        if (prod.unidades_caja > 1) {
+            precioUnitarioReal = prod.precio_unitario / prod.unidades_caja;
+        }
+        
+        const precioVenta = precioUnitarioReal * (1 + (prod.margen || 30) / 100);
 
         try {
             const { data: existentes, error: errBuscar } = await supabaseClient
@@ -1384,11 +1432,7 @@ async function confirmarProductos() {
                 .eq('nombre_normalizado', nombreNorm)
                 .limit(1);
 
-            if (errBuscar) {
-                console.error("Error buscando:", errBuscar);
-                errores++;
-                continue;
-            }
+            if (errBuscar) { errores++; continue; }
 
             if (existentes && existentes.length > 0) {
                 const existente = existentes[0];
@@ -1396,18 +1440,20 @@ async function confirmarProductos() {
 
                 const { error: errUpdate } = await supabaseClient.from('productos').update({
                     stock: nuevoStock,
-                    precio_compra_usd: prod.precio_unitario,
+                    precio_compra_usd: precioUnitarioReal,
                     precio_venta_usd: parseFloat(precioVenta.toFixed(4)),
                     margen: prod.margen || 30,
                     iva: prod.exento ? 0 : (parseFloat(prod.iva) || 16),
                     exento: prod.exento || false,
+                    unidades_caja: prod.unidades_caja || 0,
+                    precio_caja_usd: prod.precio_caja || 0,
                     ultimo_proveedor: proveedor,
                     ultima_factura: numeroFactura,
                     ultima_fecha: new Date().toLocaleDateString('es-VE'),
                     updated_at: new Date().toISOString()
                 }).eq('id', existente.id);
 
-                if (errUpdate) { console.error("Error update:", errUpdate); errores++; }
+                if (errUpdate) { errores++; }
                 else actualizados++;
             } else {
                 const { error: errInsert } = await supabaseClient.from('productos').insert([{
@@ -1416,18 +1462,20 @@ async function confirmarProductos() {
                     nombre_normalizado: nombreNorm,
                     stock: prod.cantidad,
                     unidad: prod.unidad || 'UND',
-                    precio_compra_usd: prod.precio_unitario,
+                    precio_compra_usd: precioUnitarioReal,
                     precio_venta_usd: parseFloat(precioVenta.toFixed(4)),
                     margen: prod.margen || 30,
                     iva: prod.exento ? 0 : (parseFloat(prod.iva) || 16),
                     exento: prod.exento || false,
+                    unidades_caja: prod.unidades_caja || 0,
+                    precio_caja_usd: prod.precio_caja || 0,
                     ultimo_proveedor: proveedor,
                     ultima_factura: numeroFactura,
                     ultima_fecha: new Date().toLocaleDateString('es-VE'),
                     created_at: new Date().toISOString()
                 }]);
 
-                if (errInsert) { console.error("Error insert:", errInsert); errores++; }
+                if (errInsert) { errores++; }
                 else agregados++;
             }
         } catch (e) {
@@ -1436,16 +1484,20 @@ async function confirmarProductos() {
         }
     }
 
-    facturaTemporalParaProductos = productosDetectados.map(p => ({
-        nombre: p.nombre,
-        cantidad: p.cantidad,
-        unidad: p.unidad,
-        precio_unitario: p.precio_unitario,
-        iva: p.iva,
-        exento: p.exento,
-        margen: p.margen,
-        precio_venta: p.precio_unitario * (1 + (p.margen || 30) / 100)
-    }));
+    facturaTemporalParaProductos = productosDetectados.map(p => {
+        let precioReal = p.precio_unitario;
+        if (p.unidades_caja > 1) precioReal = p.precio_unitario / p.unidades_caja;
+        return {
+            nombre: p.nombre,
+            cantidad: p.cantidad,
+            unidad: p.unidad,
+            precio_unitario: precioReal,
+            iva: p.iva,
+            exento: p.exento,
+            margen: p.margen,
+            precio_venta: precioReal * (1 + (p.margen || 30) / 100)
+        };
+    });
 
     if (errores > 0) {
         mostrarToast(`⚠️ ${agregados} nuevos, ${actualizados} actualizados, ${errores} errores`, 'error');
