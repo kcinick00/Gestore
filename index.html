@@ -8,7 +8,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Gestore">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="description" content="Gestor de facturas y pagos con tasa BCV">
     <title>Gestore</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icons/icon-192.png">
@@ -16,7 +15,7 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Barra superior -->
+    <!-- Header -->
     <header class="topbar">
         <div class="topbar-content">
             <div class="logo">
@@ -41,45 +40,51 @@
         </button>
     </nav>
 
-    <!-- Contenido principal -->
-    <main id="mainContent">
-        <!-- Sección: Facturas -->
+    <!-- Contenido -->
+    <main>
+        <!-- FACTURAS -->
         <section id="seccionFacturas" class="seccion">
-            <!-- Estadísticas -->
-            <div class="stats-grid" id="statsFacturas">
+            <div class="stats-grid">
                 <div class="stat-card stat-amarillo">
                     <div class="stat-label">Pendientes</div>
-                    <div class="stat-value" id="statPendientes">$0.00</div>
-                    <div class="stat-sub" id="statPendientesBs">0,00 Bs</div>
+                    <div class="stat-value" id="statPendientes">0</div>
+                    <div class="stat-sub" id="statPendientesUSD">$0.00</div>
+                    <div class="stat-mini" id="statPendientesBs">0,00 Bs</div>
                 </div>
                 <div class="stat-card stat-rojo">
                     <div class="stat-label">Vencidas</div>
-                    <div class="stat-value" id="statVencidas">$0.00</div>
-                    <div class="stat-sub" id="statVencidasBs">0,00 Bs</div>
+                    <div class="stat-value" id="statVencidas">0</div>
+                    <div class="stat-sub" id="statVencidasUSD">$0.00</div>
+                    <div class="stat-mini" id="statVencidasBs">0,00 Bs</div>
                 </div>
-                <div class="stat-card stat-verde">
+                <div class="stat-card stat-gris">
                     <div class="stat-label">Pagadas</div>
-                    <div class="stat-value" id="statPagadas">$0.00</div>
-                    <div class="stat-sub" id="statPagadasBs">0,00 Bs</div>
+                    <div class="stat-value" id="statPagadas">0</div>
+                    <div class="stat-sub" id="statPagadasUSD">$0.00</div>
+                    <div class="stat-mini" id="statPagadasBs">0,00 Bs</div>
                 </div>
             </div>
 
-            <!-- Filtros -->
             <div class="filtros">
-                <input type="text" id="buscarFacturas" placeholder="🔍 Buscar..." class="input-buscar">
-                <div class="filtros-chips">
-                    <button class="chip active" data-estatus="todos">Todas</button>
-                    <button class="chip" data-estatus="Pendiente">🟡 Pendientes</button>
-                    <button class="chip" data-estatus="Vencida">🔴 Vencidas</button>
-                    <button class="chip" data-estatus="Pagada">🟢 Pagadas</button>
+                <input type="text" id="buscarFacturas" placeholder="🔍 Buscar proveedor..." class="input-buscar">
+                <select id="filtroEstatusFacturas" class="select-filtro">
+                    <option value="todas">Todas</option>
+                    <option value="vencidas" selected>Solo Vencidas</option>
+                    <option value="pendientes">Solo Pendientes</option>
+                    <option value="pagadas">Solo Pagadas</option>
+                </select>
+                <div class="filtros-chips" id="chipsOrdenFacturas">
+                    <button class="chip active" data-orden="fecha">📅 Fecha</button>
+                    <button class="chip" data-orden="proveedor">🏢 Proveedor</button>
+                    <button class="chip" data-orden="monto">💵 Monto</button>
+                    <button class="chip" data-orden="dias">⏰ Días</button>
                 </div>
             </div>
 
-            <!-- Lista de facturas -->
             <div id="listaFacturas" class="lista"></div>
         </section>
 
-        <!-- Sección: Pagos -->
+        <!-- PAGOS -->
         <section id="seccionPagos" class="seccion hidden">
             <div class="stats-grid">
                 <div class="stat-card stat-azul">
@@ -90,12 +95,19 @@
                 <div class="stat-card stat-verde">
                     <div class="stat-label">Este Mes</div>
                     <div class="stat-value" id="statPagosMes">0</div>
-                    <div class="stat-sub" id="statPagosMesBs">0,00 Bs</div>
+                    <div class="stat-sub" id="statPagosMesUSD">$0.00</div>
+                    <div class="stat-mini" id="statPagosMesBs">0,00 Bs</div>
                 </div>
             </div>
 
             <div class="filtros">
-                <input type="text" id="buscarPagos" placeholder="🔍 Buscar..." class="input-buscar">
+                <input type="text" id="buscarPagos" placeholder="🔍 Buscar beneficiario..." class="input-buscar">
+                <div class="filtros-chips" id="chipsOrdenPagos">
+                    <button class="chip active" data-orden="fecha">📅 Fecha</button>
+                    <button class="chip" data-orden="beneficiario">👤 Beneficiario</button>
+                    <button class="chip" data-orden="monto">💵 Monto Bs</button>
+                    <button class="chip" data-orden="montoUSD">💵 Monto USD</button>
+                </div>
             </div>
 
             <div id="listaPagos" class="lista"></div>
@@ -163,14 +175,13 @@
         </div>
     </div>
 
-    <!-- Toast de notificaciones -->
+    <!-- Toast -->
     <div class="toast hidden" id="toast"></div>
 
-    <!-- Cargar librerías -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="app.js"></script>
 
-    <!-- Registrar Service Worker para PWA -->
+    <!-- Service Worker -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
