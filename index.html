@@ -38,6 +38,10 @@
             <span class="tab-icon">💸</span>
             <span class="tab-label">Pagos</span>
         </button>
+        <button class="tab" data-tab="inventario">
+            <span class="tab-icon">📦</span>
+            <span class="tab-label">Inventario</span>
+        </button>
     </nav>
 
     <!-- Contenido -->
@@ -113,9 +117,38 @@
 
             <div id="listaPagos" class="lista"></div>
         </section>
+
+        <!-- INVENTARIO -->
+        <section id="seccionInventario" class="seccion hidden">
+            <div class="stats-grid">
+                <div class="stat-card stat-azul">
+                    <div class="stat-label">Productos</div>
+                    <div class="stat-value" id="statTotalProductos">0</div>
+                    <div class="stat-sub">en inventario</div>
+                </div>
+                <div class="stat-card stat-verde">
+                    <div class="stat-label">Valor Inventario</div>
+                    <div class="stat-value" id="statValorInventario">$0.00</div>
+                    <div class="stat-sub" id="statValorInventarioBs">0,00 Bs</div>
+                </div>
+            </div>
+
+            <div class="filtros">
+                <input type="text" id="buscarProductos" placeholder="🔍 Buscar producto..." class="input-buscar">
+                <div class="filtros-chips" id="chipsOrdenProductos">
+                    <button class="chip active" data-orden="nombre">🔤 Nombre</button>
+                    <button class="chip" data-orden="stock">📦 Stock</button>
+                    <button class="chip" data-orden="precio_compra_usd">💵 Precio Compra</button>
+                    <button class="chip" data-orden="precio_venta_usd">💰 Precio Venta</button>
+                    <button class="chip" data-orden="margen">📊 Margen</button>
+                </div>
+            </div>
+
+            <div id="listaProductos" class="lista"></div>
+        </section>
     </main>
 
-    <!-- Botón flotante: Nueva Factura -->
+    <!-- Botón flotante -->
     <button class="fab hidden" id="fabNuevaFactura" title="Nueva Factura">+</button>
 
     <!-- Modal: Formulario de Factura -->
@@ -126,19 +159,17 @@
                 <button class="btn-cerrar" id="btnCerrarModal">✕</button>
             </div>
             <div class="modal-body">
-                <!-- Botón de foto -->
-<div id="seccionFoto" style="text-align: center; margin-bottom: 15px;">
-    <input type="file" id="inputFoto" accept="image/*" capture="environment" style="display:none;">
-    <button type="button" id="btnTomarFoto" class="btn btn-secondary" style="width: 100%; padding: 14px; font-size: 15px; background: #17a2b8; color: white; border: none; border-radius: 8px; cursor: pointer;">
-        📷 Tomar Foto de Factura
-    </button>
-    <div id="estadoFoto" style="display: none; margin-top: 10px; font-size: 13px; color: #17a2b8; font-weight: 600;">
-        ⏳ Procesando imagen...
-    </div>
-    <div id="previewFoto" style="margin-top: 10px; display: none;">
-        <img id="imgPreview" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 2px solid #17a2b8;">
-    </div>
-</div>
+                <div id="seccionFoto" style="text-align: center; margin-bottom: 15px;">
+                    <input type="file" id="inputFoto" accept="image/*" capture="environment" style="display:none;">
+                    <button type="button" id="btnTomarFoto" class="btn btn-secondary" style="width: 100%; padding: 14px; font-size: 15px; background: #17a2b8; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                        📷 Tomar Foto de Factura
+                    </button>
+                    <div id="estadoFoto" style="display: none; margin-top: 10px; font-size: 13px; color: #17a2b8; font-weight: 600;"></div>
+                    <div id="previewFoto" style="margin-top: 10px; display: none;">
+                        <img id="imgPreview" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 2px solid #17a2b8;">
+                    </div>
+                </div>
+
                 <label>Fecha:</label>
                 <input type="date" id="formFecha" required>
 
@@ -169,6 +200,12 @@
 
                 <label>Notas (opcional):</label>
                 <textarea id="formNotas" placeholder="Ej: Factura de leche pasteurizada..."></textarea>
+
+                <!-- Preview de productos extraídos -->
+                <div id="previewProductos" class="hidden" style="margin-top: 20px; padding: 12px; background: #f0f8ff; border-radius: 8px; border-left: 4px solid #007bff;">
+                    <h4 style="margin-bottom: 8px; color: #007bff; font-size: 14px;">📦 Productos detectados</h4>
+                    <div id="listaProductosPreview" style="font-size: 12px; color: #333; max-height: 150px; overflow-y: auto;"></div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-cancelar" id="btnCancelarFactura">Cancelar</button>
@@ -177,7 +214,40 @@
         </div>
     </div>
 
-    <!-- Modal: Detalle de Factura/Pago -->
+    <!-- Modal: Revisión de Productos (post-foto) -->
+    <div class="modal-overlay hidden" id="modalProductos">
+        <div class="modal" style="max-height: 95vh;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #17a2b8, #0d6e7e);">
+                <h3>📦 Revisar Productos</h3>
+                <button class="btn-cerrar" id="btnCerrarProductos">✕</button>
+            </div>
+            <div class="modal-body" style="padding: 12px;">
+                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px; border-radius: 6px; margin-bottom: 12px; font-size: 12px;">
+                    💡 Revisa y ajusta los productos detectados. El <strong>margen</strong> se aplica a todos, pero puedes cambiarlo individual.
+                </div>
+
+                <div style="display: flex; gap: 8px; margin-bottom: 12px; align-items: center; flex-wrap: wrap;">
+                    <label style="font-size: 12px; font-weight: 600; margin: 0;">Margen global (%):</label>
+                    <input type="number" id="margenGlobal" value="30" step="1" min="0" max="500" style="width: 70px; padding: 6px; border: 2px solid #17a2b8; border-radius: 5px; font-size: 13px;">
+                    <button type="button" id="btnAplicarMargenGlobal" style="padding: 6px 12px; background: #17a2b8; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                        Aplicar a todos
+                    </button>
+                </div>
+
+                <div id="tablaProductosEdit" style="max-height: 55vh; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 6px;">
+                    <!-- Se rellena dinámicamente -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancelar" id="btnCancelarProductos">Cancelar</button>
+                <button class="btn btn-primary" id="btnConfirmarProductos" style="background: #17a2b8;">
+                    ✅ Confirmar y Agregar al Inventario
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Detalle de Factura/Pago/Producto -->
     <div class="modal-overlay hidden" id="modalDetalle">
         <div class="modal">
             <div class="modal-header">
@@ -195,7 +265,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="app.js"></script>
 
-    <!-- Service Worker -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
