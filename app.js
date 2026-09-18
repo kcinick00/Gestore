@@ -3,11 +3,22 @@
 // ============================================
 
 // ⚠️ CONFIGURACIÓN DE SUPABASE
-// ⚠️ Reemplaza con TUS valores
-const SUPABASE_URL = "https://pksurjcvyp1jxt1jzlyon.supabase.co";
+// ⚠️ Verifica que estos valores sean EXACTAMENTE los de tu proyecto
+const SUPABASE_URL = "https://kpsurjxypipxtjizlyon.supabase.co";
 const SUPABASE_KEY = "sb_publishable_sA8BVuihO3RaIcZrqTPzyA_HkYahfV5";
 
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Verificación inicial
+console.log("🔧 Configuración:");
+console.log("  URL:", SUPABASE_URL);
+console.log("  Key (primeros 30):", SUPABASE_KEY.substring(0, 30) + "...");
+
+let supabaseClient;
+try {
+    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    console.log("✅ Cliente Supabase creado");
+} catch (e) {
+    console.error("❌ Error al crear cliente Supabase:", e);
+}
 
 // ============================================
 // ESTADO GLOBAL
@@ -21,6 +32,7 @@ let tasaActual = null;
 // INICIALIZACIÓN
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("🚀 Gestore iniciado");
     configurarEventos();
     cargarTasa();
     cargarDatos();
@@ -109,25 +121,47 @@ function cambiarTab(tab) {
 // CARGAR DATOS DE SUPABASE
 // ============================================
 async function cargarDatos() {
-    try {
-        const [facturasResp, pagosResp] = await Promise.all([
-            supabaseClient.from('facturas').select('*').order('fecha', { ascending: false }),
-            supabaseClient.from('pagos').select('*').order('fecha', { ascending: false })
-        ]);
+    if (!supabaseClient) {
+        console.error("❌ No hay cliente Supabase");
+        mostrarToast('Error: cliente Supabase no inicializado', 'error');
+        return;
+    }
 
-        if (facturasResp.error) throw facturasResp.error;
-        if (pagosResp.error) throw pagosResp.error;
+    try {
+        console.log("📥 Cargando datos desde Supabase...");
+
+        const facturasResp = await supabaseClient
+            .from('facturas')
+            .select('*')
+            .order('fecha', { ascending: false });
+
+        if (facturasResp.error) {
+            console.error("❌ Error facturas:", JSON.stringify(facturasResp.error, null, 2));
+            throw facturasResp.error;
+        }
+
+        const pagosResp = await supabaseClient
+            .from('pagos')
+            .select('*')
+            .order('fecha', { ascending: false });
+
+        if (pagosResp.error) {
+            console.error("❌ Error pagos:", JSON.stringify(pagosResp.error, null, 2));
+            throw pagosResp.error;
+        }
 
         datos.facturas = (facturasResp.data || []).map(dbToFactura);
         datos.pagos = (pagosResp.data || []).map(dbToPago);
+
+        console.log(`✅ Cargados: ${datos.facturas.length} facturas, ${datos.pagos.length} pagos`);
 
         renderizarFacturas();
         renderizarPagos();
         actualizarEstadisticas();
         actualizarBadge();
     } catch (error) {
-        console.error('Error al cargar:', error);
-        mostrarToast('Error al cargar datos', 'error');
+        console.error('❌ Error al cargar:', error);
+        mostrarToast('Error al cargar datos: ' + (error.message || 'desconocido'), 'error');
     }
 }
 
@@ -183,21 +217,54 @@ function facturaToDB(f) {
 }
 
 // ============================================
-// TASA BCV
+// TASA BCV (CON PROXY CORS)
 // ============================================
 async function cargarTasa() {
     const info = document.getElementById('tasaInfo');
     info.textContent = 'Consultando tasa BCV...';
-    try {
-        const resp = await fetch('https://bcv.justcarlux.dev/api/v1/rates');
-        const data = await resp.json();
-        tasaActual = data.rates.usd;
-        const fecha = new Date(data.updatedAt).toLocaleString('es-VE', {
-            day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
-        });
-        info.textContent = `💱 Tasa BCV: ${tasaActual.toFixed(2)} Bs/USD · ${fecha}`;
-    } catch (e) {
+
+    // Intentamos con el proxy CORS público (evita bloqueos del navegador)
+    const urls = [
+        // Proxy 1: AllOrigins
+        'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://bcv.justcarlux.dev/api/v1/rates'),
+        // Proxy 2: CorsProxy.io (fallback)
+        'https://corsproxy.io/?' + encodeURIComponent('https://bcv.justcarlux.dev/api/v1/rates'),
+        // Intento directo (fallback por si el servidor ya permite CORS)
+        'https://bcv.justcarlux.dev/api/v1/rates'
+    ];
+
+    let exito = false;
+
+    for (const url of urls) {
+        try {
+            console.log("🌐 Consultando tasa en:", url.substring(0, 60) + "...");
+            const resp = await fetch(url);
+            
+            if (!resp.ok) {
+                console.warn("⚠️ Respuesta no OK:", resp.status);
+                continue;
+            }
+
+            const data = await resp.json();
+            
+            if (data && data.rates && data.rates.usd) {
+                tasaActual = data.rates.usd;
+                const fecha = new Date(data.updatedAt).toLocaleString('es-VE', {
+                    day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+                });
+                info.textContent = `💱 Tasa BCV: ${tasaActual.toFixed(2)} Bs/USD · ${fecha}`;
+                console.log("✅ Tasa obtenida:", tasaActual);
+                exito = true;
+                break;
+            }
+        } catch (e) {
+            console.warn("⚠️ Error con", url.substring(0, 40) + "...:", e.message);
+        }
+    }
+
+    if (!exito) {
         info.textContent = '⚠️ Tasa BCV no disponible';
+        console.error("❌ No se pudo obtener la tasa por ningún método");
     }
 }
 
@@ -239,7 +306,6 @@ function renderizarFacturas() {
         `;
     }).join('');
 
-    // Clic para ver detalle
     lista.querySelectorAll('.card-item').forEach(card => {
         card.addEventListener('click', () => {
             const id = parseInt(card.dataset.id);
@@ -251,7 +317,6 @@ function renderizarFacturas() {
 
 function filtrarFacturas(lista) {
     return lista.filter(f => {
-        // Filtro de texto
         if (filtros.facturas.texto) {
             const t = filtros.facturas.texto;
             const coincide = 
@@ -262,7 +327,6 @@ function filtrarFacturas(lista) {
                 (f.fecha || '').includes(t);
             if (!coincide) return false;
         }
-        // Filtro de estatus
         if (filtros.facturas.estatus !== 'todos') {
             if (calcularEstatusReal(f) !== filtros.facturas.estatus) return false;
         }
@@ -301,7 +365,6 @@ function renderizarPagos() {
         </div>
     `).join('');
 
-    // Clic para ver detalle
     lista.querySelectorAll('.card-item').forEach(card => {
         card.addEventListener('click', () => {
             const id = parseInt(card.dataset.id);
@@ -374,7 +437,6 @@ function abrirDetalleFactura(f) {
     document.getElementById('detalleTitulo').textContent = 'Detalle de Factura';
     document.getElementById('detalleContenido').innerHTML = html;
 
-    // Botones de acción
     let acciones = `
         <button class="btn btn-secondary" id="btnEditarDetalle">✏️ Editar</button>
     `;
@@ -385,7 +447,6 @@ function abrirDetalleFactura(f) {
 
     document.getElementById('detalleAcciones').innerHTML = acciones;
 
-    // Eventos
     document.getElementById('btnEditarDetalle').addEventListener('click', () => {
         document.getElementById('modalDetalle').classList.add('hidden');
         abrirModalFactura(f);
@@ -460,7 +521,6 @@ function abrirModalFactura(factura = null) {
 
     if (factura) {
         titulo.textContent = '✏️ Editar Factura';
-        // Convertir fecha DD/MM/YYYY a YYYY-MM-DD
         const [d, m, y] = factura.fecha.split('/');
         document.getElementById('formFecha').value = `${y}-${m}-${d}`;
         document.getElementById('formProveedor').value = factura.proveedor || '';
@@ -613,7 +673,6 @@ async function eliminarPago(pago) {
 // ESTADÍSTICAS
 // ============================================
 function actualizarEstadisticas() {
-    // Facturas
     let pendUSD = 0, pendBs = 0, vencUSD = 0, vencBs = 0, pagUSD = 0, pagBs = 0;
 
     datos.facturas.forEach(f => {
@@ -632,7 +691,6 @@ function actualizarEstadisticas() {
     document.getElementById('statPagadas').textContent = '$' + pagUSD.toFixed(2);
     document.getElementById('statPagadasBs').textContent = formatearMontoBs(pagBs) + ' Bs';
 
-    // Pagos
     let totalBs = 0, totalUSD = 0;
     const hoy = new Date();
     let pagosMes = 0, pagosMesBs = 0;
