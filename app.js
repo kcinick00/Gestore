@@ -27,7 +27,6 @@ let filtros = {
 };
 let tasaActual = null;
 
-// Estado temporal para productos detectados por OCR
 let productosDetectados = [];
 let facturaTemporalParaProductos = null;
 
@@ -53,7 +52,6 @@ function configurarEventos() {
         cargarDatos();
     });
 
-    // Búsqueda
     document.getElementById('buscarFacturas').addEventListener('input', (e) => {
         filtros.facturas.texto = e.target.value.toLowerCase();
         renderizarFacturas();
@@ -67,13 +65,11 @@ function configurarEventos() {
         renderizarProductos();
     });
 
-    // Filtro de estatus
     document.getElementById('filtroEstatusFacturas').addEventListener('change', (e) => {
         filtros.facturas.estatus = e.target.value;
         renderizarFacturas();
     });
 
-    // Chips de orden facturas
     document.querySelectorAll('#chipsOrdenFacturas .chip').forEach(chip => {
         chip.addEventListener('click', () => {
             const campo = chip.dataset.orden;
@@ -90,7 +86,6 @@ function configurarEventos() {
         });
     });
 
-    // Chips de orden pagos
     document.querySelectorAll('#chipsOrdenPagos .chip').forEach(chip => {
         chip.addEventListener('click', () => {
             const campo = chip.dataset.orden;
@@ -107,7 +102,6 @@ function configurarEventos() {
         });
     });
 
-    // Chips de orden productos
     document.querySelectorAll('#chipsOrdenProductos .chip').forEach(chip => {
         chip.addEventListener('click', () => {
             const campo = chip.dataset.orden;
@@ -124,26 +118,21 @@ function configurarEventos() {
         });
     });
 
-    // FAB
     document.getElementById('fabNuevaFactura').addEventListener('click', () => abrirModalFactura());
 
-    // Modal factura
     document.getElementById('btnCerrarModal').addEventListener('click', cerrarModalFactura);
     document.getElementById('btnCancelarFactura').addEventListener('click', cerrarModalFactura);
     document.getElementById('btnGuardarFactura').addEventListener('click', guardarFactura);
 
-    // Modal productos
     document.getElementById('btnCerrarProductos').addEventListener('click', cerrarModalProductos);
     document.getElementById('btnCancelarProductos').addEventListener('click', cerrarModalProductos);
     document.getElementById('btnConfirmarProductos').addEventListener('click', confirmarProductos);
     document.getElementById('btnAplicarMargenGlobal').addEventListener('click', aplicarMargenGlobal);
 
-    // Modal detalle
     document.getElementById('btnCerrarDetalle').addEventListener('click', () => {
         document.getElementById('modalDetalle').classList.add('hidden');
     });
 
-    // Form factura
     document.getElementById('formSinNumero').addEventListener('change', (e) => {
         const input = document.getElementById('formNumeroFactura');
         if (e.target.checked) {
@@ -379,8 +368,8 @@ function getIconoEstatus(est) {
 function normalizarNombre(nombre) {
     return String(nombre)
         .toLowerCase()
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Quitar acentos
-        .replace(/[^a-z0-9\s]/g, '') // Quitar símbolos
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s]/g, '')
         .replace(/\s+/g, ' ')
         .trim();
 }
@@ -872,7 +861,6 @@ function abrirModalFactura(factura = null) {
     const previewFoto = document.getElementById('previewFoto');
     if (estadoFoto) estadoFoto.style.display = 'none';
     if (previewFoto) previewFoto.style.display = 'none';
-    // Reset productos detectados
     productosDetectados = [];
     facturaTemporalParaProductos = null;
     document.getElementById('previewProductos').classList.add('hidden');
@@ -942,6 +930,10 @@ async function guardarFactura() {
     const montoBs = tasaActual ? (montoNum * tasaActual).toFixed(2) : null;
     const fechaFormato = fecha.split('-').reverse().join('/');
 
+    const productosParaGuardar = facturaTemporalParaProductos 
+        ? facturaTemporalParaProductos 
+        : (facturaEditando && facturaEditando.productos ? facturaEditando.productos : []);
+
     const datosDB = {
         fecha: fechaFormato,
         proveedor: proveedor,
@@ -951,7 +943,7 @@ async function guardarFactura() {
         tasa_bcv: tasaActual,
         estatus: estatus,
         notas: notas,
-        productos: facturaEditando && facturaEditando.productos ? facturaEditando.productos : [],
+        productos: productosParaGuardar,
         updated_at: new Date().toISOString()
     };
 
@@ -1022,7 +1014,7 @@ async function eliminarPago(pago) {
 }
 
 // ============================================
-// OCR CON DEEPSEEK - FOTO DE FACTURA
+// OCR CON DEEPSEEK
 // ============================================
 function obtenerApiKeyDeepSeek() {
     let key = localStorage.getItem('deepseek_api_key');
@@ -1121,7 +1113,7 @@ Reglas:
                     { type: 'image_url', image_url: { url: base64Image } }
                 ]
             }],
-            max_tokens: 2500,
+            max_tokens: 4000,
             temperature: 0.1
         })
     });
@@ -1146,6 +1138,7 @@ Reglas:
     }
 }
 
+// ✅ ESTA ES LA FUNCIÓN CORREGIDA - AHORA SÍ ABRE EL MODAL
 function configurarFotoFactura() {
     const btn = document.getElementById('btnTomarFoto');
     const input = document.getElementById('inputFoto');
@@ -1153,7 +1146,10 @@ function configurarFotoFactura() {
     const previewDiv = document.getElementById('previewFoto');
     const imgPreview = document.getElementById('imgPreview');
 
-    if (!btn) return;
+    if (!btn) {
+        console.warn("⚠️ Botón de foto no encontrado");
+        return;
+    }
 
     btn.addEventListener('click', () => input.click());
 
@@ -1166,19 +1162,16 @@ function configurarFotoFactura() {
         previewDiv.style.display = 'block';
 
         estado.style.display = 'block';
-        estado.textContent = '⏳ Procesando imagen con IA...';
-                    // Abrir modal de revisión de productos si se detectaron
-            if (productosDetectados.length > 0) {
-                setTimeout(() => {
-                    abrirModalProductos();
-                }, 1500);
-            }
+        estado.textContent = '⏳ Procesando imagen con IA... (puede tardar 5-15 seg)';
         estado.style.color = '#17a2b8';
 
         try {
+            console.log("📸 Imagen seleccionada:", file.name, file.size, "bytes");
+            
             const base64 = await archivoABase64(file);
+            console.log("🔄 Imagen convertida a base64, enviando a DeepSeek...");
+            
             const datos = await extraerDatosConDeepSeek(base64);
-
             console.log('📦 Datos extraídos:', datos);
 
             // Rellenar campos básicos
@@ -1206,6 +1199,8 @@ function configurarFotoFactura() {
                 margen: 30
             }));
 
+            console.log(`✅ ${productosDetectados.length} productos detectados`);
+
             // Mostrar preview de productos en el modal de factura
             if (productosDetectados.length > 0) {
                 const previewProd = document.getElementById('previewProductos');
@@ -1231,9 +1226,19 @@ function configurarFotoFactura() {
                 estado.style.color = '#dc3545';
             }
 
-            setTimeout(() => { estado.style.display = 'none'; }, 5000);
+            // ✅ ABRIR EL MODAL DE PRODUCTOS AUTOMÁTICAMENTE
+            if (productosDetectados.length > 0) {
+                console.log("🔓 Abriendo modal de productos...");
+                setTimeout(() => {
+                    abrirModalProductos();
+                }, 1000);
+            } else {
+                console.warn("⚠️ No se detectaron productos, no se abre el modal");
+                setTimeout(() => { estado.style.display = 'none'; }, 5000);
+            }
+
         } catch (error) {
-            console.error('Error:', error);
+            console.error('❌ Error completo:', error);
             estado.textContent = `❌ ${error.message}`;
             estado.style.color = '#dc3545';
             setTimeout(() => { estado.style.display = 'none'; }, 8000);
@@ -1247,7 +1252,12 @@ function configurarFotoFactura() {
 // MODAL PRODUCTOS (Revisión antes de guardar)
 // ============================================
 function abrirModalProductos() {
-    if (productosDetectados.length === 0) return;
+    console.log("📦 abrirModalProductos() llamada con", productosDetectados.length, "productos");
+    
+    if (productosDetectados.length === 0) {
+        console.warn("⚠️ No hay productos para mostrar");
+        return;
+    }
 
     const container = document.getElementById('tablaProductosEdit');
     container.innerHTML = `
@@ -1271,6 +1281,7 @@ function abrirModalProductos() {
 
     adjuntarEventosProductos();
     document.getElementById('modalProductos').classList.remove('hidden');
+    console.log("✅ Modal de productos abierto");
 }
 
 function filaProductoEditable(p, index) {
@@ -1290,6 +1301,7 @@ function filaProductoEditable(p, index) {
 
 function adjuntarEventosProductos() {
     const tbody = document.getElementById('tbodyProductosEdit');
+    if (!tbody) return;
 
     tbody.querySelectorAll('tr').forEach(tr => {
         const index = parseInt(tr.dataset.index);
@@ -1313,7 +1325,6 @@ function adjuntarEventosProductos() {
 
                 productosDetectados[index][field] = valor;
 
-                // Recalcular precio de venta
                 if (field === 'precio_unitario') {
                     const margen = productosDetectados[index].margen || 30;
                     const pv = productosDetectados[index].precio_unitario * (1 + margen / 100);
@@ -1327,19 +1338,15 @@ function adjuntarEventosProductos() {
         btn.addEventListener('click', (e) => {
             const index = parseInt(e.target.dataset.eliminar);
             productosDetectados.splice(index, 1);
-            abrirModalProductos(); // Re-render
+            abrirModalProductos();
         });
     });
 }
 
 function aplicarMargenGlobal() {
     const margen = parseFloat(document.getElementById('margenGlobal').value) || 30;
-
-    productosDetectados.forEach(p => {
-        p.margen = margen;
-    });
-
-    // Re-render
+    productosDetectados.forEach(p => { p.margen = margen; });
+    
     const tbody = document.getElementById('tbodyProductosEdit');
     tbody.innerHTML = productosDetectados.map((p, i) => filaProductoEditable(p, i)).join('');
     adjuntarEventosProductos();
@@ -1360,66 +1367,75 @@ async function confirmarProductos() {
     const numeroFactura = document.getElementById('formNumeroFactura').value.trim();
 
     mostrarToast('⏳ Guardando productos...', 'info');
+    console.log("💾 Guardando", productosDetectados.length, "productos en Supabase...");
 
-    let agregados = 0, actualizados = 0;
+    let agregados = 0, actualizados = 0, errores = 0;
 
     for (const prod of productosDetectados) {
         if (!prod.nombre || prod.nombre.trim() === '') continue;
 
         const nombreNorm = normalizarNombre(prod.nombre);
-
-        // Buscar producto existente
-        const { data: existentes } = await supabaseClient
-            .from('productos')
-            .select('*')
-            .eq('nombre_normalizado', nombreNorm)
-            .limit(1);
-
         const precioVenta = prod.precio_unitario * (1 + (prod.margen || 30) / 100);
 
-        if (existentes && existentes.length > 0) {
-            // Sumar al stock existente
-            const existente = existentes[0];
-            const nuevoStock = parseFloat(existente.stock || 0) + parseFloat(prod.cantidad || 0);
+        try {
+            const { data: existentes, error: errBuscar } = await supabaseClient
+                .from('productos')
+                .select('*')
+                .eq('nombre_normalizado', nombreNorm)
+                .limit(1);
 
-            await supabaseClient.from('productos').update({
-                stock: nuevoStock,
-                precio_compra_usd: prod.precio_unitario,
-                precio_venta_usd: parseFloat(precioVenta.toFixed(4)),
-                margen: prod.margen || 30,
-                iva: prod.exento ? 0 : (parseFloat(prod.iva) || 16),
-                exento: prod.exento || false,
-                ultimo_proveedor: proveedor,
-                ultima_factura: numeroFactura,
-                ultima_fecha: new Date().toLocaleDateString('es-VE'),
-                updated_at: new Date().toISOString()
-            }).eq('id', existente.id);
+            if (errBuscar) {
+                console.error("Error buscando:", errBuscar);
+                errores++;
+                continue;
+            }
 
-            actualizados++;
-        } else {
-            // Crear nuevo producto
-            await supabaseClient.from('productos').insert([{
-                id: Date.now() + Math.floor(Math.random() * 1000),
-                nombre: prod.nombre,
-                nombre_normalizado: nombreNorm,
-                stock: prod.cantidad,
-                unidad: prod.unidad || 'UND',
-                precio_compra_usd: prod.precio_unitario,
-                precio_venta_usd: parseFloat(precioVenta.toFixed(4)),
-                margen: prod.margen || 30,
-                iva: prod.exento ? 0 : (parseFloat(prod.iva) || 16),
-                exento: prod.exento || false,
-                ultimo_proveedor: proveedor,
-                ultima_factura: numeroFactura,
-                ultima_fecha: new Date().toLocaleDateString('es-VE'),
-                created_at: new Date().toISOString()
-            }]);
+            if (existentes && existentes.length > 0) {
+                const existente = existentes[0];
+                const nuevoStock = parseFloat(existente.stock || 0) + parseFloat(prod.cantidad || 0);
 
-            agregados++;
+                const { error: errUpdate } = await supabaseClient.from('productos').update({
+                    stock: nuevoStock,
+                    precio_compra_usd: prod.precio_unitario,
+                    precio_venta_usd: parseFloat(precioVenta.toFixed(4)),
+                    margen: prod.margen || 30,
+                    iva: prod.exento ? 0 : (parseFloat(prod.iva) || 16),
+                    exento: prod.exento || false,
+                    ultimo_proveedor: proveedor,
+                    ultima_factura: numeroFactura,
+                    ultima_fecha: new Date().toLocaleDateString('es-VE'),
+                    updated_at: new Date().toISOString()
+                }).eq('id', existente.id);
+
+                if (errUpdate) { console.error("Error update:", errUpdate); errores++; }
+                else actualizados++;
+            } else {
+                const { error: errInsert } = await supabaseClient.from('productos').insert([{
+                    id: Date.now() + Math.floor(Math.random() * 100000),
+                    nombre: prod.nombre,
+                    nombre_normalizado: nombreNorm,
+                    stock: prod.cantidad,
+                    unidad: prod.unidad || 'UND',
+                    precio_compra_usd: prod.precio_unitario,
+                    precio_venta_usd: parseFloat(precioVenta.toFixed(4)),
+                    margen: prod.margen || 30,
+                    iva: prod.exento ? 0 : (parseFloat(prod.iva) || 16),
+                    exento: prod.exento || false,
+                    ultimo_proveedor: proveedor,
+                    ultima_factura: numeroFactura,
+                    ultima_fecha: new Date().toLocaleDateString('es-VE'),
+                    created_at: new Date().toISOString()
+                }]);
+
+                if (errInsert) { console.error("Error insert:", errInsert); errores++; }
+                else agregados++;
+            }
+        } catch (e) {
+            console.error("Error en producto:", e);
+            errores++;
         }
     }
 
-    // Guardar los productos en la factura (si estamos editando o guardando)
     facturaTemporalParaProductos = productosDetectados.map(p => ({
         nombre: p.nombre,
         cantidad: p.cantidad,
@@ -1431,24 +1447,14 @@ async function confirmarProductos() {
         precio_venta: p.precio_unitario * (1 + (p.margen || 30) / 100)
     }));
 
-    mostrarToast(`✅ ${agregados} nuevos, ${actualizados} actualizados`, 'success');
-    cerrarModalProductos();
-
-    // Recargar datos
-    await cargarDatos();
-
-    // Guardar los productos en la factura actual
-    if (facturaEditando) {
-        // Si estamos editando, actualizar los productos en la factura
-        await supabaseClient.from('facturas').update({
-            productos: facturaTemporalParaProductos
-        }).eq('id', facturaEditando.id);
-        cargarDatos();
+    if (errores > 0) {
+        mostrarToast(`⚠️ ${agregados} nuevos, ${actualizados} actualizados, ${errores} errores`, 'error');
     } else {
-        // Si es nueva, los guardamos cuando se guarde la factura (en guardarFactura)
-        // Solo mostramos aviso
-        mostrarToast(`ℹ️ Ahora guarda la factura para vincular los productos`, 'info');
+        mostrarToast(`✅ ${agregados} nuevos, ${actualizados} actualizados`, 'success');
     }
+
+    cerrarModalProductos();
+    await cargarDatos();
 }
 
 // ============================================
