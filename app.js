@@ -140,10 +140,22 @@ function configurarEventos() {
     document.getElementById('btnCancelarEditarProducto').addEventListener('click', cerrarModalEditarProducto);
     document.getElementById('btnGuardarEditarProducto').addEventListener('click', guardarEditarProducto);
 
-    // Cálculo automático del precio de venta al editar
+    // ✅ Cálculo automático del precio de venta - TODOS los campos relevantes
     document.getElementById('editPrecioCompra').addEventListener('input', recalcularPrecioVenta);
+    document.getElementById('editPrecioCompra').addEventListener('change', recalcularPrecioVenta);
     document.getElementById('editMargen').addEventListener('input', recalcularPrecioVenta);
+    document.getElementById('editMargen').addEventListener('change', recalcularPrecioVenta);
     document.getElementById('editUnidadesCaja').addEventListener('input', recalcularPrecioVenta);
+    document.getElementById('editUnidadesCaja').addEventListener('change', recalcularPrecioVenta);
+    
+    // Si escribe el precio de la caja, se pasa al precio de compra
+    document.getElementById('editPrecioCaja').addEventListener('input', () => {
+        const precioCaja = parseFloat(document.getElementById('editPrecioCaja').value) || 0;
+        if (precioCaja > 0) {
+            document.getElementById('editPrecioCompra').value = precioCaja;
+            recalcularPrecioVenta();
+        }
+    });
 
     document.getElementById('formSinNumero').addEventListener('change', (e) => {
         const input = document.getElementById('formNumeroFactura');
@@ -254,7 +266,6 @@ function dbToProducto(row) {
         codigoBarras: row.codigo_barras || '',
         stock: parseFloat(row.stock) || 0,
         unidad: row.unidad || 'UND',
-        // ✅ NUEVO: unidades por caja
         unidadesCaja: parseFloat(row.unidades_caja) || 0,
         precioCajaUSD: parseFloat(row.precio_caja_usd) || 0,
         precioCompraUSD: parseFloat(row.precio_compra_usd) || 0,
@@ -777,6 +788,7 @@ let productoEditando = null;
 
 function abrirModalEditarProducto(p) {
     productoEditando = p;
+    console.log("📝 Editando producto:", p.nombre);
 
     document.getElementById('editNombre').value = p.nombre || '';
     document.getElementById('editUnidad').value = p.unidad || 'UND';
@@ -788,7 +800,11 @@ function abrirModalEditarProducto(p) {
     document.getElementById('editPrecioCaja').value = p.precioCajaUSD || 0;
     document.getElementById('editNotas').value = p.notas || '';
 
-    recalcularPrecioVenta();
+    // ✅ CORREGIDO: Recalcular con un pequeño delay para asegurar que los valores están cargados
+    setTimeout(() => {
+        recalcularPrecioVenta();
+        console.log("💰 Precio de venta recalculado");
+    }, 50);
 
     document.getElementById('modalEditarProducto').classList.remove('hidden');
 }
@@ -799,30 +815,58 @@ function cerrarModalEditarProducto() {
 }
 
 function recalcularPrecioVenta() {
-    const precioCompra = parseFloat(document.getElementById('editPrecioCompra').value) || 0;
-    const margen = parseFloat(document.getElementById('editMargen').value) || 0;
-    const unidadesCaja = parseFloat(document.getElementById('editUnidadesCaja').value) || 0;
+    // Leer valores actuales del formulario
+    const precioCompraInput = document.getElementById('editPrecioCompra');
+    const margenInput = document.getElementById('editMargen');
+    const unidadesCajaInput = document.getElementById('editUnidadesCaja');
+    const precioVentaInput = document.getElementById('editPrecioVenta');
+    const info = document.getElementById('infoCalculo');
 
-    // ✅ FIX: Si unidadesCaja es 0 o 1, el precio es por unidad. Si es mayor, dividimos.
+    if (!precioCompraInput || !margenInput || !unidadesCajaInput || !precioVentaInput) {
+        console.warn("⚠️ Campos de edición no encontrados");
+        return;
+    }
+
+    const precioCompra = parseFloat(precioCompraInput.value) || 0;
+    const margen = parseFloat(margenInput.value) || 0;
+    const unidadesCaja = parseFloat(unidadesCajaInput.value) || 0;
+
+    // Si unidadesCaja > 1, el precio de compra es por CAJA → dividir entre unidades
+    // Si unidadesCaja es 0 o 1, el precio de compra es por UNIDAD
     let precioCompraPorUnidad = precioCompra;
-    let nota = '';
+    let esPorCaja = false;
 
     if (unidadesCaja > 1) {
         precioCompraPorUnidad = precioCompra / unidadesCaja;
-        nota = ` ($${precioCompraPorUnidad.toFixed(4)} por unidad × ${unidadesCaja})`;
+        esPorCaja = true;
     }
 
     const precioVenta = precioCompraPorUnidad * (1 + margen / 100);
 
-    document.getElementById('editPrecioVenta').value = precioVenta.toFixed(2);
+    // Actualizar el campo de precio de venta
+    precioVentaInput.value = precioVenta.toFixed(2);
 
-    const info = document.getElementById('infoCalculo');
-    if (unidadesCaja > 1) {
-        info.innerHTML = `📦 Caja de ${unidadesCaja} unidades<br>💵 Compra caja: $${precioCompra.toFixed(2)}<br>💵 Compra por unidad: $${precioCompraPorUnidad.toFixed(4)}${nota}<br>💰 Venta por unidad: $${precioVenta.toFixed(2)}`;
+    // Actualizar el panel de información
+    if (esPorCaja) {
+        info.innerHTML = `
+            📦 <strong>Compra por CAJA</strong> de ${unidadesCaja} unidades<br>
+            💵 Precio caja: $${precioCompra.toFixed(2)}<br>
+            💵 Precio por unidad: $${precioCompraPorUnidad.toFixed(4)}<br>
+            📊 Margen: ${margen}%<br>
+            💰 <strong>Venta por unidad: $${precioVenta.toFixed(2)}</strong>
+        `;
         info.style.display = 'block';
     } else {
-        info.style.display = 'none';
+        info.innerHTML = `
+            📦 <strong>Venta por UNIDAD</strong><br>
+            💵 Precio compra: $${precioCompra.toFixed(2)}<br>
+            📊 Margen: ${margen}%<br>
+            💰 <strong>Venta: $${precioVenta.toFixed(2)}</strong>
+        `;
+        info.style.display = 'block';
     }
+
+    console.log(`💰 Cálculo: Compra $${precioCompra} | Unid/caja: ${unidadesCaja} | Margen: ${margen}% → Venta: $${precioVenta.toFixed(2)}`);
 }
 
 async function guardarEditarProducto() {
@@ -845,12 +889,19 @@ async function guardarEditarProducto() {
     const precioCaja = parseFloat(document.getElementById('editPrecioCaja').value) || 0;
     const notas = document.getElementById('editNotas').value.trim();
 
-    // Calcular precio venta por unidad
+    // ✅ Calcular precio de venta por unidad (con lógica de caja)
     let precioCompraPorUnidad = precioCompra;
     if (unidadesCaja > 1) {
         precioCompraPorUnidad = precioCompra / unidadesCaja;
     }
     const precioVenta = precioCompraPorUnidad * (1 + margen / 100);
+
+    console.log(`💾 Guardando producto:
+    - Compra: $${precioCompra}
+    - Unid/caja: ${unidadesCaja}
+    - Compra por unidad: $${precioCompraPorUnidad.toFixed(4)}
+    - Margen: ${margen}%
+    - Venta final: $${precioVenta.toFixed(2)}`);
 
     try {
         const { error } = await supabaseClient.from('productos').update({
@@ -1216,20 +1267,17 @@ function configurarFotoFactura() {
                 check.checked = false;
             }
 
-            // ✅ Procesar productos con lógica de caja/unidad
             productosDetectados = (datos.productos || []).map(p => {
                 const unidad = (p.unidad || 'UND').toUpperCase();
                 const precioUnitario = parseFloat(p.precio_unitario) || 0;
                 let unidadesCaja = 0;
                 let precioCaja = 0;
 
-                // Detectar si es CAJA y extraer unidades del nombre
                 if (unidad.includes('CAJ') || unidad.includes('BOX')) {
-                    // Buscar "x N" o "X N" en el nombre
                     const match = (p.nombre || '').match(/[xX]\s*(\d+)/);
                     if (match) {
                         unidadesCaja = parseInt(match[1]);
-                        precioCaja = precioUnitario; // El precio era por caja
+                        precioCaja = precioUnitario;
                     }
                 }
 
@@ -1359,7 +1407,6 @@ function adjuntarEventosProductos() {
 
                 productosDetectados[index][field] = valor;
 
-                // Recalcular precio de venta con lógica de caja
                 if (field === 'precio_unitario' || field === 'unidades_caja') {
                     const precioCompra = productosDetectados[index].precio_unitario || 0;
                     const unidadesCaja = productosDetectados[index].unidades_caja || 0;
@@ -1417,7 +1464,6 @@ async function confirmarProductos() {
 
         const nombreNorm = normalizarNombre(prod.nombre);
         
-        // ✅ FIX: Calcular precio unitario real (si es caja con unidades, dividir)
         let precioUnitarioReal = prod.precio_unitario;
         if (prod.unidades_caja > 1) {
             precioUnitarioReal = prod.precio_unitario / prod.unidades_caja;
