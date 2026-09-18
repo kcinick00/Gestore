@@ -74,7 +74,6 @@ body {
 }
 
 .btn-icon:active { transform: scale(0.9); }
-
 .tasa-info { font-size: 12px; opacity: 0.9; }
 
 /* TABS */
@@ -92,13 +91,13 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 14px;
+    gap: 4px;
+    padding: 14px 8px;
     background: none;
     border: none;
     border-bottom: 3px solid transparent;
     color: var(--text-light);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
@@ -377,7 +376,7 @@ main { padding: 16px; }
 .modal {
     background: white;
     width: 100%;
-    max-width: 600px;
+    max-width: 700px;
     max-height: 92vh;
     border-radius: 20px 20px 0 0;
     display: flex;
@@ -572,6 +571,71 @@ main { padding: 16px; }
     white-space: pre-wrap;
 }
 
+/* TABLA PRODUCTOS EDITABLES */
+.tabla-productos-edit {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.tabla-productos-edit th {
+    background: #17a2b8;
+    color: white;
+    padding: 8px 6px;
+    text-align: left;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.tabla-productos-edit td {
+    padding: 6px;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+}
+
+.tabla-productos-edit input {
+    width: 100%;
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: inherit;
+}
+
+.tabla-productos-edit input:focus {
+    outline: none;
+    border-color: #17a2b8;
+    background: #f0f8ff;
+}
+
+.tabla-productos-edit .input-corto {
+    max-width: 70px;
+}
+
+.tabla-productos-edit .celda-nombre input {
+    font-weight: 600;
+}
+
+.tabla-productos-edit .precio-venta {
+    background: #f0fdf4;
+    font-weight: 700;
+    color: #155724;
+}
+
+.tabla-productos-edit .btn-eliminar-prod {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+}
+
 /* TOAST */
 .toast {
     position: fixed;
@@ -601,10 +665,10 @@ main { padding: 16px; }
 
 /* RESPONSIVE */
 @media (min-width: 768px) {
-    main { max-width: 700px; margin: 0 auto; padding: 20px; }
-    .topbar-content, .tasa-info { max-width: 700px; margin-left: auto; margin-right: auto; }
-    .tabs { max-width: 700px; margin: 0 auto; }
-    .fab { right: calc(50% - 350px + 24px); }
-    .modal { border-radius: 20px; margin-bottom: 20px; max-height: 85vh; }
+    main { max-width: 750px; margin: 0 auto; padding: 20px; }
+    .topbar-content, .tasa-info { max-width: 750px; margin-left: auto; margin-right: auto; }
+    .tabs { max-width: 750px; margin: 0 auto; }
+    .fab { right: calc(50% - 375px + 24px); }
+    .modal { border-radius: 20px; margin-bottom: 20px; max-height: 90vh; }
     .modal-overlay { align-items: center; }
 }
