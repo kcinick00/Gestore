@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     configurarEventos();
     cargarTasa();
     cargarDatos();
+    configurarFotoFactura();
 });
 
 function configurarEventos() {
@@ -740,6 +741,12 @@ function abrirModalFactura(factura = null) {
     const modal = document.getElementById('modalFactura');
     const titulo = document.getElementById('modalTitulo');
 
+    // Reset del estado de la foto
+    const estadoFoto = document.getElementById('estadoFoto');
+    const previewFoto = document.getElementById('previewFoto');
+    if (estadoFoto) estadoFoto.style.display = 'none';
+    if (previewFoto) previewFoto.style.display = 'none';
+
     if (factura) {
         titulo.textContent = '✏️ Editar Factura';
         const [d, m, y] = factura.fecha.split('/');
@@ -885,24 +892,10 @@ async function eliminarPago(pago) {
 }
 
 // ============================================
-// TOAST
-// ============================================
-function mostrarToast(mensaje, tipo = 'info') {
-    const toast = document.getElementById('toast');
-    toast.textContent = mensaje;
-    toast.className = 'toast ' + tipo;
-    toast.classList.remove('hidden');
-    clearTimeout(toast._timeout);
-    toast._timeout = setTimeout(() => {
-        toast.classList.add('hidden');
-    }, 3000);
-}
-
-// ============================================
 // FOTO DE FACTURA CON OCR (DeepSeek Vision)
 // ============================================
 
-// Configurar API Key en localStorage la primera vez
+// Obtener/guardar API Key en localStorage
 function obtenerApiKeyDeepSeek() {
     let key = localStorage.getItem('deepseek_api_key');
     if (!key) {
@@ -935,30 +928,31 @@ function archivoABase64(file) {
     });
 }
 
-// Enviar imagen a DeepSeek Vision y extraer datos
+// Extraer datos con DeepSeek Vision
 async function extraerDatosConDeepSeek(base64Image) {
     const apiKey = obtenerApiKeyDeepSeek();
     if (!apiKey) {
         throw new Error('API Key no configurada');
     }
 
-    // Prompt optimizado para tu caso
-    const prompt = `Analiza esta imagen de una factura venezolana y extrae ÚNICAMENTE el nombre del proveedor (empresa emisora) y el monto total de la factura en dólares.
+    const prompt = `Analiza esta imagen de una factura venezolana y extrae el nombre del proveedor (empresa emisora), el monto total y el número de factura.
 
 Responde EXACTAMENTE en este formato JSON (sin texto adicional, sin markdown, sin comentarios):
 
 {
   "proveedor": "NOMBRE DEL PROVEEDOR",
   "monto_usd": 123.45,
+  "numero_factura": "00123",
   "confianza": "alta|media|baja"
 }
 
 Reglas:
 - "proveedor" debe ser el nombre de la empresa que emite la factura (no el cliente).
 - "monto_usd" debe ser un número sin comas, sin puntos de miles, con punto decimal. Si el monto está en bolívares, conviértelo a USD usando la tasa que aparezca en la factura; si no aparece, devuelve el monto en bolívares como número decimal.
+- "numero_factura" debe ser el número, código o referencia de la factura (puede contener letras y números). Busca etiquetas como "Factura N°", "Nro.", "Invoice", "N°", "Control", "Recibo" o simplemente un número destacado en la parte superior. Si no hay número visible, devuelve null.
 - Si NO puedes leer algún campo, usa null.
 - Si el campo está borroso o ilegible, márcalo como null y pon "confianza": "baja".
-- Si la imagen no es una factura, devuelve {"proveedor": null, "monto_usd": null, "confianza": "baja"}.`;
+- Si la imagen no es una factura, devuelve {"proveedor": null, "monto_usd": null, "numero_factura": null, "confianza": "baja"}.`;
 
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
@@ -993,9 +987,7 @@ Reglas:
     
     console.log('📝 Respuesta DeepSeek:', contenido);
 
-    // Intentar extraer JSON de la respuesta
     try {
-        // Buscar el primer bloque { ... } en la respuesta
         const match = contenido.match(/\{[\s\S]*\}/);
         if (match) {
             const parsed = JSON.parse(match[0]);
@@ -1008,8 +1000,8 @@ Reglas:
     }
 }
 
-// Handler del botón "Tomar Foto"
-document.addEventListener('DOMContentLoaded', () => {
+// Configurar el botón de foto
+function configurarFotoFactura() {
     const btn = document.getElementById('btnTomarFoto');
     const input = document.getElementById('inputFoto');
     const estado = document.getElementById('estadoFoto');
@@ -1026,7 +1018,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const file = event.target.files[0];
         if (!file) return;
 
-        // Mostrar preview
         const urlImagen = URL.createObjectURL(file);
         imgPreview.src = urlImagen;
         previewDiv.style.display = 'block';
@@ -1036,10 +1027,7 @@ document.addEventListener('DOMContentLoaded', () => {
         estado.style.color = '#17a2b8';
 
         try {
-            // Convertir a base64
             const base64 = await archivoABase64(file);
-
-            // Enviar a DeepSeek
             const datos = await extraerDatosConDeepSeek(base64);
 
             console.log('📦 Datos extraídos:', datos);
@@ -1052,8 +1040,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('formMontoUSD').value = parseFloat(datos.monto_usd).toFixed(2);
                 actualizarEquivalente();
             }
+            if (datos.numero_factura) {
+                const inputNumero = document.getElementById('formNumeroFactura');
+                const checkSinNumero = document.getElementById('formSinNumero');
+                inputNumero.value = datos.numero_factura;
+                inputNumero.disabled = false;
+                checkSinNumero.checked = false;
+            }
 
-            // Feedback según confianza
             const confianza = datos.confianza || 'media';
             if (confianza === 'alta') {
                 estado.textContent = '✅ Datos extraídos correctamente. Revisa y ajusta si es necesario.';
@@ -1079,7 +1073,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 8000);
         }
 
-        // Limpiar el input para poder subir la misma imagen otra vez
         event.target.value = '';
     });
-});
+}
+
+// ============================================
+// TOAST
+// ============================================
+function mostrarToast(mensaje, tipo = 'info') {
+    const toast = document.getElementById('toast');
+    toast.textContent = mensaje;
+    toast.className = 'toast ' + tipo;
+    toast.classList.remove('hidden');
+    clearTimeout(toast._timeout);
+    toast._timeout = setTimeout(() => {
+        toast.classList.add('hidden');
+    }, 3000);
+}
