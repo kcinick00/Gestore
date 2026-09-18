@@ -68,10 +68,11 @@
             <div class="filtros">
                 <input type="text" id="buscarFacturas" placeholder="🔍 Buscar proveedor..." class="input-buscar">
                 <select id="filtroEstatusFacturas" class="select-filtro">
-                    <option value="todas">Todas</option>
-                    <option value="vencidas" selected>Solo Vencidas</option>
+                    <option value="activas" selected>Vencidas + Pendientes</option>
+                    <option value="vencidas">Solo Vencidas</option>
                     <option value="pendientes">Solo Pendientes</option>
                     <option value="pagadas">Solo Pagadas</option>
+                    <option value="todas">Todas</option>
                 </select>
                 <div class="filtros-chips" id="chipsOrdenFacturas">
                     <button class="chip active" data-orden="fecha">📅 Fecha</button>
