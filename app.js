@@ -19,12 +19,17 @@ try {
 // ============================================
 const DIAS_VENCIMIENTO = 10;
 
-let datos = { facturas: [], pagos: [] };
+let datos = { facturas: [], pagos: [], productos: [] };
 let filtros = { 
     facturas: { texto: '', estatus: 'activas', orden: 'fecha', direccion: 'asc' },
-    pagos: { texto: '', orden: 'fecha', direccion: 'desc' }
+    pagos: { texto: '', orden: 'fecha', direccion: 'desc' },
+    productos: { texto: '', orden: 'nombre', direccion: 'asc' }
 };
 let tasaActual = null;
+
+// Estado temporal para productos detectados por OCR
+let productosDetectados = [];
+let facturaTemporalParaProductos = null;
 
 // ============================================
 // INICIALIZACIÓN
@@ -38,12 +43,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function configurarEventos() {
-    // Tabs
     document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', () => cambiarTab(tab.dataset.tab));
     });
 
-    // Refresh
     document.getElementById('btnRefresh').addEventListener('click', () => {
         mostrarToast('Actualizando...', 'info');
         cargarTasa();
@@ -59,14 +62,18 @@ function configurarEventos() {
         filtros.pagos.texto = e.target.value.toLowerCase();
         renderizarPagos();
     });
+    document.getElementById('buscarProductos').addEventListener('input', (e) => {
+        filtros.productos.texto = e.target.value.toLowerCase();
+        renderizarProductos();
+    });
 
-    // Filtro de estatus (facturas)
+    // Filtro de estatus
     document.getElementById('filtroEstatusFacturas').addEventListener('change', (e) => {
         filtros.facturas.estatus = e.target.value;
         renderizarFacturas();
     });
 
-    // Chips de orden (facturas)
+    // Chips de orden facturas
     document.querySelectorAll('#chipsOrdenFacturas .chip').forEach(chip => {
         chip.addEventListener('click', () => {
             const campo = chip.dataset.orden;
@@ -83,7 +90,7 @@ function configurarEventos() {
         });
     });
 
-    // Chips de orden (pagos)
+    // Chips de orden pagos
     document.querySelectorAll('#chipsOrdenPagos .chip').forEach(chip => {
         chip.addEventListener('click', () => {
             const campo = chip.dataset.orden;
@@ -100,6 +107,23 @@ function configurarEventos() {
         });
     });
 
+    // Chips de orden productos
+    document.querySelectorAll('#chipsOrdenProductos .chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            const campo = chip.dataset.orden;
+            if (filtros.productos.orden === campo) {
+                filtros.productos.direccion = filtros.productos.direccion === 'asc' ? 'desc' : 'asc';
+            } else {
+                filtros.productos.orden = campo;
+                filtros.productos.direccion = 'asc';
+            }
+            document.querySelectorAll('#chipsOrdenProductos .chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            chip.textContent = chip.textContent.replace(/[↑↓]/g, '').trim() + (filtros.productos.direccion === 'asc' ? ' ↑' : ' ↓');
+            renderizarProductos();
+        });
+    });
+
     // FAB
     document.getElementById('fabNuevaFactura').addEventListener('click', () => abrirModalFactura());
 
@@ -107,6 +131,12 @@ function configurarEventos() {
     document.getElementById('btnCerrarModal').addEventListener('click', cerrarModalFactura);
     document.getElementById('btnCancelarFactura').addEventListener('click', cerrarModalFactura);
     document.getElementById('btnGuardarFactura').addEventListener('click', guardarFactura);
+
+    // Modal productos
+    document.getElementById('btnCerrarProductos').addEventListener('click', cerrarModalProductos);
+    document.getElementById('btnCancelarProductos').addEventListener('click', cerrarModalProductos);
+    document.getElementById('btnConfirmarProductos').addEventListener('click', confirmarProductos);
+    document.getElementById('btnAplicarMargenGlobal').addEventListener('click', aplicarMargenGlobal);
 
     // Modal detalle
     document.getElementById('btnCerrarDetalle').addEventListener('click', () => {
@@ -127,7 +157,6 @@ function configurarEventos() {
 
     document.getElementById('formMontoUSD').addEventListener('input', actualizarEquivalente);
 
-    // Cerrar modal al tocar overlay
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) overlay.classList.add('hidden');
@@ -140,6 +169,7 @@ function cambiarTab(tab) {
     document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
     document.getElementById('seccionFacturas').classList.toggle('hidden', tab !== 'facturas');
     document.getElementById('seccionPagos').classList.toggle('hidden', tab !== 'pagos');
+    document.getElementById('seccionInventario').classList.toggle('hidden', tab !== 'inventario');
     document.getElementById('fabNuevaFactura').classList.toggle('hidden', tab !== 'facturas');
 }
 
@@ -152,20 +182,27 @@ async function cargarDatos() {
     try {
         console.log("📥 Cargando datos desde Supabase...");
 
-        const facturasResp = await supabaseClient.from('facturas').select('*');
-        if (facturasResp.error) throw facturasResp.error;
+        const [facturasResp, pagosResp, productosResp] = await Promise.all([
+            supabaseClient.from('facturas').select('*'),
+            supabaseClient.from('pagos').select('*'),
+            supabaseClient.from('productos').select('*')
+        ]);
 
-        const pagosResp = await supabaseClient.from('pagos').select('*');
+        if (facturasResp.error) throw facturasResp.error;
         if (pagosResp.error) throw pagosResp.error;
+        if (productosResp.error) throw productosResp.error;
 
         datos.facturas = (facturasResp.data || []).map(dbToFactura);
         datos.pagos = (pagosResp.data || []).map(dbToPago);
+        datos.productos = (productosResp.data || []).map(dbToProducto);
 
-        console.log(`✅ Cargados: ${datos.facturas.length} facturas, ${datos.pagos.length} pagos`);
+        console.log(`✅ Cargados: ${datos.facturas.length} facturas, ${datos.pagos.length} pagos, ${datos.productos.length} productos`);
 
         renderizarFacturas();
         renderizarPagos();
+        renderizarProductos();
         actualizarEstadisticas();
+        actualizarEstadisticasInventario();
         actualizarBadge();
     } catch (error) {
         console.error('❌ Error al cargar:', error);
@@ -186,7 +223,8 @@ function dbToFactura(row) {
         notas: row.notas || '',
         fechaPago: row.fecha_pago || '',
         montoPagoBs: row.monto_pago_bs,
-        numeroReciboPago: row.numero_recibo_pago || ''
+        numeroReciboPago: row.numero_recibo_pago || '',
+        productos: row.productos || []
     };
 }
 
@@ -207,6 +245,26 @@ function dbToPago(row) {
     };
 }
 
+function dbToProducto(row) {
+    return {
+        id: row.id,
+        nombre: row.nombre,
+        nombreNormalizado: row.nombre_normalizado,
+        codigoBarras: row.codigo_barras || '',
+        stock: parseFloat(row.stock) || 0,
+        unidad: row.unidad || 'UND',
+        precioCompraUSD: parseFloat(row.precio_compra_usd) || 0,
+        precioVentaUSD: parseFloat(row.precio_venta_usd) || 0,
+        margen: parseFloat(row.margen) || 30,
+        iva: parseFloat(row.iva) || 16,
+        exento: row.exento || false,
+        ultimoProveedor: row.ultimo_proveedor || '',
+        ultimaFactura: row.ultima_factura || '',
+        ultimaFecha: row.ultima_fecha || '',
+        notas: row.notas || ''
+    };
+}
+
 // ============================================
 // TASA BCV
 // ============================================
@@ -221,21 +279,9 @@ async function cargarTasa() {
     }
 
     const apis = [
-        {
-            name: 'DolarAPI',
-            url: 'https://ve.dolarapi.com/v1/dolares/oficial',
-            parse: (data) => data && data.promedio ? { tasa: parseFloat(data.promedio), fecha: new Date() } : null
-        },
-        {
-            name: 'Pydolarve',
-            url: 'https://pydolarve.org/api/v1/dollar?page=bcv',
-            parse: (data) => data && data.price ? { tasa: parseFloat(data.price), fecha: new Date() } : null
-        },
-        {
-            name: 'CriptoYa',
-            url: 'https://criptoya.com/api/dolaroficial',
-            parse: (data) => data && data.bcv && data.bcv.price ? { tasa: parseFloat(data.bcv.price), fecha: new Date() } : null
-        }
+        { name: 'DolarAPI', url: 'https://ve.dolarapi.com/v1/dolares/oficial', parse: (d) => d && d.promedio ? { tasa: parseFloat(d.promedio), fecha: new Date() } : null },
+        { name: 'Pydolarve', url: 'https://pydolarve.org/api/v1/dollar?page=bcv', parse: (d) => d && d.price ? { tasa: parseFloat(d.price), fecha: new Date() } : null },
+        { name: 'CriptoYa', url: 'https://criptoya.com/api/dolaroficial', parse: (d) => d && d.bcv && d.bcv.price ? { tasa: parseFloat(d.bcv.price), fecha: new Date() } : null }
     ];
 
     for (const api of apis) {
@@ -251,18 +297,13 @@ async function cargarTasa() {
 
             if (resultado && resultado.tasa > 0) {
                 tasaActual = resultado.tasa;
-                const fechaStr = resultado.fecha.toLocaleString('es-VE', {
-                    day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
-                });
+                const fechaStr = resultado.fecha.toLocaleString('es-VE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
                 localStorage.setItem('ultimaTasaBCV', tasaActual);
                 localStorage.setItem('ultimaFechaBCV', fechaStr);
                 info.textContent = `💱 Tasa BCV: ${tasaActual.toFixed(2)} Bs/USD · ${fechaStr}`;
-                console.log(`✅ Tasa obtenida de ${api.name}:`, tasaActual);
                 return;
             }
-        } catch (e) {
-            console.warn(`⚠️ ${api.name} falló: ${e.message}`);
-        }
+        } catch (e) { console.warn(`⚠️ ${api.name} falló`); }
     }
 
     if (ultimaTasa) {
@@ -278,19 +319,15 @@ async function cargarTasa() {
 // ============================================
 function calcularEstatusReal(f) {
     if (f.estatus === 'Pagada') return 'Pagada';
-    
     const [dia, mes, anio] = f.fecha.split('/').map(Number);
-    const fechaFactura = new Date(anio, mes - 1, dia);
-    const diffDias = Math.floor((new Date() - fechaFactura) / (1000 * 60 * 60 * 24));
-    
-    if (diffDias > DIAS_VENCIMIENTO) return 'Vencida';
+    const diff = Math.floor((new Date() - new Date(anio, mes - 1, dia)) / (1000 * 60 * 60 * 24));
+    if (diff > DIAS_VENCIMIENTO) return 'Vencida';
     return 'Pendiente';
 }
 
 function diasDesdeFactura(f) {
     const [dia, mes, anio] = f.fecha.split('/').map(Number);
-    const fechaFactura = new Date(anio, mes - 1, dia);
-    return Math.floor((new Date() - fechaFactura) / (1000 * 60 * 60 * 24));
+    return Math.floor((new Date() - new Date(anio, mes - 1, dia)) / (1000 * 60 * 60 * 24));
 }
 
 // ============================================
@@ -300,13 +337,9 @@ function formatearMontoBs(montoBs) {
     if (!montoBs) return "0,00";
     let str = String(montoBs).trim();
     let numero;
-    if (str.includes(',') && str.includes('.')) {
-        numero = parseFloat(str.replace(/\./g, '').replace(',', '.'));
-    } else if (str.includes(',')) {
-        numero = parseFloat(str.replace(',', '.'));
-    } else {
-        numero = parseFloat(str);
-    }
+    if (str.includes(',') && str.includes('.')) numero = parseFloat(str.replace(/\./g, '').replace(',', '.'));
+    else if (str.includes(',')) numero = parseFloat(str.replace(',', '.'));
+    else numero = parseFloat(str);
     if (isNaN(numero)) return "0,00";
     let formateado = numero.toFixed(2);
     let [entero, decimal] = formateado.split('.');
@@ -318,13 +351,9 @@ function parsearMontoBs(montoStr) {
     if (!montoStr) return 0;
     let str = String(montoStr).trim();
     let numero;
-    if (str.includes(',') && str.includes('.')) {
-        numero = parseFloat(str.replace(/\./g, '').replace(',', '.'));
-    } else if (str.includes(',')) {
-        numero = parseFloat(str.replace(',', '.'));
-    } else {
-        numero = parseFloat(str);
-    }
+    if (str.includes(',') && str.includes('.')) numero = parseFloat(str.replace(/\./g, '').replace(',', '.'));
+    else if (str.includes(',')) numero = parseFloat(str.replace(',', '.'));
+    else numero = parseFloat(str);
     return isNaN(numero) ? 0 : numero;
 }
 
@@ -347,8 +376,17 @@ function getIconoEstatus(est) {
     return '🟡';
 }
 
+function normalizarNombre(nombre) {
+    return String(nombre)
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Quitar acentos
+        .replace(/[^a-z0-9\s]/g, '') // Quitar símbolos
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
 // ============================================
-// ORDENAR LISTA (genérico)
+// ORDENAR LISTA
 // ============================================
 function ordenarLista(lista, campo, direccion) {
     if (!direccion) return lista;
@@ -363,13 +401,13 @@ function ordenarLista(lista, campo, direccion) {
         } else if (campo === 'monto') {
             valA = parsearMontoBs(a.monto || a.montoBs);
             valB = parsearMontoBs(b.monto || b.montoBs);
-        } else if (campo === 'montoUSD') {
-            valA = parseFloat(a.montoUSD) || 0;
-            valB = parseFloat(b.montoUSD) || 0;
+        } else if (campo === 'montoUSD' || campo === 'precio_compra_usd' || campo === 'precio_venta_usd' || campo === 'margen' || campo === 'stock') {
+            valA = parseFloat(a[campo]) || 0;
+            valB = parseFloat(b[campo]) || 0;
         } else if (campo === 'dias') {
             valA = diasDesdeFactura(a);
             valB = diasDesdeFactura(b);
-        } else if (campo === 'proveedor' || campo === 'beneficiario') {
+        } else if (campo === 'nombre' || campo === 'proveedor' || campo === 'beneficiario') {
             valA = (a[campo] || '').toLowerCase();
             valB = (b[campo] || '').toLowerCase();
             return valA.localeCompare(valB) * mult;
@@ -381,17 +419,13 @@ function ordenarLista(lista, campo, direccion) {
     });
 }
 
-// ✅ Ordenamiento específico para FACTURAS: vencidas primero
 function ordenarFacturas(lista, campo, direccion) {
     const ordenadas = ordenarLista(lista, campo, direccion);
-    
-    // Si el filtro es "activas" (vencidas + pendientes), las vencidas van primero
     if (filtros.facturas.estatus === 'activas') {
         const vencidas = ordenadas.filter(f => calcularEstatusReal(f) === 'Vencida');
         const pendientes = ordenadas.filter(f => calcularEstatusReal(f) === 'Pendiente');
         return [...vencidas, ...pendientes];
     }
-    
     return ordenadas;
 }
 
@@ -402,9 +436,7 @@ function renderizarFacturas() {
     const lista = document.getElementById('listaFacturas');
     let filtradas = [...datos.facturas];
 
-    // Filtro de estatus
     if (filtros.facturas.estatus === 'activas') {
-        // Vencidas + Pendientes (excluye Pagadas)
         filtradas = filtradas.filter(f => {
             const est = calcularEstatusReal(f);
             return est === 'Vencida' || est === 'Pendiente';
@@ -416,9 +448,7 @@ function renderizarFacturas() {
     } else if (filtros.facturas.estatus === 'pagadas') {
         filtradas = filtradas.filter(f => calcularEstatusReal(f) === 'Pagada');
     }
-    // Si es 'todas', no filtra
 
-    // Filtro de texto
     if (filtros.facturas.texto) {
         const t = filtros.facturas.texto;
         filtradas = filtradas.filter(f => 
@@ -428,30 +458,22 @@ function renderizarFacturas() {
         );
     }
 
-    // Ordenar (vencidas primero cuando aplica)
     filtradas = ordenarFacturas(filtradas, filtros.facturas.orden, filtros.facturas.direccion);
 
     if (filtradas.length === 0) {
-        lista.innerHTML = `
-            <div class="vacio">
-                <span class="vacio-icon">📋</span>
-                No hay facturas que coincidan
-            </div>`;
+        lista.innerHTML = `<div class="vacio"><span class="vacio-icon">📋</span>No hay facturas que coincidan</div>`;
         return;
     }
 
     lista.innerHTML = filtradas.map(f => {
         const estatusReal = calcularEstatusReal(f);
         const dias = diasDesdeFactura(f);
-        
         let diasInfo = '';
-        if (estatusReal === 'Vencida') {
-            diasInfo = `${dias - DIAS_VENCIMIENTO}d vencida`;
-        } else if (estatusReal === 'Pendiente') {
-            diasInfo = `${DIAS_VENCIMIENTO - dias}d restantes`;
-        } else {
-            diasInfo = 'Pagada';
-        }
+        if (estatusReal === 'Vencida') diasInfo = `${dias - DIAS_VENCIMIENTO}d vencida`;
+        else if (estatusReal === 'Pendiente') diasInfo = `${DIAS_VENCIMIENTO - dias}d restantes`;
+        else diasInfo = 'Pagada';
+        
+        const cantProductos = f.productos && f.productos.length > 0 ? `<span class="card-fecha">📦 ${f.productos.length} prod.</span>` : '';
         
         return `
             <div class="card-item estatus-${estatusReal}" data-id="${f.id}">
@@ -468,6 +490,7 @@ function renderizarFacturas() {
                 <div class="card-info">
                     <span class="card-monto">$${f.montoUSD || '0.00'}</span>
                     <span class="card-monto-bs">${formatearMontoBs(f.montoBs)} Bs</span>
+                    ${cantProductos}
                 </div>
                 ${f.notas ? `<div class="card-notas">📝 ${escapeHtml(f.notas)}</div>` : ''}
             </div>
@@ -490,7 +513,6 @@ function renderizarPagos() {
     const lista = document.getElementById('listaPagos');
     let filtrados = [...datos.pagos];
 
-    // Búsqueda
     if (filtros.pagos.texto) {
         const t = filtros.pagos.texto;
         filtrados = filtrados.filter(p => 
@@ -500,15 +522,10 @@ function renderizarPagos() {
         );
     }
 
-    // Ordenar
     filtrados = ordenarLista(filtrados, filtros.pagos.orden, filtros.pagos.direccion);
 
     if (filtrados.length === 0) {
-        lista.innerHTML = `
-            <div class="vacio">
-                <span class="vacio-icon">💸</span>
-                No hay pagos que coincidan
-            </div>`;
+        lista.innerHTML = `<div class="vacio"><span class="vacio-icon">💸</span>No hay pagos que coincidan</div>`;
         return;
     }
 
@@ -537,6 +554,55 @@ function renderizarPagos() {
 }
 
 // ============================================
+// RENDERIZAR PRODUCTOS
+// ============================================
+function renderizarProductos() {
+    const lista = document.getElementById('listaProductos');
+    let filtrados = [...datos.productos];
+
+    if (filtros.productos.texto) {
+        const t = filtros.productos.texto;
+        filtrados = filtrados.filter(p => 
+            (p.nombre || '').toLowerCase().includes(t) ||
+            (p.codigoBarras || '').toLowerCase().includes(t)
+        );
+    }
+
+    filtrados = ordenarLista(filtrados, filtros.productos.orden, filtros.productos.direccion);
+
+    if (filtrados.length === 0) {
+        lista.innerHTML = `<div class="vacio"><span class="vacio-icon">📦</span>No hay productos en el inventario</div>`;
+        return;
+    }
+
+    lista.innerHTML = filtrados.map(p => `
+        <div class="card-item" data-id="${p.id}">
+            <div class="card-header">
+                <div class="card-titulo">${escapeHtml(p.nombre)}</div>
+                <span class="card-estatus" style="background:#e7f3ff; color:#0056b3;">${p.stock} ${p.unidad}</span>
+            </div>
+            <div class="card-info">
+                <span class="card-fecha">💵 Compra: $${p.precioCompraUSD.toFixed(2)}</span>
+                <span class="card-fecha" style="color:#28a745; font-weight:700;">💰 Venta: $${p.precioVentaUSD.toFixed(2)}</span>
+            </div>
+            <div class="card-info">
+                <span class="card-fecha">📊 Margen: ${p.margen}%</span>
+                <span class="card-fecha">${p.exento ? '🚫 Exento' : `IVA: ${p.iva}%`}</span>
+            </div>
+            ${p.ultimoProveedor ? `<div class="card-info"><span class="card-fecha">🏢 ${escapeHtml(p.ultimoProveedor)}</span></div>` : ''}
+        </div>
+    `).join('');
+
+    lista.querySelectorAll('.card-item').forEach(card => {
+        card.addEventListener('click', () => {
+            const id = parseInt(card.dataset.id);
+            const producto = datos.productos.find(p => p.id === id);
+            if (producto) abrirDetalleProducto(producto);
+        });
+    });
+}
+
+// ============================================
 // ESTADÍSTICAS
 // ============================================
 function actualizarEstadisticas() {
@@ -544,11 +610,8 @@ function actualizarEstadisticas() {
     const mesActual = hoy.getMonth();
     const anioActual = hoy.getFullYear();
 
-    // Facturas
     let pend = 0, venc = 0, pag = 0;
-    let pendUSD = 0, pendBs = 0;
-    let vencUSD = 0, vencBs = 0;
-    let pagUSD = 0, pagBs = 0;
+    let pendUSD = 0, pendBs = 0, vencUSD = 0, vencBs = 0, pagUSD = 0, pagBs = 0;
 
     datos.facturas.forEach(f => {
         const est = calcularEstatusReal(f);
@@ -572,30 +635,33 @@ function actualizarEstadisticas() {
     document.getElementById('statPagadasUSD').textContent = '$' + pagUSD.toFixed(2);
     document.getElementById('statPagadasBs').textContent = formatearMontoBs(pagBs) + ' Bs';
 
-    // Pagos
-    let totalBs = 0, totalUSD = 0;
-    let mes = 0, mesBs = 0, mesUSD = 0;
-
+    let totalBs = 0, totalUSD = 0, mes = 0, mesBs = 0, mesUSD = 0;
     datos.pagos.forEach(p => {
         const bs = parsearMontoBs(p.monto);
         const usd = parseFloat(p.montoUSD) || 0;
-        totalBs += bs;
-        totalUSD += usd;
-
+        totalBs += bs; totalUSD += usd;
         const [d, m, y] = p.fecha.split('/').map(Number);
-        if (m - 1 === mesActual && y === anioActual) {
-            mes++;
-            mesBs += bs;
-            mesUSD += usd;
-        }
+        if (m - 1 === mesActual && y === anioActual) { mes++; mesBs += bs; mesUSD += usd; }
     });
 
     document.getElementById('statTotalPagos').textContent = formatearMontoBs(totalBs) + ' Bs';
     document.getElementById('statTotalPagosUSD').textContent = '$' + totalUSD.toFixed(2);
-
     document.getElementById('statPagosMes').textContent = mes;
     document.getElementById('statPagosMesUSD').textContent = '$' + mesUSD.toFixed(2);
     document.getElementById('statPagosMesBs').textContent = formatearMontoBs(mesBs) + ' Bs';
+}
+
+function actualizarEstadisticasInventario() {
+    let totalProductos = datos.productos.length;
+    let valorTotal = 0;
+
+    datos.productos.forEach(p => {
+        valorTotal += (p.stock * p.precioCompraUSD);
+    });
+
+    document.getElementById('statTotalProductos').textContent = totalProductos;
+    document.getElementById('statValorInventario').textContent = '$' + valorTotal.toFixed(2);
+    document.getElementById('statValorInventarioBs').textContent = formatearMontoBs(valorTotal * (tasaActual || 0)) + ' Bs';
 }
 
 function actualizarBadge() {
@@ -616,6 +682,23 @@ function abrirDetalleFactura(f) {
     const estatusReal = calcularEstatusReal(f);
     const dias = diasDesdeFactura(f);
 
+    let productosHtml = '';
+    if (f.productos && f.productos.length > 0) {
+        productosHtml = `
+            <div class="detalle-row">
+                <div class="detalle-label">Productos (${f.productos.length})</div>
+                <div class="detalle-valor" style="font-size: 12px; margin-top: 6px;">
+                    ${f.productos.map(p => `
+                        <div style="padding: 6px 8px; background:#f8f9fa; border-radius:4px; margin-bottom:4px; display:flex; justify-content:space-between;">
+                            <span>${escapeHtml(p.nombre)}</span>
+                            <span style="color:#6c757d;">${p.cantidad} × $${parseFloat(p.precio_unitario || 0).toFixed(2)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
     const html = `
         <div class="detalle-grid">
             <div class="detalle-row">
@@ -631,7 +714,7 @@ function abrirDetalleFactura(f) {
                 <div class="detalle-valor">${formatearMontoBs(f.montoBs)} Bs</div>
             </div>
             <div class="detalle-row">
-                <div class="detalle-label">Fecha de factura</div>
+                <div class="detalle-label">Fecha</div>
                 <div class="detalle-valor">${f.fecha} (hace ${dias} días)</div>
             </div>
             <div class="detalle-row">
@@ -652,6 +735,7 @@ function abrirDetalleFactura(f) {
                     <div class="detalle-notas">${escapeHtml(f.notas)}</div>
                 </div>
             ` : ''}
+            ${productosHtml}
         </div>
     `;
 
@@ -683,52 +767,95 @@ function abrirDetalleFactura(f) {
 function abrirDetallePago(p) {
     const html = `
         <div class="detalle-grid">
-            <div class="detalle-row">
-                <div class="detalle-label">Beneficiario</div>
-                <div class="detalle-valor">${escapeHtml(p.beneficiario)}</div>
-            </div>
-            <div class="detalle-row">
-                <div class="detalle-label">Monto</div>
-                <div class="detalle-valor destacado">${p.monto} Bs</div>
-            </div>
-            <div class="detalle-row">
-                <div class="detalle-label">Equivalente USD</div>
-                <div class="detalle-valor">$${p.montoUSD || '0.00'}</div>
-            </div>
-            <div class="detalle-row">
-                <div class="detalle-label">Fecha</div>
-                <div class="detalle-valor">${p.fecha}</div>
-            </div>
-            <div class="detalle-row">
-                <div class="detalle-label">N° Recibo</div>
-                <div class="detalle-valor">${p.numeroRecibo || 'N/A'}</div>
-            </div>
-            <div class="detalle-row">
-                <div class="detalle-label">Concepto</div>
-                <div class="detalle-valor">${p.concepto || 'N/A'}</div>
-            </div>
-            <div class="detalle-row">
-                <div class="detalle-label">Tasa BCV</div>
-                <div class="detalle-valor">${p.tasaBCV ? p.tasaBCV.toFixed(2) + ' Bs/USD' : 'N/A'}</div>
-            </div>
-            ${p.notas ? `
-                <div class="detalle-row">
-                    <div class="detalle-label">Notas</div>
-                    <div class="detalle-notas">${escapeHtml(p.notas)}</div>
-                </div>
-            ` : ''}
+            <div class="detalle-row"><div class="detalle-label">Beneficiario</div><div class="detalle-valor">${escapeHtml(p.beneficiario)}</div></div>
+            <div class="detalle-row"><div class="detalle-label">Monto</div><div class="detalle-valor destacado">${p.monto} Bs</div></div>
+            <div class="detalle-row"><div class="detalle-label">Equivalente USD</div><div class="detalle-valor">$${p.montoUSD || '0.00'}</div></div>
+            <div class="detalle-row"><div class="detalle-label">Fecha</div><div class="detalle-valor">${p.fecha}</div></div>
+            <div class="detalle-row"><div class="detalle-label">N° Recibo</div><div class="detalle-valor">${p.numeroRecibo || 'N/A'}</div></div>
+            <div class="detalle-row"><div class="detalle-label">Concepto</div><div class="detalle-valor">${p.concepto || 'N/A'}</div></div>
+            <div class="detalle-row"><div class="detalle-label">Tasa BCV</div><div class="detalle-valor">${p.tasaBCV ? p.tasaBCV.toFixed(2) + ' Bs/USD' : 'N/A'}</div></div>
+            ${p.notas ? `<div class="detalle-row"><div class="detalle-label">Notas</div><div class="detalle-notas">${escapeHtml(p.notas)}</div></div>` : ''}
         </div>
     `;
 
     document.getElementById('detalleTitulo').textContent = 'Detalle de Pago';
     document.getElementById('detalleContenido').innerHTML = html;
-    document.getElementById('detalleAcciones').innerHTML = `
-        <button class="btn btn-danger" id="btnEliminarPago">🗑️ Eliminar</button>
+    document.getElementById('detalleAcciones').innerHTML = `<button class="btn btn-danger" id="btnEliminarPago">🗑️ Eliminar</button>`;
+    document.getElementById('btnEliminarPago').addEventListener('click', () => eliminarPago(p));
+    document.getElementById('modalDetalle').classList.remove('hidden');
+}
+
+// ============================================
+// DETALLE PRODUCTO
+// ============================================
+function abrirDetalleProducto(p) {
+    const html = `
+        <div class="detalle-grid">
+            <div class="detalle-row"><div class="detalle-label">Nombre</div><div class="detalle-valor">${escapeHtml(p.nombre)}</div></div>
+            <div class="detalle-row"><div class="detalle-label">Stock</div><div class="detalle-valor destacado">${p.stock} ${p.unidad}</div></div>
+            <div class="detalle-row"><div class="detalle-label">Precio Compra USD</div><div class="detalle-valor">$${p.precioCompraUSD.toFixed(2)}</div></div>
+            <div class="detalle-row"><div class="detalle-label">Precio Venta USD</div><div class="detalle-valor destacado">$${p.precioVentaUSD.toFixed(2)}</div></div>
+            <div class="detalle-row"><div class="detalle-label">Margen</div><div class="detalle-valor">${p.margen}%</div></div>
+            <div class="detalle-row"><div class="detalle-label">IVA</div><div class="detalle-valor">${p.exento ? '🚫 Exento' : p.iva + '%'}</div></div>
+            ${p.ultimoProveedor ? `<div class="detalle-row"><div class="detalle-label">Último Proveedor</div><div class="detalle-valor">${escapeHtml(p.ultimoProveedor)}</div></div>` : ''}
+            ${p.ultimaFactura ? `<div class="detalle-row"><div class="detalle-label">Última Factura</div><div class="detalle-valor">${p.ultimaFactura}</div></div>` : ''}
+        </div>
     `;
 
-    document.getElementById('btnEliminarPago').addEventListener('click', () => eliminarPago(p));
-
+    document.getElementById('detalleTitulo').textContent = 'Detalle de Producto';
+    document.getElementById('detalleContenido').innerHTML = html;
+    document.getElementById('detalleAcciones').innerHTML = `
+        <button class="btn btn-secondary" id="btnEditarProducto">✏️ Editar</button>
+        <button class="btn btn-danger" id="btnEliminarProducto">🗑️</button>
+    `;
+    document.getElementById('btnEditarProducto').addEventListener('click', () => editarProducto(p));
+    document.getElementById('btnEliminarProducto').addEventListener('click', () => eliminarProducto(p));
     document.getElementById('modalDetalle').classList.remove('hidden');
+}
+
+function editarProducto(p) {
+    const nuevoNombre = prompt(`Nombre del producto:`, p.nombre);
+    if (nuevoNombre === null) return;
+    const nuevoStock = prompt(`Stock (${p.unidad}):`, p.stock);
+    if (nuevoStock === null) return;
+    const nuevoPrecioCompra = prompt(`Precio Compra USD:`, p.precioCompraUSD);
+    if (nuevoPrecioCompra === null) return;
+    const nuevoMargen = prompt(`Margen (%):`, p.margen);
+    if (nuevoMargen === null) return;
+
+    const margenNum = parseFloat(nuevoMargen) || 30;
+    const precioCompraNum = parseFloat(nuevoPrecioCompra) || 0;
+    const precioVenta = precioCompraNum * (1 + margenNum / 100);
+
+    supabaseClient.from('productos').update({
+        nombre: nuevoNombre,
+        nombre_normalizado: normalizarNombre(nuevoNombre),
+        stock: parseFloat(nuevoStock) || 0,
+        precio_compra_usd: precioCompraNum,
+        margen: margenNum,
+        precio_venta_usd: parseFloat(precioVenta.toFixed(4)),
+        updated_at: new Date().toISOString()
+    }).eq('id', p.id).then(({ error }) => {
+        if (error) {
+            mostrarToast('Error al actualizar', 'error');
+        } else {
+            mostrarToast('✅ Producto actualizado', 'success');
+            document.getElementById('modalDetalle').classList.add('hidden');
+            cargarDatos();
+        }
+    });
+}
+
+async function eliminarProducto(p) {
+    if (!confirm(`¿Eliminar "${p.nombre}" del inventario?`)) return;
+    const { error } = await supabaseClient.from('productos').delete().eq('id', p.id);
+    if (error) {
+        mostrarToast('Error al eliminar', 'error');
+    } else {
+        mostrarToast('✅ Producto eliminado', 'success');
+        document.getElementById('modalDetalle').classList.add('hidden');
+        cargarDatos();
+    }
 }
 
 // ============================================
@@ -741,11 +868,14 @@ function abrirModalFactura(factura = null) {
     const modal = document.getElementById('modalFactura');
     const titulo = document.getElementById('modalTitulo');
 
-    // Reset del estado de la foto
     const estadoFoto = document.getElementById('estadoFoto');
     const previewFoto = document.getElementById('previewFoto');
     if (estadoFoto) estadoFoto.style.display = 'none';
     if (previewFoto) previewFoto.style.display = 'none';
+    // Reset productos detectados
+    productosDetectados = [];
+    facturaTemporalParaProductos = null;
+    document.getElementById('previewProductos').classList.add('hidden');
 
     if (factura) {
         titulo.textContent = '✏️ Editar Factura';
@@ -782,7 +912,6 @@ function cerrarModalFactura() {
 function actualizarEquivalente() {
     const monto = parseFloat(document.getElementById('formMontoUSD').value);
     const equival = document.getElementById('equivalenteBs');
-
     if (!isNaN(monto) && tasaActual) {
         const bs = monto * tasaActual;
         equival.innerHTML = `💱 Equivalente en Bs: <strong>${formatearMontoBs(bs)} Bs</strong> (Tasa: ${tasaActual.toFixed(2)})`;
@@ -822,6 +951,7 @@ async function guardarFactura() {
         tasa_bcv: tasaActual,
         estatus: estatus,
         notas: notas,
+        productos: facturaEditando && facturaEditando.productos ? facturaEditando.productos : [],
         updated_at: new Date().toISOString()
     };
 
@@ -892,10 +1022,8 @@ async function eliminarPago(pago) {
 }
 
 // ============================================
-// FOTO DE FACTURA CON OCR (DeepSeek Vision)
+// OCR CON DEEPSEEK - FOTO DE FACTURA
 // ============================================
-
-// Obtener/guardar API Key en localStorage
 function obtenerApiKeyDeepSeek() {
     let key = localStorage.getItem('deepseek_api_key');
     if (!key) {
@@ -918,7 +1046,6 @@ function obtenerApiKeyDeepSeek() {
     return key;
 }
 
-// Convertir archivo de imagen a base64
 function archivoABase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -928,31 +1055,56 @@ function archivoABase64(file) {
     });
 }
 
-// Extraer datos con DeepSeek Vision
 async function extraerDatosConDeepSeek(base64Image) {
     const apiKey = obtenerApiKeyDeepSeek();
-    if (!apiKey) {
-        throw new Error('API Key no configurada');
-    }
+    if (!apiKey) throw new Error('API Key no configurada');
 
-    const prompt = `Analiza esta imagen de una factura venezolana y extrae el nombre del proveedor (empresa emisora), el monto total y el número de factura.
+    const prompt = `Analiza esta imagen de una factura venezolana y extrae:
+1. El nombre del proveedor (empresa emisora).
+2. El monto total de la factura en dólares.
+3. El número de factura.
+4. La LISTA COMPLETA DE PRODUCTOS con: nombre, cantidad, unidad, precio unitario, IVA (16 o "E" si es exento).
 
-Responde EXACTAMENTE en este formato JSON (sin texto adicional, sin markdown, sin comentarios):
+Responde EXACTAMENTE en este formato JSON (sin texto adicional, sin markdown):
 
 {
   "proveedor": "NOMBRE DEL PROVEEDOR",
   "monto_usd": 123.45,
   "numero_factura": "00123",
+  "productos": [
+    {
+      "nombre": "LECHE ENTERA 1L",
+      "cantidad": 24,
+      "unidad": "UND",
+      "precio_unitario": 2.50,
+      "iva": 16,
+      "exento": false
+    },
+    {
+      "nombre": "QUESO BLANCO 500G",
+      "cantidad": 12,
+      "unidad": "KG",
+      "precio_unitario": 4.20,
+      "iva": "E",
+      "exento": true
+    }
+  ],
   "confianza": "alta|media|baja"
 }
 
 Reglas:
-- "proveedor" debe ser el nombre de la empresa que emite la factura (no el cliente).
-- "monto_usd" debe ser un número sin comas, sin puntos de miles, con punto decimal. Si el monto está en bolívares, conviértelo a USD usando la tasa que aparezca en la factura; si no aparece, devuelve el monto en bolívares como número decimal.
-- "numero_factura" debe ser el número, código o referencia de la factura (puede contener letras y números). Busca etiquetas como "Factura N°", "Nro.", "Invoice", "N°", "Control", "Recibo" o simplemente un número destacado en la parte superior. Si no hay número visible, devuelve null.
+- "proveedor": nombre de la empresa que emite la factura (no el cliente).
+- "monto_usd": número sin comas, sin puntos de miles, con punto decimal.
+- "numero_factura": número o código de la factura. Si no existe, null.
+- "productos": array con TODOS los productos de la factura. Si no puedes leer los productos, devuelve array vacío [].
+  - "nombre": descripción del producto en MAYÚSCULAS.
+  - "cantidad": número decimal (ej: 24, 1.5).
+  - "unidad": "UND" (unidad), "KG" (kilogramo), "LT" (litro), "CAJ" (caja), "PAQ" (paquete), "DOC" (docena), etc.
+  - "precio_unitario": precio unitario en USD (sin IVA).
+  - "iva": 16 si tiene IVA, "E" si es exento.
+  - "exento": true si el producto está exento de IVA, false si no.
 - Si NO puedes leer algún campo, usa null.
-- Si el campo está borroso o ilegible, márcalo como null y pon "confianza": "baja".
-- Si la imagen no es una factura, devuelve {"proveedor": null, "monto_usd": null, "numero_factura": null, "confianza": "baja"}.`;
+- Si la imagen no es una factura, devuelve {"proveedor": null, "monto_usd": null, "numero_factura": null, "productos": [], "confianza": "baja"}.`;
 
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
@@ -962,16 +1114,14 @@ Reglas:
         },
         body: JSON.stringify({
             model: 'deepseek-chat',
-            messages: [
-                {
-                    role: 'user',
-                    content: [
-                        { type: 'text', text: prompt },
-                        { type: 'image_url', image_url: { url: base64Image } }
-                    ]
-                }
-            ],
-            max_tokens: 300,
+            messages: [{
+                role: 'user',
+                content: [
+                    { type: 'text', text: prompt },
+                    { type: 'image_url', image_url: { url: base64Image } }
+                ]
+            }],
+            max_tokens: 2500,
             temperature: 0.1
         })
     });
@@ -984,23 +1134,18 @@ Reglas:
 
     const data = await response.json();
     const contenido = data.choices?.[0]?.message?.content || '';
-    
     console.log('📝 Respuesta DeepSeek:', contenido);
 
     try {
         const match = contenido.match(/\{[\s\S]*\}/);
-        if (match) {
-            const parsed = JSON.parse(match[0]);
-            return parsed;
-        }
+        if (match) return JSON.parse(match[0]);
         throw new Error('No se encontró JSON en la respuesta');
     } catch (e) {
-        console.error('Error al parsear respuesta:', contenido);
+        console.error('Error al parsear:', contenido);
         throw new Error('Respuesta inesperada de la IA');
     }
 }
 
-// Configurar el botón de foto
 function configurarFotoFactura() {
     const btn = document.getElementById('btnTomarFoto');
     const input = document.getElementById('inputFoto');
@@ -1010,9 +1155,7 @@ function configurarFotoFactura() {
 
     if (!btn) return;
 
-    btn.addEventListener('click', () => {
-        input.click();
-    });
+    btn.addEventListener('click', () => input.click());
 
     input.addEventListener('change', async (event) => {
         const file = event.target.files[0];
@@ -1032,49 +1175,274 @@ function configurarFotoFactura() {
 
             console.log('📦 Datos extraídos:', datos);
 
-            // Rellenar el formulario
-            if (datos.proveedor) {
-                document.getElementById('formProveedor').value = datos.proveedor;
-            }
+            // Rellenar campos básicos
+            if (datos.proveedor) document.getElementById('formProveedor').value = datos.proveedor;
             if (datos.monto_usd) {
                 document.getElementById('formMontoUSD').value = parseFloat(datos.monto_usd).toFixed(2);
                 actualizarEquivalente();
             }
             if (datos.numero_factura) {
-                const inputNumero = document.getElementById('formNumeroFactura');
-                const checkSinNumero = document.getElementById('formSinNumero');
-                inputNumero.value = datos.numero_factura;
-                inputNumero.disabled = false;
-                checkSinNumero.checked = false;
+                const inputNum = document.getElementById('formNumeroFactura');
+                const check = document.getElementById('formSinNumero');
+                inputNum.value = datos.numero_factura;
+                inputNum.disabled = false;
+                check.checked = false;
+            }
+
+            // Guardar productos detectados
+            productosDetectados = (datos.productos || []).map(p => ({
+                nombre: p.nombre || '',
+                cantidad: parseFloat(p.cantidad) || 1,
+                unidad: p.unidad || 'UND',
+                precio_unitario: parseFloat(p.precio_unitario) || 0,
+                iva: p.iva === 'E' ? 'E' : (parseFloat(p.iva) || 16),
+                exento: p.exento || p.iva === 'E' || false,
+                margen: 30
+            }));
+
+            // Mostrar preview de productos en el modal de factura
+            if (productosDetectados.length > 0) {
+                const previewProd = document.getElementById('previewProductos');
+                const listaPrev = document.getElementById('listaProductosPreview');
+                listaPrev.innerHTML = productosDetectados.map(p => 
+                    `<div style="padding:4px 0; border-bottom:1px solid #e0e0e0; display:flex; justify-content:space-between;">
+                        <span>${escapeHtml(p.nombre)}</span>
+                        <span style="color:#666;">${p.cantidad} × $${p.precio_unitario.toFixed(2)}</span>
+                    </div>`
+                ).join('');
+                previewProd.classList.remove('hidden');
             }
 
             const confianza = datos.confianza || 'media';
             if (confianza === 'alta') {
-                estado.textContent = '✅ Datos extraídos correctamente. Revisa y ajusta si es necesario.';
+                estado.textContent = `✅ ${productosDetectados.length} productos extraídos correctamente.`;
                 estado.style.color = '#28a745';
             } else if (confianza === 'media') {
-                estado.textContent = '⚠️ Datos extraídos con confianza media. Verifica con cuidado.';
+                estado.textContent = `⚠️ ${productosDetectados.length} productos extraídos. Verifica con cuidado.`;
                 estado.style.color = '#ffc107';
             } else {
-                estado.textContent = '⚠️ Confianza baja. Revisa y completa los datos manualmente.';
+                estado.textContent = `⚠️ Confianza baja. Revisa todos los datos.`;
                 estado.style.color = '#dc3545';
             }
 
-            setTimeout(() => {
-                estado.style.display = 'none';
-            }, 5000);
-
+            setTimeout(() => { estado.style.display = 'none'; }, 5000);
         } catch (error) {
-            console.error('Error al procesar foto:', error);
+            console.error('Error:', error);
             estado.textContent = `❌ ${error.message}`;
             estado.style.color = '#dc3545';
-            setTimeout(() => {
-                estado.style.display = 'none';
-            }, 8000);
+            setTimeout(() => { estado.style.display = 'none'; }, 8000);
         }
 
         event.target.value = '';
     });
+}
+
+// ============================================
+// MODAL PRODUCTOS (Revisión antes de guardar)
+// ============================================
+function abrirModalProductos() {
+    if (productosDetectados.length === 0) return;
+
+    const container = document.getElementById('tablaProductosEdit');
+    container.innerHTML = `
+        <table class="tabla-productos-edit">
+            <thead>
+                <tr>
+                    <th style="width: 35%;">Producto</th>
+                    <th style="width: 12%;">Cant.</th>
+                    <th style="width: 12%;">Unid.</th>
+                    <th style="width: 13%;">P.Compra</th>
+                    <th style="width: 10%;">IVA</th>
+                    <th style="width: 13%;">P.Venta</th>
+                    <th style="width: 5%;"></th>
+                </tr>
+            </thead>
+            <tbody id="tbodyProductosEdit">
+                ${productosDetectados.map((p, i) => filaProductoEditable(p, i)).join('')}
+            </tbody>
+        </table>
+    `;
+
+    adjuntarEventosProductos();
+    document.getElementById('modalProductos').classList.remove('hidden');
+}
+
+function filaProductoEditable(p, index) {
+    const precioVenta = p.precio_unitario * (1 + (p.margen || 30) / 100);
+    return `
+        <tr data-index="${index}">
+            <td class="celda-nombre"><input type="text" data-field="nombre" value="${escapeHtml(p.nombre)}"></td>
+            <td><input type="number" class="input-corto" data-field="cantidad" value="${p.cantidad}" step="0.01" min="0"></td>
+            <td><input type="text" class="input-corto" data-field="unidad" value="${p.unidad}"></td>
+            <td><input type="number" class="input-corto" data-field="precio_unitario" value="${p.precio_unitario}" step="0.01" min="0"></td>
+            <td><input type="text" class="input-corto" data-field="iva" value="${p.iva}" style="text-align:center;"></td>
+            <td><input type="number" class="input-corto precio-venta" data-field="precio_venta" value="${precioVenta.toFixed(2)}" step="0.01" min="0" readonly></td>
+            <td style="text-align:center;"><button class="btn-eliminar-prod" data-eliminar="${index}">✕</button></td>
+        </tr>
+    `;
+}
+
+function adjuntarEventosProductos() {
+    const tbody = document.getElementById('tbodyProductosEdit');
+
+    tbody.querySelectorAll('tr').forEach(tr => {
+        const index = parseInt(tr.dataset.index);
+
+        tr.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', (e) => {
+                const field = e.target.dataset.field;
+                let valor = e.target.value;
+
+                if (field === 'cantidad' || field === 'precio_unitario') {
+                    valor = parseFloat(valor) || 0;
+                } else if (field === 'iva') {
+                    if (valor.toUpperCase() === 'E') {
+                        productosDetectados[index].exento = true;
+                        productosDetectados[index].iva = 'E';
+                    } else {
+                        productosDetectados[index].exento = false;
+                        productosDetectados[index].iva = parseFloat(valor) || 16;
+                    }
+                }
+
+                productosDetectados[index][field] = valor;
+
+                // Recalcular precio de venta
+                if (field === 'precio_unitario') {
+                    const margen = productosDetectados[index].margen || 30;
+                    const pv = productosDetectados[index].precio_unitario * (1 + margen / 100);
+                    tr.querySelector('[data-field="precio_venta"]').value = pv.toFixed(2);
+                }
+            });
+        });
+    });
+
+    tbody.querySelectorAll('[data-eliminar]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const index = parseInt(e.target.dataset.eliminar);
+            productosDetectados.splice(index, 1);
+            abrirModalProductos(); // Re-render
+        });
+    });
+}
+
+function aplicarMargenGlobal() {
+    const margen = parseFloat(document.getElementById('margenGlobal').value) || 30;
+
+    productosDetectados.forEach(p => {
+        p.margen = margen;
+    });
+
+    // Re-render
+    const tbody = document.getElementById('tbodyProductosEdit');
+    tbody.innerHTML = productosDetectados.map((p, i) => filaProductoEditable(p, i)).join('');
+    adjuntarEventosProductos();
+    mostrarToast(`✅ Margen ${margen}% aplicado a ${productosDetectados.length} productos`, 'success');
+}
+
+function cerrarModalProductos() {
+    document.getElementById('modalProductos').classList.add('hidden');
+}
+
+async function confirmarProductos() {
+    if (productosDetectados.length === 0) {
+        mostrarToast('No hay productos para guardar', 'error');
+        return;
+    }
+
+    const proveedor = document.getElementById('formProveedor').value.trim();
+    const numeroFactura = document.getElementById('formNumeroFactura').value.trim();
+
+    mostrarToast('⏳ Guardando productos...', 'info');
+
+    let agregados = 0, actualizados = 0;
+
+    for (const prod of productosDetectados) {
+        if (!prod.nombre || prod.nombre.trim() === '') continue;
+
+        const nombreNorm = normalizarNombre(prod.nombre);
+
+        // Buscar producto existente
+        const { data: existentes } = await supabaseClient
+            .from('productos')
+            .select('*')
+            .eq('nombre_normalizado', nombreNorm)
+            .limit(1);
+
+        const precioVenta = prod.precio_unitario * (1 + (prod.margen || 30) / 100);
+
+        if (existentes && existentes.length > 0) {
+            // Sumar al stock existente
+            const existente = existentes[0];
+            const nuevoStock = parseFloat(existente.stock || 0) + parseFloat(prod.cantidad || 0);
+
+            await supabaseClient.from('productos').update({
+                stock: nuevoStock,
+                precio_compra_usd: prod.precio_unitario,
+                precio_venta_usd: parseFloat(precioVenta.toFixed(4)),
+                margen: prod.margen || 30,
+                iva: prod.exento ? 0 : (parseFloat(prod.iva) || 16),
+                exento: prod.exento || false,
+                ultimo_proveedor: proveedor,
+                ultima_factura: numeroFactura,
+                ultima_fecha: new Date().toLocaleDateString('es-VE'),
+                updated_at: new Date().toISOString()
+            }).eq('id', existente.id);
+
+            actualizados++;
+        } else {
+            // Crear nuevo producto
+            await supabaseClient.from('productos').insert([{
+                id: Date.now() + Math.floor(Math.random() * 1000),
+                nombre: prod.nombre,
+                nombre_normalizado: nombreNorm,
+                stock: prod.cantidad,
+                unidad: prod.unidad || 'UND',
+                precio_compra_usd: prod.precio_unitario,
+                precio_venta_usd: parseFloat(precioVenta.toFixed(4)),
+                margen: prod.margen || 30,
+                iva: prod.exento ? 0 : (parseFloat(prod.iva) || 16),
+                exento: prod.exento || false,
+                ultimo_proveedor: proveedor,
+                ultima_factura: numeroFactura,
+                ultima_fecha: new Date().toLocaleDateString('es-VE'),
+                created_at: new Date().toISOString()
+            }]);
+
+            agregados++;
+        }
+    }
+
+    // Guardar los productos en la factura (si estamos editando o guardando)
+    facturaTemporalParaProductos = productosDetectados.map(p => ({
+        nombre: p.nombre,
+        cantidad: p.cantidad,
+        unidad: p.unidad,
+        precio_unitario: p.precio_unitario,
+        iva: p.iva,
+        exento: p.exento,
+        margen: p.margen,
+        precio_venta: p.precio_unitario * (1 + (p.margen || 30) / 100)
+    }));
+
+    mostrarToast(`✅ ${agregados} nuevos, ${actualizados} actualizados`, 'success');
+    cerrarModalProductos();
+
+    // Recargar datos
+    await cargarDatos();
+
+    // Guardar los productos en la factura actual
+    if (facturaEditando) {
+        // Si estamos editando, actualizar los productos en la factura
+        await supabaseClient.from('facturas').update({
+            productos: facturaTemporalParaProductos
+        }).eq('id', facturaEditando.id);
+        cargarDatos();
+    } else {
+        // Si es nueva, los guardamos cuando se guarde la factura (en guardarFactura)
+        // Solo mostramos aviso
+        mostrarToast(`ℹ️ Ahora guarda la factura para vincular los productos`, 'info');
+    }
 }
 
 // ============================================
