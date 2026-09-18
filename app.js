@@ -897,3 +897,189 @@ function mostrarToast(mensaje, tipo = 'info') {
         toast.classList.add('hidden');
     }, 3000);
 }
+
+// ============================================
+// FOTO DE FACTURA CON OCR (DeepSeek Vision)
+// ============================================
+
+// Configurar API Key en localStorage la primera vez
+function obtenerApiKeyDeepSeek() {
+    let key = localStorage.getItem('deepseek_api_key');
+    if (!key) {
+        key = prompt(
+            '🔑 CONFIGURACIÓN INICIAL\n\n' +
+            'Para usar la función de foto con OCR, necesitas una API Key de DeepSeek.\n\n' +
+            'Obtén una gratis en:\n' +
+            'https://platform.deepseek.com\n\n' +
+            'Pega tu API Key aquí (empieza con "sk-"):'
+        );
+        if (key && key.trim().startsWith('sk-')) {
+            localStorage.setItem('deepseek_api_key', key.trim());
+            return key.trim();
+        } else if (key) {
+            alert('⚠️ La API Key no parece válida. Debe empezar con "sk-".');
+            return null;
+        }
+        return null;
+    }
+    return key;
+}
+
+// Convertir archivo de imagen a base64
+function archivoABase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+// Enviar imagen a DeepSeek Vision y extraer datos
+async function extraerDatosConDeepSeek(base64Image) {
+    const apiKey = obtenerApiKeyDeepSeek();
+    if (!apiKey) {
+        throw new Error('API Key no configurada');
+    }
+
+    // Prompt optimizado para tu caso
+    const prompt = `Analiza esta imagen de una factura venezolana y extrae ÚNICAMENTE el nombre del proveedor (empresa emisora) y el monto total de la factura en dólares.
+
+Responde EXACTAMENTE en este formato JSON (sin texto adicional, sin markdown, sin comentarios):
+
+{
+  "proveedor": "NOMBRE DEL PROVEEDOR",
+  "monto_usd": 123.45,
+  "confianza": "alta|media|baja"
+}
+
+Reglas:
+- "proveedor" debe ser el nombre de la empresa que emite la factura (no el cliente).
+- "monto_usd" debe ser un número sin comas, sin puntos de miles, con punto decimal. Si el monto está en bolívares, conviértelo a USD usando la tasa que aparezca en la factura; si no aparece, devuelve el monto en bolívares como número decimal.
+- Si NO puedes leer algún campo, usa null.
+- Si el campo está borroso o ilegible, márcalo como null y pon "confianza": "baja".
+- Si la imagen no es una factura, devuelve {"proveedor": null, "monto_usd": null, "confianza": "baja"}.`;
+
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+            model: 'deepseek-chat',
+            messages: [
+                {
+                    role: 'user',
+                    content: [
+                        { type: 'text', text: prompt },
+                        { type: 'image_url', image_url: { url: base64Image } }
+                    ]
+                }
+            ],
+            max_tokens: 300,
+            temperature: 0.1
+        })
+    });
+
+    if (!response.ok) {
+        const error = await response.text();
+        console.error('Error DeepSeek:', error);
+        throw new Error(`Error API (${response.status}). Verifica tu API Key y saldo.`);
+    }
+
+    const data = await response.json();
+    const contenido = data.choices?.[0]?.message?.content || '';
+    
+    console.log('📝 Respuesta DeepSeek:', contenido);
+
+    // Intentar extraer JSON de la respuesta
+    try {
+        // Buscar el primer bloque { ... } en la respuesta
+        const match = contenido.match(/\{[\s\S]*\}/);
+        if (match) {
+            const parsed = JSON.parse(match[0]);
+            return parsed;
+        }
+        throw new Error('No se encontró JSON en la respuesta');
+    } catch (e) {
+        console.error('Error al parsear respuesta:', contenido);
+        throw new Error('Respuesta inesperada de la IA');
+    }
+}
+
+// Handler del botón "Tomar Foto"
+document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('btnTomarFoto');
+    const input = document.getElementById('inputFoto');
+    const estado = document.getElementById('estadoFoto');
+    const previewDiv = document.getElementById('previewFoto');
+    const imgPreview = document.getElementById('imgPreview');
+
+    if (!btn) return;
+
+    btn.addEventListener('click', () => {
+        input.click();
+    });
+
+    input.addEventListener('change', async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Mostrar preview
+        const urlImagen = URL.createObjectURL(file);
+        imgPreview.src = urlImagen;
+        previewDiv.style.display = 'block';
+
+        estado.style.display = 'block';
+        estado.textContent = '⏳ Procesando imagen con IA...';
+        estado.style.color = '#17a2b8';
+
+        try {
+            // Convertir a base64
+            const base64 = await archivoABase64(file);
+
+            // Enviar a DeepSeek
+            const datos = await extraerDatosConDeepSeek(base64);
+
+            console.log('📦 Datos extraídos:', datos);
+
+            // Rellenar el formulario
+            if (datos.proveedor) {
+                document.getElementById('formProveedor').value = datos.proveedor;
+            }
+            if (datos.monto_usd) {
+                document.getElementById('formMontoUSD').value = parseFloat(datos.monto_usd).toFixed(2);
+                actualizarEquivalente();
+            }
+
+            // Feedback según confianza
+            const confianza = datos.confianza || 'media';
+            if (confianza === 'alta') {
+                estado.textContent = '✅ Datos extraídos correctamente. Revisa y ajusta si es necesario.';
+                estado.style.color = '#28a745';
+            } else if (confianza === 'media') {
+                estado.textContent = '⚠️ Datos extraídos con confianza media. Verifica con cuidado.';
+                estado.style.color = '#ffc107';
+            } else {
+                estado.textContent = '⚠️ Confianza baja. Revisa y completa los datos manualmente.';
+                estado.style.color = '#dc3545';
+            }
+
+            setTimeout(() => {
+                estado.style.display = 'none';
+            }, 5000);
+
+        } catch (error) {
+            console.error('Error al procesar foto:', error);
+            estado.textContent = `❌ ${error.message}`;
+            estado.style.color = '#dc3545';
+            setTimeout(() => {
+                estado.style.display = 'none';
+            }, 8000);
+        }
+
+        // Limpiar el input para poder subir la misma imagen otra vez
+        event.target.value = '';
+    });
+});
