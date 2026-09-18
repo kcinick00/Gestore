@@ -126,6 +126,19 @@
                 <button class="btn-cerrar" id="btnCerrarModal">✕</button>
             </div>
             <div class="modal-body">
+                <!-- Botón de foto -->
+<div id="seccionFoto" style="text-align: center; margin-bottom: 15px;">
+    <input type="file" id="inputFoto" accept="image/*" capture="environment" style="display:none;">
+    <button type="button" id="btnTomarFoto" class="btn btn-secondary" style="width: 100%; padding: 14px; font-size: 15px; background: #17a2b8; color: white; border: none; border-radius: 8px; cursor: pointer;">
+        📷 Tomar Foto de Factura
+    </button>
+    <div id="estadoFoto" style="display: none; margin-top: 10px; font-size: 13px; color: #17a2b8; font-weight: 600;">
+        ⏳ Procesando imagen...
+    </div>
+    <div id="previewFoto" style="margin-top: 10px; display: none;">
+        <img id="imgPreview" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 2px solid #17a2b8;">
+    </div>
+</div>
                 <label>Fecha:</label>
                 <input type="date" id="formFecha" required>
 
