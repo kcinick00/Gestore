@@ -7,6 +7,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Gestore">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="description" content="Gestor de facturas y pagos con tasa BCV">
     <title>Gestore</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icons/icon-192.png">
@@ -167,5 +169,16 @@
     <!-- Cargar librerías -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="app.js"></script>
+
+    <!-- Registrar Service Worker para PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('✅ SW registrado:', reg.scope))
+                    .catch(err => console.error('❌ SW error:', err));
+            });
+        }
+    </script>
 </body>
 </html>
