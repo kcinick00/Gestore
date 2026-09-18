@@ -201,7 +201,6 @@
                 <label>Notas (opcional):</label>
                 <textarea id="formNotas" placeholder="Ej: Factura de leche pasteurizada..."></textarea>
 
-                <!-- Preview de productos extraídos -->
                 <div id="previewProductos" class="hidden" style="margin-top: 20px; padding: 12px; background: #f0f8ff; border-radius: 8px; border-left: 4px solid #007bff;">
                     <h4 style="margin-bottom: 8px; color: #007bff; font-size: 14px;">📦 Productos detectados</h4>
                     <div id="listaProductosPreview" style="font-size: 12px; color: #333; max-height: 150px; overflow-y: auto;"></div>
@@ -224,6 +223,7 @@
             <div class="modal-body" style="padding: 12px;">
                 <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px; border-radius: 6px; margin-bottom: 12px; font-size: 12px;">
                     💡 Revisa y ajusta los productos detectados. El <strong>margen</strong> se aplica a todos, pero puedes cambiarlo individual.
+                    <br>💡 <strong>Unid/Caja</strong>: si la factura vino por caja, el precio se divide automáticamente.
                 </div>
 
                 <div style="display: flex; gap: 8px; margin-bottom: 12px; align-items: center; flex-wrap: wrap;">
@@ -235,7 +235,6 @@
                 </div>
 
                 <div id="tablaProductosEdit" style="max-height: 55vh; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 6px;">
-                    <!-- Se rellena dinámicamente -->
                 </div>
             </div>
             <div class="modal-footer">
@@ -247,7 +246,66 @@
         </div>
     </div>
 
-    <!-- Modal: Detalle de Factura/Pago/Producto -->
+    <!-- Modal: Editar Producto -->
+    <div class="modal-overlay hidden" id="modalEditarProducto">
+        <div class="modal">
+            <div class="modal-header" style="background: linear-gradient(135deg, #17a2b8, #0d6e7e);">
+                <h3>✏️ Editar Producto</h3>
+                <button class="btn-cerrar" id="btnCerrarEditarProducto">✕</button>
+            </div>
+            <div class="modal-body">
+                <label>Nombre del producto:</label>
+                <input type="text" id="editNombre">
+
+                <label>Unidad:</label>
+                <input type="text" id="editUnidad" placeholder="UND, KG, LT, CAJA">
+
+                <label>Stock actual:</label>
+                <input type="number" id="editStock" step="0.01" min="0">
+
+                <label>Precio de Compra (USD):</label>
+                <div class="input-prefix">
+                    <span>$</span>
+                    <input type="number" id="editPrecioCompra" step="0.01" min="0">
+                </div>
+
+                <label>Unidades por Caja (0 = venta por unidad):</label>
+                <input type="number" id="editUnidadesCaja" step="1" min="0" placeholder="Ej: 24, 12, 0">
+                <div style="font-size: 11px; color: #6c757d; margin-top: 4px;">
+                    💡 Si el precio de compra es por caja, ingresa cuántas unidades tiene. Si es por unidad, deja 0.
+                </div>
+
+                <label>Precio de la Caja (USD) - opcional:</label>
+                <div class="input-prefix">
+                    <span>$</span>
+                    <input type="number" id="editPrecioCaja" step="0.01" min="0" placeholder="0.00">
+                </div>
+
+                <label>Margen de Ganancia (%):</label>
+                <input type="number" id="editMargen" step="1" min="0" max="500">
+
+                <label>Precio de Venta (USD) - calculado automáticamente:</label>
+                <div class="input-prefix">
+                    <span>$</span>
+                    <input type="number" id="editPrecioVenta" step="0.01" readonly style="background: #f0fdf4; color: #155724; font-weight: 700;">
+                </div>
+
+                <div id="infoCalculo" style="background: #e7f3ff; border-left: 4px solid #007bff; padding: 10px; border-radius: 6px; margin-top: 10px; font-size: 12px; line-height: 1.5; display: none;"></div>
+
+                <label>IVA:</label>
+                <input type="text" id="editIva" placeholder="16 o E (exento)">
+
+                <label>Notas (opcional):</label>
+                <textarea id="editNotas"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancelar" id="btnCancelarEditarProducto">Cancelar</button>
+                <button class="btn btn-primary" id="btnGuardarEditarProducto" style="background: #17a2b8;">💾 Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Detalle de Factura/Pago -->
     <div class="modal-overlay hidden" id="modalDetalle">
         <div class="modal">
             <div class="modal-header">
