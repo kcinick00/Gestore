@@ -1167,6 +1167,12 @@ function configurarFotoFactura() {
 
         estado.style.display = 'block';
         estado.textContent = '⏳ Procesando imagen con IA...';
+                    // Abrir modal de revisión de productos si se detectaron
+            if (productosDetectados.length > 0) {
+                setTimeout(() => {
+                    abrirModalProductos();
+                }, 1500);
+            }
         estado.style.color = '#17a2b8';
 
         try {
