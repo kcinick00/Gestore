@@ -3,11 +3,10 @@
 // ============================================
 
 // ⚠️ CONFIGURACIÓN DE SUPABASE
-// ⚠️ Verifica que estos valores sean EXACTAMENTE los de tu proyecto
 const SUPABASE_URL = "https://kpsurjxypipxtjizlyon.supabase.co";
 const SUPABASE_KEY = "sb_publishable_sA8BVuihO3RaIcZrqTPzyA_HkYahfV5";
 
-// Verificación inicial
+
 console.log("🔧 Configuración:");
 console.log("  URL:", SUPABASE_URL);
 console.log("  Key (primeros 30):", SUPABASE_KEY.substring(0, 30) + "...");
@@ -123,7 +122,6 @@ function cambiarTab(tab) {
 async function cargarDatos() {
     if (!supabaseClient) {
         console.error("❌ No hay cliente Supabase");
-        mostrarToast('Error: cliente Supabase no inicializado', 'error');
         return;
     }
 
@@ -202,69 +200,110 @@ function dbToPago(row) {
     };
 }
 
-function facturaToDB(f) {
-    return {
-        fecha: f.fecha,
-        proveedor: f.proveedor,
-        numero_factura: f.numeroFactura || 'S/N',
-        monto_usd: f.montoUSD ? parseFloat(f.montoUSD) : null,
-        monto_bs: f.montoBs ? parseFloat(f.montoBs) : null,
-        tasa_bcv: f.tasaBCV,
-        estatus: f.estatus,
-        notas: f.notas || '',
-        updated_at: new Date().toISOString()
-    };
-}
-
 // ============================================
-// TASA BCV (CON PROXY CORS)
+// TASA BCV - Usando APIs con CORS habilitado
 // ============================================
 async function cargarTasa() {
     const info = document.getElementById('tasaInfo');
     info.textContent = 'Consultando tasa BCV...';
 
-    // Intentamos con el proxy CORS público (evita bloqueos del navegador)
-    const urls = [
-        // Proxy 1: AllOrigins
-        'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://bcv.justcarlux.dev/api/v1/rates'),
-        // Proxy 2: CorsProxy.io (fallback)
-        'https://corsproxy.io/?' + encodeURIComponent('https://bcv.justcarlux.dev/api/v1/rates'),
-        // Intento directo (fallback por si el servidor ya permite CORS)
-        'https://bcv.justcarlux.dev/api/v1/rates'
+    // 1. Mostrar la última tasa guardada mientras se consulta
+    const ultimaTasa = localStorage.getItem('ultimaTasaBCV');
+    const ultimaFecha = localStorage.getItem('ultimaFechaBCV');
+    if (ultimaTasa && ultimaFecha) {
+        info.textContent = `💱 Tasa BCV: ${parseFloat(ultimaTasa).toFixed(2)} Bs/USD · ${ultimaFecha}`;
+    }
+
+    // 2. APIs alternativas con CORS habilitado
+    const apis = [
+        {
+            name: 'DolarAPI',
+            url: 'https://ve.dolarapi.com/v1/dolares/oficial',
+            parse: (data) => {
+                if (data && data.promedio) {
+                    return {
+                        tasa: parseFloat(data.promedio),
+                        fecha: data.fechaActualizacion ? new Date(data.fechaActualizacion) : new Date()
+                    };
+                }
+                return null;
+            }
+        },
+        {
+            name: 'Pydolarve',
+            url: 'https://pydolarve.org/api/v1/dollar?page=bcv',
+            parse: (data) => {
+                if (data && data.price) {
+                    return {
+                        tasa: parseFloat(data.price),
+                        fecha: data.last_update ? new Date(data.last_update) : new Date()
+                    };
+                }
+                return null;
+            }
+        },
+        {
+            name: 'CriptoYa',
+            url: 'https://criptoya.com/api/dolaroficial',
+            parse: (data) => {
+                if (data && data.bcv && data.bcv.price) {
+                    return {
+                        tasa: parseFloat(data.bcv.price),
+                        fecha: new Date()
+                    };
+                }
+                return null;
+            }
+        }
     ];
 
-    let exito = false;
-
-    for (const url of urls) {
+    // 3. Probar cada API
+    for (const api of apis) {
         try {
-            console.log("🌐 Consultando tasa en:", url.substring(0, 60) + "...");
-            const resp = await fetch(url);
+            console.log(`🌐 Probando ${api.name}: ${api.url}`);
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
+            
+            const resp = await fetch(api.url, { signal: controller.signal });
+            clearTimeout(timeoutId);
             
             if (!resp.ok) {
-                console.warn("⚠️ Respuesta no OK:", resp.status);
+                console.warn(`⚠️ ${api.name} → status ${resp.status}`);
                 continue;
             }
 
             const data = await resp.json();
+            const resultado = api.parse(data);
             
-            if (data && data.rates && data.rates.usd) {
-                tasaActual = data.rates.usd;
-                const fecha = new Date(data.updatedAt).toLocaleString('es-VE', {
+            if (resultado && resultado.tasa > 0) {
+                tasaActual = resultado.tasa;
+                const fechaStr = resultado.fecha.toLocaleString('es-VE', {
                     day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
                 });
-                info.textContent = `💱 Tasa BCV: ${tasaActual.toFixed(2)} Bs/USD · ${fecha}`;
-                console.log("✅ Tasa obtenida:", tasaActual);
-                exito = true;
-                break;
+                
+                localStorage.setItem('ultimaTasaBCV', tasaActual);
+                localStorage.setItem('ultimaFechaBCV', fechaStr);
+                
+                info.textContent = `💱 Tasa BCV: ${tasaActual.toFixed(2)} Bs/USD · ${fechaStr}`;
+                console.log(`✅ Tasa obtenida de ${api.name}:`, tasaActual);
+                return;
+            } else {
+                console.warn(`⚠️ ${api.name} → datos inválidos:`, data);
             }
         } catch (e) {
-            console.warn("⚠️ Error con", url.substring(0, 40) + "...:", e.message);
+            console.warn(`⚠️ ${api.name} → ${e.message}`);
         }
     }
 
-    if (!exito) {
+    // 4. Si nada funciona pero teníamos una tasa guardada
+    if (ultimaTasa) {
+        info.textContent = `💱 Tasa BCV: ${parseFloat(ultimaTasa).toFixed(2)} (guardada) · ${ultimaFecha}`;
+        tasaActual = parseFloat(ultimaTasa);
+        console.warn("⚠️ Usando tasa guardada de sesión anterior");
+    } else {
         info.textContent = '⚠️ Tasa BCV no disponible';
-        console.error("❌ No se pudo obtener la tasa por ningún método");
+        console.error("❌ Ninguna API respondió y no hay tasa guardada");
     }
 }
 
