@@ -1,15 +1,10 @@
 // ============================================
-// GESTORE - Lógica principal
+// GESTORE PWA - Lógica principal
 // ============================================
 
 // ⚠️ CONFIGURACIÓN DE SUPABASE
 const SUPABASE_URL = "https://kpsurjxypipxtjizlyon.supabase.co";
 const SUPABASE_KEY = "sb_publishable_sA8BVuihO3RaIcZrqTPzyA_HkYahfV5";
-
-
-console.log("🔧 Configuración:");
-console.log("  URL:", SUPABASE_URL);
-console.log("  Key (primeros 30):", SUPABASE_KEY.substring(0, 30) + "...");
 
 let supabaseClient;
 try {
@@ -22,16 +17,20 @@ try {
 // ============================================
 // ESTADO GLOBAL
 // ============================================
-const DIAS_VENCIMIENTO = 30;
+const DIAS_VENCIMIENTO = 10; // ✅ Cambiado de 30 a 10
+
 let datos = { facturas: [], pagos: [] };
-let filtros = { facturas: { texto: '', estatus: 'todos' }, pagos: { texto: '' } };
+let filtros = { 
+    facturas: { texto: '', estatus: 'vencidas', orden: 'fecha', direccion: 'asc' },
+    pagos: { texto: '', orden: 'fecha', direccion: 'desc' }
+};
 let tasaActual = null;
 
 // ============================================
 // INICIALIZACIÓN
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("🚀 Gestore iniciado");
+    console.log("🚀 Gestore PWA iniciado");
     configurarEventos();
     cargarTasa();
     cargarDatos();
@@ -43,7 +42,7 @@ function configurarEventos() {
         tab.addEventListener('click', () => cambiarTab(tab.dataset.tab));
     });
 
-    // Botón refresh
+    // Refresh
     document.getElementById('btnRefresh').addEventListener('click', () => {
         mostrarToast('Actualizando...', 'info');
         cargarTasa();
@@ -60,17 +59,47 @@ function configurarEventos() {
         renderizarPagos();
     });
 
-    // Chips de estatus
-    document.querySelectorAll('.chip').forEach(chip => {
+    // Filtro de estatus (facturas)
+    document.getElementById('filtroEstatusFacturas').addEventListener('change', (e) => {
+        filtros.facturas.estatus = e.target.value;
+        renderizarFacturas();
+    });
+
+    // Chips de orden (facturas)
+    document.querySelectorAll('#chipsOrdenFacturas .chip').forEach(chip => {
         chip.addEventListener('click', () => {
-            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            const campo = chip.dataset.orden;
+            if (filtros.facturas.orden === campo) {
+                filtros.facturas.direccion = filtros.facturas.direccion === 'asc' ? 'desc' : 'asc';
+            } else {
+                filtros.facturas.orden = campo;
+                filtros.facturas.direccion = 'asc';
+            }
+            document.querySelectorAll('#chipsOrdenFacturas .chip').forEach(c => c.classList.remove('active'));
             chip.classList.add('active');
-            filtros.facturas.estatus = chip.dataset.estatus;
+            chip.textContent = chip.textContent.replace(/[↑↓]/g, '').trim() + (filtros.facturas.direccion === 'asc' ? ' ↑' : ' ↓');
             renderizarFacturas();
         });
     });
 
-    // FAB nueva factura
+    // Chips de orden (pagos)
+    document.querySelectorAll('#chipsOrdenPagos .chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            const campo = chip.dataset.orden;
+            if (filtros.pagos.orden === campo) {
+                filtros.pagos.direccion = filtros.pagos.direccion === 'asc' ? 'desc' : 'asc';
+            } else {
+                filtros.pagos.orden = campo;
+                filtros.pagos.direccion = 'desc';
+            }
+            document.querySelectorAll('#chipsOrdenPagos .chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            chip.textContent = chip.textContent.replace(/[↑↓]/g, '').trim() + (filtros.pagos.direccion === 'asc' ? ' ↑' : ' ↓');
+            renderizarPagos();
+        });
+    });
+
+    // FAB
     document.getElementById('fabNuevaFactura').addEventListener('click', () => abrirModalFactura());
 
     // Modal factura
@@ -83,7 +112,7 @@ function configurarEventos() {
         document.getElementById('modalDetalle').classList.add('hidden');
     });
 
-    // Form factura: sin número
+    // Form factura
     document.getElementById('formSinNumero').addEventListener('change', (e) => {
         const input = document.getElementById('formNumeroFactura');
         if (e.target.checked) {
@@ -95,15 +124,12 @@ function configurarEventos() {
         }
     });
 
-    // Form factura: cálculo equivalente
     document.getElementById('formMontoUSD').addEventListener('input', actualizarEquivalente);
 
     // Cerrar modal al tocar overlay
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) {
-                overlay.classList.add('hidden');
-            }
+            if (e.target === overlay) overlay.classList.add('hidden');
         });
     });
 }
@@ -117,36 +143,19 @@ function cambiarTab(tab) {
 }
 
 // ============================================
-// CARGAR DATOS DE SUPABASE
+// CARGAR DATOS
 // ============================================
 async function cargarDatos() {
-    if (!supabaseClient) {
-        console.error("❌ No hay cliente Supabase");
-        return;
-    }
+    if (!supabaseClient) return;
 
     try {
         console.log("📥 Cargando datos desde Supabase...");
 
-        const facturasResp = await supabaseClient
-            .from('facturas')
-            .select('*')
-            .order('fecha', { ascending: false });
+        const facturasResp = await supabaseClient.from('facturas').select('*');
+        if (facturasResp.error) throw facturasResp.error;
 
-        if (facturasResp.error) {
-            console.error("❌ Error facturas:", JSON.stringify(facturasResp.error, null, 2));
-            throw facturasResp.error;
-        }
-
-        const pagosResp = await supabaseClient
-            .from('pagos')
-            .select('*')
-            .order('fecha', { ascending: false });
-
-        if (pagosResp.error) {
-            console.error("❌ Error pagos:", JSON.stringify(pagosResp.error, null, 2));
-            throw pagosResp.error;
-        }
+        const pagosResp = await supabaseClient.from('pagos').select('*');
+        if (pagosResp.error) throw pagosResp.error;
 
         datos.facturas = (facturasResp.data || []).map(dbToFactura);
         datos.pagos = (pagosResp.data || []).map(dbToPago);
@@ -159,13 +168,10 @@ async function cargarDatos() {
         actualizarBadge();
     } catch (error) {
         console.error('❌ Error al cargar:', error);
-        mostrarToast('Error al cargar datos: ' + (error.message || 'desconocido'), 'error');
+        mostrarToast('Error al cargar datos', 'error');
     }
 }
 
-// ============================================
-// CONVERSIÓN DE DATOS
-// ============================================
 function dbToFactura(row) {
     return {
         id: row.id,
@@ -201,110 +207,177 @@ function dbToPago(row) {
 }
 
 // ============================================
-// TASA BCV - Usando APIs con CORS habilitado
+// TASA BCV
 // ============================================
 async function cargarTasa() {
     const info = document.getElementById('tasaInfo');
     info.textContent = 'Consultando tasa BCV...';
 
-    // 1. Mostrar la última tasa guardada mientras se consulta
     const ultimaTasa = localStorage.getItem('ultimaTasaBCV');
     const ultimaFecha = localStorage.getItem('ultimaFechaBCV');
     if (ultimaTasa && ultimaFecha) {
         info.textContent = `💱 Tasa BCV: ${parseFloat(ultimaTasa).toFixed(2)} Bs/USD · ${ultimaFecha}`;
     }
 
-    // 2. APIs alternativas con CORS habilitado
     const apis = [
         {
             name: 'DolarAPI',
             url: 'https://ve.dolarapi.com/v1/dolares/oficial',
-            parse: (data) => {
-                if (data && data.promedio) {
-                    return {
-                        tasa: parseFloat(data.promedio),
-                        fecha: data.fechaActualizacion ? new Date(data.fechaActualizacion) : new Date()
-                    };
-                }
-                return null;
-            }
+            parse: (data) => data && data.promedio ? { tasa: parseFloat(data.promedio), fecha: new Date() } : null
         },
         {
             name: 'Pydolarve',
             url: 'https://pydolarve.org/api/v1/dollar?page=bcv',
-            parse: (data) => {
-                if (data && data.price) {
-                    return {
-                        tasa: parseFloat(data.price),
-                        fecha: data.last_update ? new Date(data.last_update) : new Date()
-                    };
-                }
-                return null;
-            }
+            parse: (data) => data && data.price ? { tasa: parseFloat(data.price), fecha: new Date() } : null
         },
         {
             name: 'CriptoYa',
             url: 'https://criptoya.com/api/dolaroficial',
-            parse: (data) => {
-                if (data && data.bcv && data.bcv.price) {
-                    return {
-                        tasa: parseFloat(data.bcv.price),
-                        fecha: new Date()
-                    };
-                }
-                return null;
-            }
+            parse: (data) => data && data.bcv && data.bcv.price ? { tasa: parseFloat(data.bcv.price), fecha: new Date() } : null
         }
     ];
 
-    // 3. Probar cada API
     for (const api of apis) {
         try {
-            console.log(`🌐 Probando ${api.name}: ${api.url}`);
-            
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 8000);
-            
             const resp = await fetch(api.url, { signal: controller.signal });
             clearTimeout(timeoutId);
-            
-            if (!resp.ok) {
-                console.warn(`⚠️ ${api.name} → status ${resp.status}`);
-                continue;
-            }
 
+            if (!resp.ok) continue;
             const data = await resp.json();
             const resultado = api.parse(data);
-            
+
             if (resultado && resultado.tasa > 0) {
                 tasaActual = resultado.tasa;
                 const fechaStr = resultado.fecha.toLocaleString('es-VE', {
                     day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
                 });
-                
                 localStorage.setItem('ultimaTasaBCV', tasaActual);
                 localStorage.setItem('ultimaFechaBCV', fechaStr);
-                
                 info.textContent = `💱 Tasa BCV: ${tasaActual.toFixed(2)} Bs/USD · ${fechaStr}`;
                 console.log(`✅ Tasa obtenida de ${api.name}:`, tasaActual);
                 return;
-            } else {
-                console.warn(`⚠️ ${api.name} → datos inválidos:`, data);
             }
         } catch (e) {
-            console.warn(`⚠️ ${api.name} → ${e.message}`);
+            console.warn(`⚠️ ${api.name} falló: ${e.message}`);
         }
     }
 
-    // 4. Si nada funciona pero teníamos una tasa guardada
     if (ultimaTasa) {
-        info.textContent = `💱 Tasa BCV: ${parseFloat(ultimaTasa).toFixed(2)} (guardada) · ${ultimaFecha}`;
+        info.textContent = `💱 Tasa BCV: ${parseFloat(ultimaTasa).toFixed(2)} (guardada)`;
         tasaActual = parseFloat(ultimaTasa);
-        console.warn("⚠️ Usando tasa guardada de sesión anterior");
     } else {
         info.textContent = '⚠️ Tasa BCV no disponible';
-        console.error("❌ Ninguna API respondió y no hay tasa guardada");
     }
+}
+
+// ============================================
+// CÁLCULO DE ESTATUS (misma lógica que la extensión)
+// ============================================
+function calcularEstatusReal(f) {
+    if (f.estatus === 'Pagada') return 'Pagada';
+    
+    const [dia, mes, anio] = f.fecha.split('/').map(Number);
+    const fechaFactura = new Date(anio, mes - 1, dia);
+    const diffDias = Math.floor((new Date() - fechaFactura) / (1000 * 60 * 60 * 24));
+    
+    if (diffDias > DIAS_VENCIMIENTO) return 'Vencida';
+    return 'Pendiente';
+}
+
+function diasDesdeFactura(f) {
+    const [dia, mes, anio] = f.fecha.split('/').map(Number);
+    const fechaFactura = new Date(anio, mes - 1, dia);
+    return Math.floor((new Date() - fechaFactura) / (1000 * 60 * 60 * 24));
+}
+
+// ============================================
+// FORMATOS
+// ============================================
+function formatearMontoBs(montoBs) {
+    if (!montoBs) return "0,00";
+    let str = String(montoBs).trim();
+    let numero;
+    if (str.includes(',') && str.includes('.')) {
+        numero = parseFloat(str.replace(/\./g, '').replace(',', '.'));
+    } else if (str.includes(',')) {
+        numero = parseFloat(str.replace(',', '.'));
+    } else {
+        numero = parseFloat(str);
+    }
+    if (isNaN(numero)) return "0,00";
+    let formateado = numero.toFixed(2);
+    let [entero, decimal] = formateado.split('.');
+    entero = entero.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return `${entero},${decimal}`;
+}
+
+function parsearMontoBs(montoStr) {
+    if (!montoStr) return 0;
+    let str = String(montoStr).trim();
+    let numero;
+    if (str.includes(',') && str.includes('.')) {
+        numero = parseFloat(str.replace(/\./g, '').replace(',', '.'));
+    } else if (str.includes(',')) {
+        numero = parseFloat(str.replace(',', '.'));
+    } else {
+        numero = parseFloat(str);
+    }
+    return isNaN(numero) ? 0 : numero;
+}
+
+function parsearFecha(fechaStr) {
+    if (!fechaStr) return new Date(0);
+    const [d, m, y] = fechaStr.split('/').map(Number);
+    return new Date(y, m - 1, d);
+}
+
+function escapeHtml(texto) {
+    if (!texto) return '';
+    const div = document.createElement('div');
+    div.textContent = texto;
+    return div.innerHTML;
+}
+
+function getIconoEstatus(est) {
+    if (est === 'Pagada') return '🟢';
+    if (est === 'Vencida') return '🔴';
+    return '🟡';
+}
+
+// ============================================
+// ORDENAR LISTA (genérico)
+// ============================================
+function ordenarLista(lista, campo, direccion) {
+    if (!direccion) return lista;
+    const mult = direccion === 'asc' ? 1 : -1;
+
+    return [...lista].sort((a, b) => {
+        let valA, valB;
+
+        if (campo === 'fecha') {
+            valA = parsearFecha(a.fecha).getTime();
+            valB = parsearFecha(b.fecha).getTime();
+        } else if (campo === 'monto') {
+            valA = parsearMontoBs(a.monto || a.montoBs);
+            valB = parsearMontoBs(b.monto || b.montoBs);
+        } else if (campo === 'montoUSD') {
+            valA = parseFloat(a.montoUSD) || 0;
+            valB = parseFloat(b.montoUSD) || 0;
+        } else if (campo === 'dias') {
+            valA = diasDesdeFactura(a);
+            valB = diasDesdeFactura(b);
+        } else if (campo === 'proveedor' || campo === 'beneficiario') {
+            valA = (a[campo] || '').toLowerCase();
+            valB = (b[campo] || '').toLowerCase();
+            return valA.localeCompare(valB) * mult;
+        }
+
+        if (valA < valB) return -1 * mult;
+        if (valA > valB) return 1 * mult;
+        return 0;
+    });
 }
 
 // ============================================
@@ -312,7 +385,29 @@ async function cargarTasa() {
 // ============================================
 function renderizarFacturas() {
     const lista = document.getElementById('listaFacturas');
-    const filtradas = filtrarFacturas(datos.facturas);
+    let filtradas = [...datos.facturas];
+
+    // Filtro de estatus
+    if (filtros.facturas.estatus === 'vencidas') {
+        filtradas = filtradas.filter(f => calcularEstatusReal(f) === 'Vencida');
+    } else if (filtros.facturas.estatus === 'pendientes') {
+        filtradas = filtradas.filter(f => calcularEstatusReal(f) === 'Pendiente');
+    } else if (filtros.facturas.estatus === 'pagadas') {
+        filtradas = filtradas.filter(f => calcularEstatusReal(f) === 'Pagada');
+    }
+
+    // Filtro de texto
+    if (filtros.facturas.texto) {
+        const t = filtros.facturas.texto;
+        filtradas = filtradas.filter(f => 
+            (f.proveedor || '').toLowerCase().includes(t) ||
+            (f.numeroFactura || '').toLowerCase().includes(t) ||
+            (f.notas || '').toLowerCase().includes(t)
+        );
+    }
+
+    // Ordenar
+    filtradas = ordenarLista(filtradas, filtros.facturas.orden, filtros.facturas.direccion);
 
     if (filtradas.length === 0) {
         lista.innerHTML = `
@@ -325,6 +420,17 @@ function renderizarFacturas() {
 
     lista.innerHTML = filtradas.map(f => {
         const estatusReal = calcularEstatusReal(f);
+        const dias = diasDesdeFactura(f);
+        
+        let diasInfo = '';
+        if (estatusReal === 'Vencida') {
+            diasInfo = `${dias - DIAS_VENCIMIENTO}d vencida`;
+        } else if (estatusReal === 'Pendiente') {
+            diasInfo = `${DIAS_VENCIMIENTO - dias}d restantes`;
+        } else {
+            diasInfo = 'Pagada';
+        }
+        
         return `
             <div class="card-item estatus-${estatusReal}" data-id="${f.id}">
                 <div class="card-header">
@@ -335,6 +441,7 @@ function renderizarFacturas() {
                 </div>
                 <div class="card-info">
                     <span class="card-fecha">📅 ${f.fecha} · Fact. ${f.numeroFactura}</span>
+                    <span class="card-fecha">⏰ ${diasInfo}</span>
                 </div>
                 <div class="card-info">
                     <span class="card-monto">$${f.montoUSD || '0.00'}</span>
@@ -354,31 +461,25 @@ function renderizarFacturas() {
     });
 }
 
-function filtrarFacturas(lista) {
-    return lista.filter(f => {
-        if (filtros.facturas.texto) {
-            const t = filtros.facturas.texto;
-            const coincide = 
-                (f.proveedor || '').toLowerCase().includes(t) ||
-                (f.numeroFactura || '').toLowerCase().includes(t) ||
-                (f.notas || '').toLowerCase().includes(t) ||
-                (f.montoUSD || '').includes(t) ||
-                (f.fecha || '').includes(t);
-            if (!coincide) return false;
-        }
-        if (filtros.facturas.estatus !== 'todos') {
-            if (calcularEstatusReal(f) !== filtros.facturas.estatus) return false;
-        }
-        return true;
-    });
-}
-
 // ============================================
 // RENDERIZAR PAGOS
 // ============================================
 function renderizarPagos() {
     const lista = document.getElementById('listaPagos');
-    const filtrados = filtrarPagos(datos.pagos);
+    let filtrados = [...datos.pagos];
+
+    // Búsqueda
+    if (filtros.pagos.texto) {
+        const t = filtros.pagos.texto;
+        filtrados = filtrados.filter(p => 
+            (p.beneficiario || '').toLowerCase().includes(t) ||
+            (p.numeroRecibo || '').toLowerCase().includes(t) ||
+            (p.notas || '').toLowerCase().includes(t)
+        );
+    }
+
+    // Ordenar
+    filtrados = ordenarLista(filtrados, filtros.pagos.orden, filtros.pagos.direccion);
 
     if (filtrados.length === 0) {
         lista.innerHTML = `
@@ -413,22 +514,81 @@ function renderizarPagos() {
     });
 }
 
-function filtrarPagos(lista) {
-    return lista.filter(p => {
-        if (filtros.pagos.texto) {
-            const t = filtros.pagos.texto;
-            return (p.beneficiario || '').toLowerCase().includes(t) ||
-                   (p.numeroRecibo || '').toLowerCase().includes(t) ||
-                   (p.notas || '').toLowerCase().includes(t) ||
-                   (p.monto || '').includes(t) ||
-                   (p.fecha || '').includes(t);
-        }
-        return true;
+// ============================================
+// ESTADÍSTICAS
+// ============================================
+function actualizarEstadisticas() {
+    const hoy = new Date();
+    const mesActual = hoy.getMonth();
+    const anioActual = hoy.getFullYear();
+
+    // Facturas
+    let pend = 0, venc = 0, pag = 0;
+    let pendUSD = 0, pendBs = 0;
+    let vencUSD = 0, vencBs = 0;
+    let pagUSD = 0, pagBs = 0;
+
+    datos.facturas.forEach(f => {
+        const est = calcularEstatusReal(f);
+        const usd = parseFloat(f.montoUSD) || 0;
+        const bs = parsearMontoBs(f.montoBs);
+
+        if (est === 'Pagada') { pag++; pagUSD += usd; pagBs += bs; }
+        else if (est === 'Vencida') { venc++; vencUSD += usd; vencBs += bs; }
+        else { pend++; pendUSD += usd; pendBs += bs; }
     });
+
+    document.getElementById('statPendientes').textContent = pend;
+    document.getElementById('statPendientesUSD').textContent = '$' + pendUSD.toFixed(2);
+    document.getElementById('statPendientesBs').textContent = formatearMontoBs(pendBs) + ' Bs';
+
+    document.getElementById('statVencidas').textContent = venc;
+    document.getElementById('statVencidasUSD').textContent = '$' + vencUSD.toFixed(2);
+    document.getElementById('statVencidasBs').textContent = formatearMontoBs(vencBs) + ' Bs';
+
+    document.getElementById('statPagadas').textContent = pag;
+    document.getElementById('statPagadasUSD').textContent = '$' + pagUSD.toFixed(2);
+    document.getElementById('statPagadasBs').textContent = formatearMontoBs(pagBs) + ' Bs';
+
+    // Pagos
+    let totalBs = 0, totalUSD = 0;
+    let mes = 0, mesBs = 0, mesUSD = 0;
+
+    datos.pagos.forEach(p => {
+        const bs = parsearMontoBs(p.monto);
+        const usd = parseFloat(p.montoUSD) || 0;
+        totalBs += bs;
+        totalUSD += usd;
+
+        const [d, m, y] = p.fecha.split('/').map(Number);
+        if (m - 1 === mesActual && y === anioActual) {
+            mes++;
+            mesBs += bs;
+            mesUSD += usd;
+        }
+    });
+
+    document.getElementById('statTotalPagos').textContent = formatearMontoBs(totalBs) + ' Bs';
+    document.getElementById('statTotalPagosUSD').textContent = '$' + totalUSD.toFixed(2);
+
+    document.getElementById('statPagosMes').textContent = mes;
+    document.getElementById('statPagosMesUSD').textContent = '$' + mesUSD.toFixed(2);
+    document.getElementById('statPagosMesBs').textContent = formatearMontoBs(mesBs) + ' Bs';
+}
+
+function actualizarBadge() {
+    const vencidas = datos.facturas.filter(f => calcularEstatusReal(f) === 'Vencida').length;
+    const badge = document.getElementById('badgeFacturas');
+    if (vencidas > 0) {
+        badge.textContent = vencidas;
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
 }
 
 // ============================================
-// DETALLE
+// DETALLE FACTURA
 // ============================================
 function abrirDetalleFactura(f) {
     const estatusReal = calcularEstatusReal(f);
@@ -476,13 +636,11 @@ function abrirDetalleFactura(f) {
     document.getElementById('detalleTitulo').textContent = 'Detalle de Factura';
     document.getElementById('detalleContenido').innerHTML = html;
 
-    let acciones = `
-        <button class="btn btn-secondary" id="btnEditarDetalle">✏️ Editar</button>
-    `;
+    let acciones = `<button class="btn btn-secondary" id="btnEditarDetalle">✏️ Editar</button>`;
     if (estatusReal !== 'Pagada') {
         acciones += `<button class="btn btn-primary" id="btnMarcarPagada">✅ Marcar Pagada</button>`;
     }
-    acciones += `<button class="btn btn-danger" id="btnEliminarDetalle">🗑️ Eliminar</button>`;
+    acciones += `<button class="btn btn-danger" id="btnEliminarDetalle">🗑️</button>`;
 
     document.getElementById('detalleAcciones').innerHTML = acciones;
 
@@ -497,6 +655,9 @@ function abrirDetalleFactura(f) {
     document.getElementById('modalDetalle').classList.remove('hidden');
 }
 
+// ============================================
+// DETALLE PAGO
+// ============================================
 function abrirDetallePago(p) {
     const html = `
         <div class="detalle-grid">
@@ -549,7 +710,7 @@ function abrirDetallePago(p) {
 }
 
 // ============================================
-// MODAL FACTURA (Nueva / Editar)
+// MODAL FACTURA
 // ============================================
 let facturaEditando = null;
 
@@ -661,16 +822,12 @@ async function guardarFactura() {
 // ============================================
 async function marcarPagada(factura) {
     if (!confirm(`¿Marcar como PAGADA la factura de ${factura.proveedor}?`)) return;
-
     try {
-        const { error } = await supabaseClient
-            .from('facturas')
-            .update({ 
-                estatus: 'Pagada', 
-                fecha_pago: new Date().toLocaleDateString('es-VE'),
-                updated_at: new Date().toISOString()
-            })
-            .eq('id', factura.id);
+        const { error } = await supabaseClient.from('facturas').update({
+            estatus: 'Pagada',
+            fecha_pago: new Date().toLocaleDateString('es-VE'),
+            updated_at: new Date().toISOString()
+        }).eq('id', factura.id);
         if (error) throw error;
         mostrarToast('✅ Factura marcada como pagada', 'success');
         document.getElementById('modalDetalle').classList.add('hidden');
@@ -681,8 +838,7 @@ async function marcarPagada(factura) {
 }
 
 async function eliminarFactura(factura) {
-    if (!confirm(`¿Eliminar la factura de ${factura.proveedor}?\n\nEsta acción no se puede deshacer.`)) return;
-
+    if (!confirm(`¿Eliminar la factura de ${factura.proveedor}?`)) return;
     try {
         const { error } = await supabaseClient.from('facturas').delete().eq('id', factura.id);
         if (error) throw error;
@@ -695,8 +851,7 @@ async function eliminarFactura(factura) {
 }
 
 async function eliminarPago(pago) {
-    if (!confirm(`¿Eliminar el pago a ${pago.beneficiario}?\n\nEsta acción no se puede deshacer.`)) return;
-
+    if (!confirm(`¿Eliminar el pago a ${pago.beneficiario}?`)) return;
     try {
         const { error } = await supabaseClient.from('pagos').delete().eq('id', pago.id);
         if (error) throw error;
@@ -709,101 +864,8 @@ async function eliminarPago(pago) {
 }
 
 // ============================================
-// ESTADÍSTICAS
+// TOAST
 // ============================================
-function actualizarEstadisticas() {
-    let pendUSD = 0, pendBs = 0, vencUSD = 0, vencBs = 0, pagUSD = 0, pagBs = 0;
-
-    datos.facturas.forEach(f => {
-        const usd = parseFloat(f.montoUSD) || 0;
-        const bs = parseFloat(f.montoBs) || 0;
-        const est = calcularEstatusReal(f);
-        if (est === 'Pagada') { pagUSD += usd; pagBs += bs; }
-        else if (est === 'Vencida') { vencUSD += usd; vencBs += bs; }
-        else { pendUSD += usd; pendBs += bs; }
-    });
-
-    document.getElementById('statPendientes').textContent = '$' + pendUSD.toFixed(2);
-    document.getElementById('statPendientesBs').textContent = formatearMontoBs(pendBs) + ' Bs';
-    document.getElementById('statVencidas').textContent = '$' + vencUSD.toFixed(2);
-    document.getElementById('statVencidasBs').textContent = formatearMontoBs(vencBs) + ' Bs';
-    document.getElementById('statPagadas').textContent = '$' + pagUSD.toFixed(2);
-    document.getElementById('statPagadasBs').textContent = formatearMontoBs(pagBs) + ' Bs';
-
-    let totalBs = 0, totalUSD = 0;
-    const hoy = new Date();
-    let pagosMes = 0, pagosMesBs = 0;
-
-    datos.pagos.forEach(p => {
-        const bs = parseFloat(String(p.monto).replace(/\./g, '').replace(',', '.')) || 0;
-        totalBs += bs;
-        totalUSD += parseFloat(p.montoUSD) || 0;
-
-        const [d, m, y] = p.fecha.split('/').map(Number);
-        if (m - 1 === hoy.getMonth() && y === hoy.getFullYear()) {
-            pagosMes++;
-            pagosMesBs += bs;
-        }
-    });
-
-    document.getElementById('statTotalPagos').textContent = formatearMontoBs(totalBs) + ' Bs';
-    document.getElementById('statTotalPagosUSD').textContent = '$' + totalUSD.toFixed(2);
-    document.getElementById('statPagosMes').textContent = pagosMes;
-    document.getElementById('statPagosMesBs').textContent = formatearMontoBs(pagosMesBs) + ' Bs';
-}
-
-function actualizarBadge() {
-    const vencidas = datos.facturas.filter(f => calcularEstatusReal(f) === 'Vencida').length;
-    const badge = document.getElementById('badgeFacturas');
-    if (vencidas > 0) {
-        badge.textContent = vencidas;
-        badge.classList.remove('hidden');
-    } else {
-        badge.classList.add('hidden');
-    }
-}
-
-// ============================================
-// UTILIDADES
-// ============================================
-function calcularEstatusReal(f) {
-    if (f.estatus === 'Pagada') return 'Pagada';
-    const [d, m, y] = f.fecha.split('/').map(Number);
-    const fechaF = new Date(y, m - 1, d);
-    const diff = Math.floor((new Date() - fechaF) / (1000 * 60 * 60 * 24));
-    if (diff > DIAS_VENCIMIENTO) return 'Vencida';
-    return 'Pendiente';
-}
-
-function diasDesdeFactura(f) {
-    const [d, m, y] = f.fecha.split('/').map(Number);
-    const fechaF = new Date(y, m - 1, d);
-    return Math.floor((new Date() - fechaF) / (1000 * 60 * 60 * 24));
-}
-
-function getIconoEstatus(est) {
-    if (est === 'Pagada') return '🟢';
-    if (est === 'Vencida') return '🔴';
-    return '🟡';
-}
-
-function formatearMontoBs(monto) {
-    if (!monto) return '0,00';
-    let num = typeof monto === 'number' ? monto : parseFloat(String(monto).replace(',', '.'));
-    if (isNaN(num)) return '0,00';
-    let str = num.toFixed(2);
-    let [ent, dec] = str.split('.');
-    ent = ent.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    return `${ent},${dec}`;
-}
-
-function escapeHtml(texto) {
-    if (!texto) return '';
-    const div = document.createElement('div');
-    div.textContent = texto;
-    return div.innerHTML;
-}
-
 function mostrarToast(mensaje, tipo = 'info') {
     const toast = document.getElementById('toast');
     toast.textContent = mensaje;
