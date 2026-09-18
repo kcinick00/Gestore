@@ -1,0 +1,24 @@
+{
+  "name": "Gestore",
+  "short_name": "Gestore",
+  "description": "Gestiona tus facturas y pagos con tasa BCV",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#6f42c1",
+  "theme_color": "#6f42c1",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
