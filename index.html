@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#6f42c1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Gestore">
+    <title>Gestore</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Barra superior -->
+    <header class="topbar">
+        <div class="topbar-content">
+            <div class="logo">
+                <span class="logo-icon">💰</span>
+                <span class="logo-text">Gestore</span>
+            </div>
+            <button class="btn-icon" id="btnRefresh" title="Actualizar">🔄</button>
+        </div>
+        <div class="tasa-info" id="tasaInfo">Consultando tasa BCV...</div>
+    </header>
+
+    <!-- Pestañas -->
+    <nav class="tabs">
+        <button class="tab active" data-tab="facturas">
+            <span class="tab-icon">📋</span>
+            <span class="tab-label">Facturas</span>
+            <span class="badge hidden" id="badgeFacturas">0</span>
+        </button>
+        <button class="tab" data-tab="pagos">
+            <span class="tab-icon">💸</span>
+            <span class="tab-label">Pagos</span>
+        </button>
+    </nav>
+
+    <!-- Contenido principal -->
+    <main id="mainContent">
+        <!-- Sección: Facturas -->
+        <section id="seccionFacturas" class="seccion">
+            <!-- Estadísticas -->
+            <div class="stats-grid" id="statsFacturas">
+                <div class="stat-card stat-amarillo">
+                    <div class="stat-label">Pendientes</div>
+                    <div class="stat-value" id="statPendientes">$0.00</div>
+                    <div class="stat-sub" id="statPendientesBs">0,00 Bs</div>
+                </div>
+                <div class="stat-card stat-rojo">
+                    <div class="stat-label">Vencidas</div>
+                    <div class="stat-value" id="statVencidas">$0.00</div>
+                    <div class="stat-sub" id="statVencidasBs">0,00 Bs</div>
+                </div>
+                <div class="stat-card stat-verde">
+                    <div class="stat-label">Pagadas</div>
+                    <div class="stat-value" id="statPagadas">$0.00</div>
+                    <div class="stat-sub" id="statPagadasBs">0,00 Bs</div>
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="filtros">
+                <input type="text" id="buscarFacturas" placeholder="🔍 Buscar..." class="input-buscar">
+                <div class="filtros-chips">
+                    <button class="chip active" data-estatus="todos">Todas</button>
+                    <button class="chip" data-estatus="Pendiente">🟡 Pendientes</button>
+                    <button class="chip" data-estatus="Vencida">🔴 Vencidas</button>
+                    <button class="chip" data-estatus="Pagada">🟢 Pagadas</button>
+                </div>
+            </div>
+
+            <!-- Lista de facturas -->
+            <div id="listaFacturas" class="lista"></div>
+        </section>
+
+        <!-- Sección: Pagos -->
+        <section id="seccionPagos" class="seccion hidden">
+            <div class="stats-grid">
+                <div class="stat-card stat-azul">
+                    <div class="stat-label">Total Pagado</div>
+                    <div class="stat-value" id="statTotalPagos">0,00 Bs</div>
+                    <div class="stat-sub" id="statTotalPagosUSD">$0.00</div>
+                </div>
+                <div class="stat-card stat-verde">
+                    <div class="stat-label">Este Mes</div>
+                    <div class="stat-value" id="statPagosMes">0</div>
+                    <div class="stat-sub" id="statPagosMesBs">0,00 Bs</div>
+                </div>
+            </div>
+
+            <div class="filtros">
+                <input type="text" id="buscarPagos" placeholder="🔍 Buscar..." class="input-buscar">
+            </div>
+
+            <div id="listaPagos" class="lista"></div>
+        </section>
+    </main>
+
+    <!-- Botón flotante: Nueva Factura -->
+    <button class="fab hidden" id="fabNuevaFactura" title="Nueva Factura">+</button>
+
+    <!-- Modal: Formulario de Factura -->
+    <div class="modal-overlay hidden" id="modalFactura">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitulo">Nueva Factura</h3>
+                <button class="btn-cerrar" id="btnCerrarModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <label>Fecha:</label>
+                <input type="date" id="formFecha" required>
+
+                <label>Proveedor:</label>
+                <input type="text" id="formProveedor" placeholder="Ej: AGRO INDUSTRIAS..." required>
+
+                <label>N° Factura:</label>
+                <input type="text" id="formNumeroFactura" placeholder="Ej: 00123">
+                <div class="checkbox-inline">
+                    <input type="checkbox" id="formSinNumero">
+                    <label for="formSinNumero">Sin número</label>
+                </div>
+
+                <label>Monto (USD):</label>
+                <div class="input-prefix">
+                    <span>$</span>
+                    <input type="number" id="formMontoUSD" step="0.01" placeholder="102.84" required>
+                </div>
+
+                <div class="equivalente-bs" id="equivalenteBs">💱 Equivalente en Bs: --</div>
+
+                <label>Estatus:</label>
+                <select id="formEstatus">
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="Pagada">Pagada</option>
+                    <option value="Vencida">Vencida</option>
+                </select>
+
+                <label>Notas (opcional):</label>
+                <textarea id="formNotas" placeholder="Ej: Factura de leche pasteurizada..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancelar" id="btnCancelarFactura">Cancelar</button>
+                <button class="btn btn-primary" id="btnGuardarFactura">💾 Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Detalle de Factura/Pago -->
+    <div class="modal-overlay hidden" id="modalDetalle">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="detalleTitulo">Detalle</h3>
+                <button class="btn-cerrar" id="btnCerrarDetalle">✕</button>
+            </div>
+            <div class="modal-body" id="detalleContenido"></div>
+            <div class="modal-footer" id="detalleAcciones"></div>
+        </div>
+    </div>
+
+    <!-- Toast de notificaciones -->
+    <div class="toast hidden" id="toast"></div>
+
+    <!-- Cargar librerías -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+</body>
+</html>
