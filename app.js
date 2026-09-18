@@ -17,11 +17,11 @@ try {
 // ============================================
 // ESTADO GLOBAL
 // ============================================
-const DIAS_VENCIMIENTO = 10; // ✅ Cambiado de 30 a 10
+const DIAS_VENCIMIENTO = 10;
 
 let datos = { facturas: [], pagos: [] };
 let filtros = { 
-    facturas: { texto: '', estatus: 'vencidas', orden: 'fecha', direccion: 'asc' },
+    facturas: { texto: '', estatus: 'activas', orden: 'fecha', direccion: 'asc' },
     pagos: { texto: '', orden: 'fecha', direccion: 'desc' }
 };
 let tasaActual = null;
@@ -273,7 +273,7 @@ async function cargarTasa() {
 }
 
 // ============================================
-// CÁLCULO DE ESTATUS (misma lógica que la extensión)
+// CÁLCULO DE ESTATUS
 // ============================================
 function calcularEstatusReal(f) {
     if (f.estatus === 'Pagada') return 'Pagada';
@@ -380,6 +380,20 @@ function ordenarLista(lista, campo, direccion) {
     });
 }
 
+// ✅ Ordenamiento específico para FACTURAS: vencidas primero
+function ordenarFacturas(lista, campo, direccion) {
+    const ordenadas = ordenarLista(lista, campo, direccion);
+    
+    // Si el filtro es "activas" (vencidas + pendientes), las vencidas van primero
+    if (filtros.facturas.estatus === 'activas') {
+        const vencidas = ordenadas.filter(f => calcularEstatusReal(f) === 'Vencida');
+        const pendientes = ordenadas.filter(f => calcularEstatusReal(f) === 'Pendiente');
+        return [...vencidas, ...pendientes];
+    }
+    
+    return ordenadas;
+}
+
 // ============================================
 // RENDERIZAR FACTURAS
 // ============================================
@@ -388,13 +402,20 @@ function renderizarFacturas() {
     let filtradas = [...datos.facturas];
 
     // Filtro de estatus
-    if (filtros.facturas.estatus === 'vencidas') {
+    if (filtros.facturas.estatus === 'activas') {
+        // Vencidas + Pendientes (excluye Pagadas)
+        filtradas = filtradas.filter(f => {
+            const est = calcularEstatusReal(f);
+            return est === 'Vencida' || est === 'Pendiente';
+        });
+    } else if (filtros.facturas.estatus === 'vencidas') {
         filtradas = filtradas.filter(f => calcularEstatusReal(f) === 'Vencida');
     } else if (filtros.facturas.estatus === 'pendientes') {
         filtradas = filtradas.filter(f => calcularEstatusReal(f) === 'Pendiente');
     } else if (filtros.facturas.estatus === 'pagadas') {
         filtradas = filtradas.filter(f => calcularEstatusReal(f) === 'Pagada');
     }
+    // Si es 'todas', no filtra
 
     // Filtro de texto
     if (filtros.facturas.texto) {
@@ -406,8 +427,8 @@ function renderizarFacturas() {
         );
     }
 
-    // Ordenar
-    filtradas = ordenarLista(filtradas, filtros.facturas.orden, filtros.facturas.direccion);
+    // Ordenar (vencidas primero cuando aplica)
+    filtradas = ordenarFacturas(filtradas, filtros.facturas.orden, filtros.facturas.direccion);
 
     if (filtradas.length === 0) {
         lista.innerHTML = `
