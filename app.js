@@ -28,6 +28,7 @@ let tasaActual = null;
 
 let productosDetectados = [];
 let facturaTemporalParaProductos = null;
+let productoEditando = null;
 
 // ============================================
 // INICIALIZACIÓN
@@ -38,8 +39,6 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarTasa();
     cargarDatos();
     configurarFotoFactura();
-
-    // ✅ FIX: Mostrar el FAB desde el inicio
     document.getElementById('fabNuevaFactura').classList.remove('hidden');
 });
 
@@ -135,12 +134,13 @@ function configurarEventos() {
         document.getElementById('modalDetalle').classList.add('hidden');
     });
 
-    // Modal de edición de producto
+    // Modal editar producto
     document.getElementById('btnCerrarEditarProducto').addEventListener('click', cerrarModalEditarProducto);
     document.getElementById('btnCancelarEditarProducto').addEventListener('click', cerrarModalEditarProducto);
     document.getElementById('btnGuardarEditarProducto').addEventListener('click', guardarEditarProducto);
+    document.getElementById('btnEliminarEditarProducto').addEventListener('click', eliminarProductoDesdeModal);
 
-    // ✅ Cálculo automático del precio de venta - TODOS los campos relevantes
+    // Cálculo automático del precio de venta
     document.getElementById('editPrecioCompra').addEventListener('input', recalcularPrecioVenta);
     document.getElementById('editPrecioCompra').addEventListener('change', recalcularPrecioVenta);
     document.getElementById('editMargen').addEventListener('input', recalcularPrecioVenta);
@@ -148,7 +148,6 @@ function configurarEventos() {
     document.getElementById('editUnidadesCaja').addEventListener('input', recalcularPrecioVenta);
     document.getElementById('editUnidadesCaja').addEventListener('change', recalcularPrecioVenta);
     
-    // Si escribe el precio de la caja, se pasa al precio de compra
     document.getElementById('editPrecioCaja').addEventListener('input', () => {
         const precioCaja = parseFloat(document.getElementById('editPrecioCaja').value) || 0;
         if (precioCaja > 0) {
@@ -167,6 +166,9 @@ function configurarEventos() {
             input.disabled = false;
         }
     });
+
+    // Convertir Bs a USD en el formulario de factura
+    document.getElementById('formMontoBs').addEventListener('input', convertirBsAUSD);
 
     document.getElementById('formMontoUSD').addEventListener('input', actualizarEquivalente);
 
@@ -291,6 +293,7 @@ async function cargarTasa() {
     const ultimaFecha = localStorage.getItem('ultimaFechaBCV');
     if (ultimaTasa && ultimaFecha) {
         info.textContent = `💱 Tasa BCV: ${parseFloat(ultimaTasa).toFixed(2)} Bs/USD · ${ultimaFecha}`;
+        tasaActual = parseFloat(ultimaTasa);
     }
 
     const apis = [
@@ -321,11 +324,23 @@ async function cargarTasa() {
         } catch (e) { console.warn(`⚠️ ${api.name} falló`); }
     }
 
-    if (ultimaTasa) {
-        info.textContent = `💱 Tasa BCV: ${parseFloat(ultimaTasa).toFixed(2)} (guardada)`;
-        tasaActual = parseFloat(ultimaTasa);
-    } else {
+    if (!tasaActual) {
         info.textContent = '⚠️ Tasa BCV no disponible';
+    }
+}
+
+// ============================================
+// Convertir Bs a USD
+// ============================================
+function convertirBsAUSD() {
+    const montoBsInput = document.getElementById('formMontoBs');
+    const montoBs = parseFloat(montoBsInput.value) || 0;
+
+    if (montoBs > 0 && tasaActual) {
+        const montoUSD = montoBs / tasaActual;
+        document.getElementById('formMontoUSD').value = montoUSD.toFixed(2);
+        actualizarEquivalente();
+        mostrarToast(`💱 Convertido: ${formatearMontoBs(montoBs)} Bs → $${montoUSD.toFixed(2)}`, 'info');
     }
 }
 
@@ -784,8 +799,6 @@ function abrirDetallePago(p) {
 // ============================================
 // MODAL EDITAR PRODUCTO
 // ============================================
-let productoEditando = null;
-
 function abrirModalEditarProducto(p) {
     productoEditando = p;
     console.log("📝 Editando producto:", p.nombre);
@@ -800,10 +813,8 @@ function abrirModalEditarProducto(p) {
     document.getElementById('editPrecioCaja').value = p.precioCajaUSD || 0;
     document.getElementById('editNotas').value = p.notas || '';
 
-    // ✅ CORREGIDO: Recalcular con un pequeño delay para asegurar que los valores están cargados
     setTimeout(() => {
         recalcularPrecioVenta();
-        console.log("💰 Precio de venta recalculado");
     }, 50);
 
     document.getElementById('modalEditarProducto').classList.remove('hidden');
@@ -815,24 +826,18 @@ function cerrarModalEditarProducto() {
 }
 
 function recalcularPrecioVenta() {
-    // Leer valores actuales del formulario
     const precioCompraInput = document.getElementById('editPrecioCompra');
     const margenInput = document.getElementById('editMargen');
     const unidadesCajaInput = document.getElementById('editUnidadesCaja');
     const precioVentaInput = document.getElementById('editPrecioVenta');
     const info = document.getElementById('infoCalculo');
 
-    if (!precioCompraInput || !margenInput || !unidadesCajaInput || !precioVentaInput) {
-        console.warn("⚠️ Campos de edición no encontrados");
-        return;
-    }
+    if (!precioCompraInput || !margenInput || !unidadesCajaInput || !precioVentaInput) return;
 
     const precioCompra = parseFloat(precioCompraInput.value) || 0;
     const margen = parseFloat(margenInput.value) || 0;
     const unidadesCaja = parseFloat(unidadesCajaInput.value) || 0;
 
-    // Si unidadesCaja > 1, el precio de compra es por CAJA → dividir entre unidades
-    // Si unidadesCaja es 0 o 1, el precio de compra es por UNIDAD
     let precioCompraPorUnidad = precioCompra;
     let esPorCaja = false;
 
@@ -843,10 +848,8 @@ function recalcularPrecioVenta() {
 
     const precioVenta = precioCompraPorUnidad * (1 + margen / 100);
 
-    // Actualizar el campo de precio de venta
     precioVentaInput.value = precioVenta.toFixed(2);
 
-    // Actualizar el panel de información
     if (esPorCaja) {
         info.innerHTML = `
             📦 <strong>Compra por CAJA</strong> de ${unidadesCaja} unidades<br>
@@ -865,8 +868,6 @@ function recalcularPrecioVenta() {
         `;
         info.style.display = 'block';
     }
-
-    console.log(`💰 Cálculo: Compra $${precioCompra} | Unid/caja: ${unidadesCaja} | Margen: ${margen}% → Venta: $${precioVenta.toFixed(2)}`);
 }
 
 async function guardarEditarProducto() {
@@ -889,19 +890,11 @@ async function guardarEditarProducto() {
     const precioCaja = parseFloat(document.getElementById('editPrecioCaja').value) || 0;
     const notas = document.getElementById('editNotas').value.trim();
 
-    // ✅ Calcular precio de venta por unidad (con lógica de caja)
     let precioCompraPorUnidad = precioCompra;
     if (unidadesCaja > 1) {
         precioCompraPorUnidad = precioCompra / unidadesCaja;
     }
     const precioVenta = precioCompraPorUnidad * (1 + margen / 100);
-
-    console.log(`💾 Guardando producto:
-    - Compra: $${precioCompra}
-    - Unid/caja: ${unidadesCaja}
-    - Compra por unidad: $${precioCompraPorUnidad.toFixed(4)}
-    - Margen: ${margen}%
-    - Venta final: $${precioVenta.toFixed(2)}`);
 
     try {
         const { error } = await supabaseClient.from('productos').update({
@@ -928,6 +921,27 @@ async function guardarEditarProducto() {
     } catch (error) {
         console.error('Error al guardar producto:', error);
         mostrarToast('Error al guardar: ' + error.message, 'error');
+    }
+}
+
+async function eliminarProductoDesdeModal() {
+    if (!productoEditando) return;
+    const nombre = productoEditando.nombre;
+    
+    if (!confirm(`¿Eliminar el producto "${nombre}" del inventario?\n\nEsta acción no se puede deshacer.`)) {
+        return;
+    }
+
+    try {
+        const { error } = await supabaseClient.from('productos').delete().eq('id', productoEditando.id);
+        if (error) throw error;
+        
+        mostrarToast('✅ Producto eliminado', 'success');
+        cerrarModalEditarProducto();
+        cargarDatos();
+    } catch (error) {
+        console.error('Error al eliminar producto:', error);
+        mostrarToast('Error al eliminar: ' + error.message, 'error');
     }
 }
 
@@ -958,6 +972,7 @@ function abrirModalFactura(factura = null) {
         document.getElementById('formSinNumero').checked = factura.numeroFactura === 'S/N';
         document.getElementById('formNumeroFactura').disabled = factura.numeroFactura === 'S/N';
         document.getElementById('formMontoUSD').value = factura.montoUSD || '';
+        document.getElementById('formMontoBs').value = factura.montoBs || '';
         document.getElementById('formEstatus').value = factura.estatus || 'Pendiente';
         document.getElementById('formNotas').value = factura.notas || '';
     } else {
@@ -968,6 +983,7 @@ function abrirModalFactura(factura = null) {
         document.getElementById('formSinNumero').checked = false;
         document.getElementById('formNumeroFactura').disabled = false;
         document.getElementById('formMontoUSD').value = '';
+        document.getElementById('formMontoBs').value = '';
         document.getElementById('formEstatus').value = 'Pendiente';
         document.getElementById('formNotas').value = '';
     }
@@ -1131,41 +1147,49 @@ function archivoABase64(file) {
     });
 }
 
+// ✅ NUEVA VERSIÓN DEL PROMPT: Solo extrae productos con cantidad y precio reales
 async function extraerDatosConDeepSeek(base64Image) {
     const apiKey = obtenerApiKeyDeepSeek();
     if (!apiKey) throw new Error('API Key no configurada');
 
     const prompt = `Analiza esta imagen de una factura venezolana y extrae:
 1. El nombre del proveedor (empresa emisora).
-2. El monto total de la factura en dólares.
+2. El monto total de la factura (en USD o Bs).
 3. El número de factura.
-4. La LISTA COMPLETA DE PRODUCTOS con: nombre, cantidad, unidad, precio unitario, IVA (16 o "E" si es exento).
+4. La LISTA de productos REALMENTE COMPRADOS en esta factura.
 
-IMPORTANTE sobre el precio:
-- Si la factura dice "CAJA x 12" o "CAJA x 24" o similar, el precio unitario que debes reportar es el PRECIO POR UNIDAD (dividir el precio de caja entre las unidades).
-- Ejemplo: si dice "CAJA x 24 - $60.00", el precio unitario es 60/24 = $2.50.
-- El campo "unidad" debe indicar "UND" (unidad suelta), "CAJA", "KG", "LT", etc.
+⚠️ REGLA CRÍTICA PARA PRODUCTOS:
+Muchas facturas venezolanas tienen un CATÁLOGO IMPRESO con TODOS los productos que vende el proveedor.
+PERO solo unos pocos tienen datos rellenados (cantidad, precio, total escritos a mano o impresos en las columnas de la derecha).
+Debes extraer ÚNICAMENTE los productos que tengan CANTIDAD mayor a cero Y PRECIO escrito.
+IGNORA las filas del catálogo que estén vacías (sin cantidad, sin precio).
+Si una fila del catálogo tiene código, descripción pero NO tiene cantidad ni precio, NO la incluyas.
+
+⚠️ SOBRE EL MONTO Y LA TASA:
+La factura puede tener una sección "MONTO EXPRESADO EN USD SEGÚN TASA DE CAMBIO" con:
+- TASA Bs/USD (ejemplo: 848,55)
+- TOTAL MONTO USD (ejemplo: 98,04)
+Si está disponible, USA ESOS VALORES para el monto total en USD.
+Si no, convierte el total en Bs a USD usando la tasa que aparezca en la factura.
+
+⚠️ CONVERSIÓN DE PRECIOS:
+Si el precio unitario del producto está en Bs, conviértelo a USD usando la tasa de la factura.
+Si el total del producto está en Bs, conviértelo a USD también.
 
 Responde EXACTAMENTE en este formato JSON (sin texto adicional, sin markdown):
 
 {
   "proveedor": "NOMBRE DEL PROVEEDOR",
-  "monto_usd": 123.45,
-  "numero_factura": "00123",
+  "monto_total": 98.04,
+  "monto_es_bs": false,
+  "numero_factura": "081161",
+  "tasa_bcv": 848.55,
   "productos": [
     {
-      "nombre": "LECHE ENTERA 1L",
-      "cantidad": 24,
+      "nombre": "PACOMELLA PALMITA",
+      "cantidad": 1,
       "unidad": "UND",
-      "precio_unitario": 2.50,
-      "iva": 16,
-      "exento": false
-    },
-    {
-      "nombre": "QUESO BLANCO",
-      "cantidad": 2,
-      "unidad": "CAJA",
-      "precio_unitario": 4.20,
+      "precio_unitario": 10.22,
       "iva": "E",
       "exento": true
     }
@@ -1173,19 +1197,28 @@ Responde EXACTAMENTE en este formato JSON (sin texto adicional, sin markdown):
   "confianza": "alta|media|baja"
 }
 
-Reglas:
+Reglas ESPECÍFICAS:
 - "proveedor": nombre de la empresa que emite la factura (no el cliente).
-- "monto_usd": número sin comas, sin puntos de miles, con punto decimal.
-- "numero_factura": número o código de la factura. Si no existe, null.
-- "productos": array con TODOS los productos de la factura. Si no puedes leer los productos, devuelve array vacío [].
+- "monto_total": número decimal. Si la factura tiene "TOTAL MONTO USD", usa ese valor.
+- "monto_es_bs": true si el monto_total está en Bs, false si está en USD.
+- "numero_factura": número de factura.
+- "tasa_bcv": si la factura menciona la tasa (ejemplo "848,55"), inclúyela. Si no, null.
+- "productos": SOLO los productos con cantidad > 0 Y precio. Si no hay ninguno, array vacío [].
   - "nombre": descripción del producto en MAYÚSCULAS.
-  - "cantidad": número decimal (ej: 24, 1.5).
-  - "unidad": "UND" (unidad), "KG" (kilogramo), "LT" (litro), "CAJ" (caja), "PAQ" (paquete), "DOC" (docena), etc.
-  - "precio_unitario": PRECIO POR UNIDAD en USD (si la factura dice CAJA x N, debes dividir el precio total entre N).
-  - "iva": 16 si tiene IVA, "E" si es exento.
-  - "exento": true si el producto está exento de IVA, false si no.
-- Si NO puedes leer algún campo, usa null.
-- Si la imagen no es una factura, devuelve {"proveedor": null, "monto_usd": null, "numero_factura": null, "productos": [], "confianza": "baja"}.`;
+  - "cantidad": número decimal.
+  - "unidad": "UND", "KG", "LT", "CAJA", etc.
+  - "precio_unitario": precio por unidad EN USD. Si está en Bs, conviértelo usando la tasa de la factura.
+  - "iva": número (16) o "E" si es exento.
+  - "exento": true si el producto tiene "(E)" en la descripción o está exento de IVA.
+
+EJEMPLO para una factura con catálogo de 50 productos pero SOLO 1 comprado:
+- El catálogo tiene 50 productos impresos pero SOLO 1 fila tiene cantidad, precio y total.
+- Los demás están vacíos.
+- Por lo tanto, "productos" debe tener SOLO 1 elemento.
+- Si la factura dice "TASA Bs/USD: 848,55" y "TOTAL MONTO USD: 98,04", usar esos valores.
+
+Si NO puedes leer algún campo, usa null.
+Si la imagen no es una factura, devuelve {"proveedor": null, "monto_total": null, "monto_es_bs": false, "numero_factura": null, "tasa_bcv": null, "productos": [], "confianza": "baja"}.`;
 
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
@@ -1255,10 +1288,27 @@ function configurarFotoFactura() {
             const datos = await extraerDatosConDeepSeek(base64);
 
             if (datos.proveedor) document.getElementById('formProveedor').value = datos.proveedor;
-            if (datos.monto_usd) {
-                document.getElementById('formMontoUSD').value = parseFloat(datos.monto_usd).toFixed(2);
+            
+            // Detectar si el monto está en Bs o USD
+            if (datos.monto_total) {
+                if (datos.monto_es_bs === true) {
+                    document.getElementById('formMontoBs').value = datos.monto_total;
+                    const tasaU = datos.tasa_bcv || tasaActual;
+                    if (tasaU) {
+                        const usd = datos.monto_total / tasaU;
+                        document.getElementById('formMontoUSD').value = usd.toFixed(2);
+                        estado.textContent = `💱 Monto en Bs detectado: ${formatearMontoBs(datos.monto_total)} → $${usd.toFixed(2)}`;
+                        estado.style.color = '#ffc107';
+                    } else {
+                        estado.textContent = `⚠️ Monto en Bs detectado pero no hay tasa BCV. Ingresa el monto USD manualmente.`;
+                        estado.style.color = '#dc3545';
+                    }
+                } else {
+                    document.getElementById('formMontoUSD').value = parseFloat(datos.monto_total).toFixed(2);
+                }
                 actualizarEquivalente();
             }
+            
             if (datos.numero_factura) {
                 const inputNum = document.getElementById('formNumeroFactura');
                 const check = document.getElementById('formSinNumero');
