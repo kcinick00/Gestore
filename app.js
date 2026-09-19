@@ -184,7 +184,7 @@ function configurarEventos() {
     document.getElementById('btnGuardarPago').addEventListener('click', guardarPagoDesdeCaptura);
     document.getElementById('pagoMontoBs').addEventListener('input', actualizarEquivalentePago);
 
-    // Modal editar pago
+    // ✅ NUEVO: Modal editar pago
     document.getElementById('btnCerrarEditarPago').addEventListener('click', cerrarModalEditarPago);
     document.getElementById('btnCancelarEditarPago').addEventListener('click', cerrarModalEditarPago);
     document.getElementById('btnGuardarEditarPago').addEventListener('click', guardarEditarPago);
@@ -307,7 +307,7 @@ function dbToProducto(row) {
 }
 
 // ============================================
-// TASA BCV - ✅ VERSIÓN QUE YA FUNCIONA
+// TASA BCV - CON MÚLTIPLES APIs Y ELECCIÓN DE LA MÁS RECIENTE
 // ============================================
 async function cargarTasa() {
     const info = document.getElementById('tasaInfo');
@@ -321,6 +321,7 @@ async function cargarTasa() {
         tasaActual = parseFloat(ultimaTasa);
     }
 
+    // ✅ APIs en orden de prioridad (la del banco primero)
     const apis = [
         { 
             name: 'BCV Oficial (justcarlux)', 
@@ -344,6 +345,19 @@ async function cargarTasa() {
                     return { 
                         tasa: parseFloat(d.promedio), 
                         fecha: d.fechaActualizacion ? new Date(d.fechaActualizacion) : new Date() 
+                    };
+                }
+                return null;
+            }
+        },
+        { 
+            name: 'Pydolarve', 
+            url: 'https://pydolarve.org/api/v1/dollar?page=bcv', 
+            parse: (d) => {
+                if (d && d.price) {
+                    return { 
+                        tasa: parseFloat(d.price), 
+                        fecha: d.last_update ? new Date(d.last_update) : new Date() 
                     };
                 }
                 return null;
@@ -875,7 +889,7 @@ function abrirDetalleFactura(f) {
 }
 
 // ============================================
-// DETALLE PAGO - ✅ CON BOTÓN EDITAR
+// DETALLE PAGO
 // ============================================
 function abrirDetallePago(p) {
     let extraInfo = '';
@@ -1370,6 +1384,7 @@ Si NO puedes leer algún campo, usa null.`;
     }
 }
 
+// ✅ CONFIGURAR 2 BOTONES: Tomar Foto + Subir Imagen
 function configurarFotoFactura() {
     const btnTomar = document.getElementById('btnTomarFoto');
     const btnGaleria = document.getElementById('btnSubirGaleria');
@@ -1730,7 +1745,7 @@ async function guardarPagoDesdeCaptura() {
 }
 
 // ============================================
-// MODAL EDITAR PAGO - ✅ NUEVA FUNCIONALIDAD
+// MODAL EDITAR PAGO
 // ============================================
 function abrirModalEditarPago(p) {
     pagoEditando = p;
