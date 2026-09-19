@@ -307,7 +307,7 @@ function dbToProducto(row) {
 }
 
 // ============================================
-// TASA BCV - CON MÚLTIPLES APIs Y ELECCIÓN DE LA MÁS RECIENTE
+// TASA BCV - ✅ VERSIÓN QUE YA FUNCIONA
 // ============================================
 async function cargarTasa() {
     const info = document.getElementById('tasaInfo');
@@ -321,7 +321,6 @@ async function cargarTasa() {
         tasaActual = parseFloat(ultimaTasa);
     }
 
-    // ✅ ORDEN: justcarlux PRIMERO (es la que funciona bien)
     const apis = [
         { 
             name: 'BCV Oficial (justcarlux)', 
@@ -876,7 +875,7 @@ function abrirDetalleFactura(f) {
 }
 
 // ============================================
-// DETALLE PAGO
+// DETALLE PAGO - ✅ CON BOTÓN EDITAR
 // ============================================
 function abrirDetallePago(p) {
     let extraInfo = '';
@@ -1731,7 +1730,7 @@ async function guardarPagoDesdeCaptura() {
 }
 
 // ============================================
-// MODAL EDITAR PAGO
+// MODAL EDITAR PAGO - ✅ NUEVA FUNCIONALIDAD
 // ============================================
 function abrirModalEditarPago(p) {
     pagoEditando = p;
