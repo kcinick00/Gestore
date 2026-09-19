@@ -386,6 +386,59 @@
         </div>
     </div>
 
+    <!-- Modal: Editar Pago -->
+    <div class="modal-overlay hidden" id="modalEditarPago">
+        <div class="modal">
+            <div class="modal-header" style="background: linear-gradient(135deg, #28a745, #1e7e34);">
+                <h3>✏️ Editar Pago</h3>
+                <button class="btn-cerrar" id="btnCerrarEditarPago">✕</button>
+            </div>
+            <div class="modal-body">
+                <label>Beneficiario:</label>
+                <input type="text" id="editPagoBeneficiario">
+
+                <label>Monto (Bs):</label>
+                <div class="input-prefix">
+                    <span style="color:#28a745;">Bs</span>
+                    <input type="number" id="editPagoMontoBs" step="0.01" style="padding-left: 50px;">
+                </div>
+
+                <div id="editPagoEquivalente" style="background: #e7f3ff; border-left: 4px solid #007bff; padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 14px; font-weight: 600; color: #004085;">
+                    💵 Equivalente USD: --
+                </div>
+
+                <label>Referencia / N° Operación:</label>
+                <input type="text" id="editPagoReferencia">
+
+                <label>Fecha:</label>
+                <input type="date" id="editPagoFecha">
+
+                <label>Banco Receptor:</label>
+                <input type="text" id="editPagoBanco">
+
+                <label>Nombre del Receptor:</label>
+                <input type="text" id="editPagoNombreReceptor">
+
+                <label>Cédula o RIF del Receptor:</label>
+                <input type="text" id="editPagoCedulaReceptor">
+
+                <label>Teléfono (solo Pago Móvil):</label>
+                <input type="text" id="editPagoTelefonoReceptor">
+
+                <label>Concepto:</label>
+                <input type="text" id="editPagoConcepto" placeholder="Pago Móvil, Transferencia, etc.">
+
+                <label>Observaciones / Notas:</label>
+                <textarea id="editPagoNotas" placeholder="Escribe aquí cualquier observación sobre este pago..." style="min-height: 100px;"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="btnEliminarPagoDesdeModal" style="flex: 0 0 auto;">🗑️ Eliminar</button>
+                <button class="btn btn-cancelar" id="btnCancelarEditarPago">Cancelar</button>
+                <button class="btn btn-primary" id="btnGuardarEditarPago" style="background: #28a745;">💾 Guardar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal: Detalle de Factura/Pago -->
     <div class="modal-overlay hidden" id="modalDetalle">
         <div class="modal">
