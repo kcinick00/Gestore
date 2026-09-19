@@ -168,13 +168,20 @@
                 <button class="btn-cerrar" id="btnCerrarModal">✕</button>
             </div>
             <div class="modal-body">
-                <div id="seccionFoto" style="text-align: center; margin-bottom: 15px;">
-                    <input type="file" id="inputFoto" accept="image/*" style="display:none;">
-                    <button type="button" id="btnTomarFoto" class="btn btn-secondary" style="width: 100%; padding: 14px; font-size: 15px; background: #17a2b8; color: white; border: none; border-radius: 8px; cursor: pointer;">
-                        📷 Tomar Foto de Factura
-                    </button>
-                    <div id="estadoFoto" style="display: none; margin-top: 10px; font-size: 13px; color: #17a2b8; font-weight: 600;"></div>
-                    <div id="previewFoto" style="margin-top: 10px; display: none;">
+                <!-- DOS BOTONES: Tomar foto y Subir desde galería -->
+                <div id="seccionFoto" style="margin-bottom: 15px;">
+                    <input type="file" id="inputFoto" accept="image/*" capture="environment" style="display:none;">
+                    <input type="file" id="inputFotoGaleria" accept="image/*" style="display:none;">
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" id="btnTomarFoto" class="btn btn-secondary" style="flex: 1; padding: 14px; font-size: 14px; background: #17a2b8; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700;">
+                            📷 Tomar Foto
+                        </button>
+                        <button type="button" id="btnSubirGaleria" class="btn btn-secondary" style="flex: 1; padding: 14px; font-size: 14px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700;">
+                            🖼️ Subir Imagen
+                        </button>
+                    </div>
+                    <div id="estadoFoto" style="display: none; margin-top: 10px; font-size: 13px; color: #17a2b8; font-weight: 600; text-align: center;"></div>
+                    <div id="previewFoto" style="margin-top: 10px; display: none; text-align: center;">
                         <img id="imgPreview" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 2px solid #17a2b8;">
                     </div>
                 </div>
