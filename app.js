@@ -184,7 +184,7 @@ function configurarEventos() {
     document.getElementById('btnGuardarPago').addEventListener('click', guardarPagoDesdeCaptura);
     document.getElementById('pagoMontoBs').addEventListener('input', actualizarEquivalentePago);
 
-    // ✅ NUEVO: Modal editar pago
+    // Modal editar pago
     document.getElementById('btnCerrarEditarPago').addEventListener('click', cerrarModalEditarPago);
     document.getElementById('btnCancelarEditarPago').addEventListener('click', cerrarModalEditarPago);
     document.getElementById('btnGuardarEditarPago').addEventListener('click', guardarEditarPago);
@@ -307,7 +307,7 @@ function dbToProducto(row) {
 }
 
 // ============================================
-// TASA BCV - CON MÚLTIPLES APIs Y ELECCIÓN DE LA MÁS RECIENTE
+// TASA BCV - PRIORIZA JUSTCARLUX, RESPALDO DOLARAPI
 // ============================================
 async function cargarTasa() {
     const info = document.getElementById('tasaInfo');
@@ -321,126 +321,110 @@ async function cargarTasa() {
         tasaActual = parseFloat(ultimaTasa);
     }
 
-    // ✅ APIs en orden de prioridad (la del banco primero)
-    const apis = [
-        { 
-            name: 'BCV Oficial (justcarlux)', 
-            url: 'https://bcv.justcarlux.dev/api/v1/rates',
-            useCorsProxy: true,
-            parse: (d) => {
-                if (d && d.rates && d.rates.usd) {
-                    return { 
-                        tasa: parseFloat(d.rates.usd), 
-                        fecha: d.updatedAt ? new Date(d.updatedAt) : new Date() 
-                    };
-                }
-                return null;
-            }
-        },
-        { 
-            name: 'DolarAPI', 
-            url: 'https://ve.dolarapi.com/v1/dolares/oficial', 
-            parse: (d) => {
-                if (d && d.promedio) {
-                    return { 
-                        tasa: parseFloat(d.promedio), 
-                        fecha: d.fechaActualizacion ? new Date(d.fechaActualizacion) : new Date() 
-                    };
-                }
-                return null;
-            }
-        },
-        { 
-            name: 'Pydolarve', 
-            url: 'https://pydolarve.org/api/v1/dollar?page=bcv', 
-            parse: (d) => {
-                if (d && d.price) {
-                    return { 
-                        tasa: parseFloat(d.price), 
-                        fecha: d.last_update ? new Date(d.last_update) : new Date() 
-                    };
-                }
-                return null;
-            }
-        }
-    ];
+    // ==========================================
+    // 1. Intentar JUSTCARLUX con timeout largo (15 seg)
+    // ==========================================
+    try {
+        console.log('🌐 Consultando BCV Oficial (justcarlux)...');
+        const url = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://bcv.justcarlux.dev/api/v1/rates');
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        
+        const resp = await fetch(url, { 
+            signal: controller.signal,
+            cache: 'no-cache'
+        });
+        clearTimeout(timeoutId);
 
-    let tasaMasReciente = tasaActual ? parseFloat(tasaActual) : 0;
-    let fechaMasReciente = ultimaFecha || '';
-    let tasaObtenida = false;
-
-    for (const api of apis) {
-        try {
-            console.log(`🌐 Consultando ${api.name}...`);
-            
-            let urlFinal = api.url;
-            if (api.useCorsProxy) {
-                urlFinal = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(api.url);
-            }
-            
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 8000);
-            
-            const resp = await fetch(urlFinal, { 
-                signal: controller.signal,
-                cache: 'no-cache'
-            });
-            clearTimeout(timeoutId);
-
-            if (!resp.ok) {
-                console.warn(`⚠️ ${api.name}: status ${resp.status}`);
-                continue;
-            }
-            
+        if (resp.ok) {
             const data = await resp.json();
-            const resultado = api.parse(data);
+            if (data && data.rates && data.rates.usd) {
+                const tasa = parseFloat(data.rates.usd);
+                const fecha = data.updatedAt ? new Date(data.updatedAt) : new Date();
+                const fechaStr = fecha.toLocaleString('es-VE', { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    year: 'numeric',
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                
+                console.log(`✅ justcarlux: ${tasa} (${fechaStr})`);
+                
+                const tasaAnterior = ultimaTasa ? parseFloat(ultimaTasa) : null;
+                const cambio = tasaAnterior && Math.abs(tasaAnterior - tasa) > 0.01;
 
-            if (resultado && resultado.tasa > 0) {
-                console.log(`✅ ${api.name}: ${resultado.tasa} (${resultado.fecha.toLocaleString('es-VE')})`);
+                tasaActual = tasa;
+                localStorage.setItem('ultimaTasaBCV', tasaActual);
+                localStorage.setItem('ultimaFechaBCV', fechaStr);
+                localStorage.setItem('ultimaTasaTimestamp', Date.now().toString());
                 
-                if (!tasaObtenida || resultado.fecha >= new Date(fechaMasReciente) || tasaMasReciente === 0) {
-                    tasaMasReciente = resultado.tasa;
-                    fechaMasReciente = resultado.fecha.toLocaleString('es-VE', { 
-                        day: '2-digit', 
-                        month: '2-digit', 
-                        year: 'numeric',
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                    });
+                info.textContent = `💱 Tasa BCV: ${tasaActual.toFixed(2)} Bs/USD · ${fechaStr}`;
+                console.log(`✅ Tasa final: ${tasaActual} (${fechaStr})`);
+                
+                if (cambio) {
+                    mostrarToast(`💱 Nueva tasa BCV: ${tasaActual.toFixed(2)} Bs/USD`, 'info');
                 }
-                
-                tasaObtenida = true;
+                return;
             }
-        } catch (e) { 
-            console.warn(`⚠️ ${api.name} falló:`, e.message); 
         }
+    } catch (e) {
+        console.warn('⚠️ justcarlux falló:', e.message);
     }
 
-    if (tasaObtenida && tasaMasReciente > 0) {
-        const tasaAnterior = ultimaTasa ? parseFloat(ultimaTasa) : null;
-        const cambio = tasaAnterior && Math.abs(tasaAnterior - tasaMasReciente) > 0.01;
+    // ==========================================
+    // 2. Respaldo: DolarAPI
+    // ==========================================
+    try {
+        console.log('🌐 Consultando DolarAPI (respaldo)...');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        
+        const resp = await fetch('https://ve.dolarapi.com/v1/dolares/oficial', { 
+            signal: controller.signal,
+            cache: 'no-cache'
+        });
+        clearTimeout(timeoutId);
 
-        tasaActual = tasaMasReciente;
-        localStorage.setItem('ultimaTasaBCV', tasaActual);
-        localStorage.setItem('ultimaFechaBCV', fechaMasReciente);
-        localStorage.setItem('ultimaTasaTimestamp', Date.now().toString());
-        
-        info.textContent = `💱 Tasa BCV: ${tasaActual.toFixed(2)} Bs/USD · ${fechaMasReciente}`;
-        console.log(`✅ Tasa final: ${tasaActual} (${fechaMasReciente})`);
-        
-        if (cambio) {
-            console.log(`📢 Tasa CAMBIÓ: ${tasaAnterior} → ${tasaActual}`);
-            mostrarToast(`💱 Nueva tasa BCV: ${tasaActual.toFixed(2)} Bs/USD`, 'info');
+        if (resp.ok) {
+            const data = await resp.json();
+            if (data && data.promedio) {
+                const tasa = parseFloat(data.promedio);
+                const fecha = data.fechaActualizacion ? new Date(data.fechaActualizacion) : new Date();
+                const fechaStr = fecha.toLocaleString('es-VE', { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    year: 'numeric',
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                
+                console.log(`✅ DolarAPI: ${tasa} (${fechaStr})`);
+                
+                tasaActual = tasa;
+                localStorage.setItem('ultimaTasaBCV', tasaActual);
+                localStorage.setItem('ultimaFechaBCV', fechaStr);
+                
+                info.textContent = `💱 Tasa BCV: ${tasaActual.toFixed(2)} Bs/USD · ${fechaStr}`;
+                console.log(`✅ Tasa final: ${tasaActual} (${fechaStr})`);
+                return;
+            }
         }
+    } catch (e) {
+        console.warn('⚠️ DolarAPI falló:', e.message);
+    }
+
+    // ==========================================
+    // 3. Último recurso: usar la guardada
+    // ==========================================
+    if (ultimaTasa && ultimaFecha) {
+        info.textContent = `💱 Tasa BCV: ${parseFloat(ultimaTasa).toFixed(2)} Bs/USD · ${ultimaFecha} (guardada)`;
+        tasaActual = parseFloat(ultimaTasa);
+        console.warn("⚠️ Ninguna API respondió. Usando tasa guardada.");
     } else {
-        if (ultimaTasa && ultimaFecha) {
-            info.textContent = `💱 Tasa BCV: ${parseFloat(ultimaTasa).toFixed(2)} Bs/USD · ${ultimaFecha} (guardada)`;
-            tasaActual = parseFloat(ultimaTasa);
-            console.warn("⚠️ No se pudo actualizar. Usando tasa guardada.");
-        } else {
-            info.textContent = '⚠️ Tasa BCV no disponible';
-            console.error("❌ No hay tasa disponible");
-        }
+        info.textContent = '⚠️ Tasa BCV no disponible';
+        console.error("❌ No hay tasa disponible");
     }
 }
 
@@ -1384,7 +1368,7 @@ Si NO puedes leer algún campo, usa null.`;
     }
 }
 
-// ✅ CONFIGURAR 2 BOTONES: Tomar Foto + Subir Imagen
+// CONFIGURAR 2 BOTONES: Tomar Foto + Subir Imagen
 function configurarFotoFactura() {
     const btnTomar = document.getElementById('btnTomarFoto');
     const btnGaleria = document.getElementById('btnSubirGaleria');
