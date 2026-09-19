@@ -307,7 +307,7 @@ function dbToProducto(row) {
 }
 
 // ============================================
-// TASA BCV - PRIORIZA JUSTCARLUX, RESPALDO DOLARAPI
+// TASA BCV - LEER DESDE SUPABASE (actualizada por la extensión)
 // ============================================
 async function cargarTasa() {
     const info = document.getElementById('tasaInfo');
@@ -321,107 +321,47 @@ async function cargarTasa() {
         tasaActual = parseFloat(ultimaTasa);
     }
 
-    // ==========================================
-    // 1. Intentar JUSTCARLUX con timeout largo (15 seg)
-    // ==========================================
     try {
-        console.log('🌐 Consultando BCV Oficial (justcarlux)...');
-        const url = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://bcv.justcarlux.dev/api/v1/rates');
+        // ✅ Leer la tasa desde Supabase (la extensión la actualiza automáticamente)
+        console.log('🌐 Leyendo tasa desde Supabase...');
+        const { data, error } = await supabaseClient
+            .from('tasa_bcv')
+            .select('*')
+            .eq('id', 1)
+            .single();
         
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
-        
-        const resp = await fetch(url, { 
-            signal: controller.signal,
-            cache: 'no-cache'
-        });
-        clearTimeout(timeoutId);
+        if (error) {
+            console.warn('⚠️ Error leyendo tasa de Supabase:', error.message);
+        } else if (data && data.tasa && data.tasa > 0) {
+            const tasa = parseFloat(data.tasa);
+            const fechaStr = data.fecha || 'Sin fecha';
+            
+            console.log(`✅ Tasa desde Supabase: ${tasa} (${fechaStr})`);
+            
+            const tasaAnterior = ultimaTasa ? parseFloat(ultimaTasa) : null;
+            const cambio = tasaAnterior && Math.abs(tasaAnterior - tasa) > 0.01;
 
-        if (resp.ok) {
-            const data = await resp.json();
-            if (data && data.rates && data.rates.usd) {
-                const tasa = parseFloat(data.rates.usd);
-                const fecha = data.updatedAt ? new Date(data.updatedAt) : new Date();
-                const fechaStr = fecha.toLocaleString('es-VE', { 
-                    day: '2-digit', 
-                    month: '2-digit', 
-                    year: 'numeric',
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                });
-                
-                console.log(`✅ justcarlux: ${tasa} (${fechaStr})`);
-                
-                const tasaAnterior = ultimaTasa ? parseFloat(ultimaTasa) : null;
-                const cambio = tasaAnterior && Math.abs(tasaAnterior - tasa) > 0.01;
-
-                tasaActual = tasa;
-                localStorage.setItem('ultimaTasaBCV', tasaActual);
-                localStorage.setItem('ultimaFechaBCV', fechaStr);
-                localStorage.setItem('ultimaTasaTimestamp', Date.now().toString());
-                
-                info.textContent = `💱 Tasa BCV: ${tasaActual.toFixed(2)} Bs/USD · ${fechaStr}`;
-                console.log(`✅ Tasa final: ${tasaActual} (${fechaStr})`);
-                
-                if (cambio) {
-                    mostrarToast(`💱 Nueva tasa BCV: ${tasaActual.toFixed(2)} Bs/USD`, 'info');
-                }
-                return;
+            tasaActual = tasa;
+            localStorage.setItem('ultimaTasaBCV', tasaActual);
+            localStorage.setItem('ultimaFechaBCV', fechaStr);
+            
+            info.textContent = `💱 Tasa BCV: ${tasaActual.toFixed(2)} Bs/USD · ${fechaStr}`;
+            console.log(`✅ Tasa final: ${tasaActual}`);
+            
+            if (cambio) {
+                mostrarToast(`💱 Nueva tasa BCV: ${tasaActual.toFixed(2)} Bs/USD`, 'info');
             }
+            return;
         }
     } catch (e) {
-        console.warn('⚠️ justcarlux falló:', e.message);
+        console.warn('⚠️ Error consultando Supabase:', e.message);
     }
 
-    // ==========================================
-    // 2. Respaldo: DolarAPI
-    // ==========================================
-    try {
-        console.log('🌐 Consultando DolarAPI (respaldo)...');
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
-        
-        const resp = await fetch('https://ve.dolarapi.com/v1/dolares/oficial', { 
-            signal: controller.signal,
-            cache: 'no-cache'
-        });
-        clearTimeout(timeoutId);
-
-        if (resp.ok) {
-            const data = await resp.json();
-            if (data && data.promedio) {
-                const tasa = parseFloat(data.promedio);
-                const fecha = data.fechaActualizacion ? new Date(data.fechaActualizacion) : new Date();
-                const fechaStr = fecha.toLocaleString('es-VE', { 
-                    day: '2-digit', 
-                    month: '2-digit', 
-                    year: 'numeric',
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                });
-                
-                console.log(`✅ DolarAPI: ${tasa} (${fechaStr})`);
-                
-                tasaActual = tasa;
-                localStorage.setItem('ultimaTasaBCV', tasaActual);
-                localStorage.setItem('ultimaFechaBCV', fechaStr);
-                
-                info.textContent = `💱 Tasa BCV: ${tasaActual.toFixed(2)} Bs/USD · ${fechaStr}`;
-                console.log(`✅ Tasa final: ${tasaActual} (${fechaStr})`);
-                return;
-            }
-        }
-    } catch (e) {
-        console.warn('⚠️ DolarAPI falló:', e.message);
-    }
-
-    // ==========================================
-    // 3. Último recurso: usar la guardada
-    // ==========================================
+    // Respaldo: si Supabase no tiene tasa, usar la guardada en localStorage
     if (ultimaTasa && ultimaFecha) {
         info.textContent = `💱 Tasa BCV: ${parseFloat(ultimaTasa).toFixed(2)} Bs/USD · ${ultimaFecha} (guardada)`;
         tasaActual = parseFloat(ultimaTasa);
-        console.warn("⚠️ Ninguna API respondió. Usando tasa guardada.");
+        console.warn("⚠️ Usando tasa guardada localmente.");
     } else {
         info.textContent = '⚠️ Tasa BCV no disponible';
         console.error("❌ No hay tasa disponible");
@@ -1368,7 +1308,6 @@ Si NO puedes leer algún campo, usa null.`;
     }
 }
 
-// CONFIGURAR 2 BOTONES: Tomar Foto + Subir Imagen
 function configurarFotoFactura() {
     const btnTomar = document.getElementById('btnTomarFoto');
     const btnGaleria = document.getElementById('btnSubirGaleria');
