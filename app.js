@@ -299,24 +299,36 @@ function dbToProducto(row) {
 }
 
 // ============================================
-// TASA BCV - SIEMPRE CONSULTA LA MÁS RECIENTE
+// TASA BCV - CON MÚLTIPLES APIs Y ELECCIÓN DE LA MÁS RECIENTE
 // ============================================
 async function cargarTasa() {
     const info = document.getElementById('tasaInfo');
     info.textContent = 'Consultando tasa BCV...';
 
-    // Solo usar la guardada como respaldo temporal mientras se consulta
     const ultimaTasa = localStorage.getItem('ultimaTasaBCV');
     const ultimaFecha = localStorage.getItem('ultimaFechaBCV');
     
-    // Mostrar la guardada con indicador de actualización
     if (ultimaTasa && ultimaFecha) {
         info.textContent = `💱 Tasa BCV: ${parseFloat(ultimaTasa).toFixed(2)} Bs/USD · ${ultimaFecha} (actualizando...)`;
         tasaActual = parseFloat(ultimaTasa);
     }
 
-    // Lista de APIs en orden de prioridad
+    // ✅ APIs en orden de prioridad (la del banco primero)
     const apis = [
+        { 
+            name: 'BCV Oficial (justcarlux)', 
+            url: 'https://bcv.justcarlux.dev/api/v1/rates',
+            useCorsProxy: true,
+            parse: (d) => {
+                if (d && d.rates && d.rates.usd) {
+                    return { 
+                        tasa: parseFloat(d.rates.usd), 
+                        fecha: d.updatedAt ? new Date(d.updatedAt) : new Date() 
+                    };
+                }
+                return null;
+            }
+        },
         { 
             name: 'DolarAPI', 
             url: 'https://ve.dolarapi.com/v1/dolares/oficial', 
@@ -342,31 +354,27 @@ async function cargarTasa() {
                 }
                 return null;
             }
-        },
-        { 
-            name: 'CriptoYa', 
-            url: 'https://criptoya.com/api/dolaroficial', 
-            parse: (d) => {
-                if (d && d.bcv && d.bcv.price) {
-                    return { 
-                        tasa: parseFloat(d.bcv.price), 
-                        fecha: new Date() 
-                    };
-                }
-                return null;
-            }
         }
     ];
 
+    let tasaMasReciente = tasaActual ? parseFloat(tasaActual) : 0;
+    let fechaMasReciente = ultimaFecha || '';
     let tasaObtenida = false;
 
     for (const api of apis) {
         try {
             console.log(`🌐 Consultando ${api.name}...`);
+            
+            // Construir URL (con o sin proxy)
+            let urlFinal = api.url;
+            if (api.useCorsProxy) {
+                urlFinal = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(api.url);
+            }
+            
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 8000);
             
-            const resp = await fetch(api.url, { 
+            const resp = await fetch(urlFinal, { 
                 signal: controller.signal,
                 cache: 'no-cache'
             });
@@ -381,43 +389,44 @@ async function cargarTasa() {
             const resultado = api.parse(data);
 
             if (resultado && resultado.tasa > 0) {
-                // Detectar si la tasa cambió
-                const tasaAnterior = ultimaTasa ? parseFloat(ultimaTasa) : null;
-                const cambio = tasaAnterior && Math.abs(tasaAnterior - resultado.tasa) > 0.01;
-
-                tasaActual = resultado.tasa;
-                const fechaStr = resultado.fecha.toLocaleString('es-VE', { 
-                    day: '2-digit', 
-                    month: '2-digit', 
-                    year: 'numeric',
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                });
+                console.log(`✅ ${api.name}: ${resultado.tasa} (${resultado.fecha.toLocaleString('es-VE')})`);
                 
-                // Guardar nueva tasa
-                localStorage.setItem('ultimaTasaBCV', tasaActual);
-                localStorage.setItem('ultimaFechaBCV', fechaStr);
-                localStorage.setItem('ultimaTasaTimestamp', Date.now().toString());
-                
-                info.textContent = `💱 Tasa BCV: ${tasaActual.toFixed(2)} Bs/USD · ${fechaStr}`;
-                console.log(`✅ Tasa obtenida de ${api.name}: ${tasaActual}`);
-                
-                if (cambio) {
-                    console.log(`📢 Tasa CAMBIÓ: ${tasaAnterior} → ${tasaActual}`);
-                    mostrarToast(`💱 Nueva tasa BCV: ${tasaActual.toFixed(2)} Bs/USD`, 'info');
+                // ✅ Guardar siempre la tasa con la fecha más reciente
+                if (!tasaObtenida || resultado.fecha >= new Date(fechaMasReciente) || tasaMasReciente === 0) {
+                    tasaMasReciente = resultado.tasa;
+                    fechaMasReciente = resultado.fecha.toLocaleString('es-VE', { 
+                        day: '2-digit', 
+                        month: '2-digit', 
+                        year: 'numeric',
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    });
                 }
                 
                 tasaObtenida = true;
-                break;
-            } else {
-                console.warn(`⚠️ ${api.name}: datos inválidos`, data);
             }
         } catch (e) { 
             console.warn(`⚠️ ${api.name} falló:`, e.message); 
         }
     }
 
-    if (!tasaObtenida) {
+    if (tasaObtenida && tasaMasReciente > 0) {
+        const tasaAnterior = ultimaTasa ? parseFloat(ultimaTasa) : null;
+        const cambio = tasaAnterior && Math.abs(tasaAnterior - tasaMasReciente) > 0.01;
+
+        tasaActual = tasaMasReciente;
+        localStorage.setItem('ultimaTasaBCV', tasaActual);
+        localStorage.setItem('ultimaFechaBCV', fechaMasReciente);
+        localStorage.setItem('ultimaTasaTimestamp', Date.now().toString());
+        
+        info.textContent = `💱 Tasa BCV: ${tasaActual.toFixed(2)} Bs/USD · ${fechaMasReciente}`;
+        console.log(`✅ Tasa final: ${tasaActual} (${fechaMasReciente})`);
+        
+        if (cambio) {
+            console.log(`📢 Tasa CAMBIÓ: ${tasaAnterior} → ${tasaActual}`);
+            mostrarToast(`💱 Nueva tasa BCV: ${tasaActual.toFixed(2)} Bs/USD`, 'info');
+        }
+    } else {
         if (ultimaTasa && ultimaFecha) {
             info.textContent = `💱 Tasa BCV: ${parseFloat(ultimaTasa).toFixed(2)} Bs/USD · ${ultimaFecha} (guardada)`;
             tasaActual = parseFloat(ultimaTasa);
