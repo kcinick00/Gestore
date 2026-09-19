@@ -321,7 +321,7 @@ async function cargarTasa() {
         tasaActual = parseFloat(ultimaTasa);
     }
 
-    // ✅ APIs en orden de prioridad (la del banco primero)
+    // ✅ ORDEN: justcarlux PRIMERO (es la que funciona bien)
     const apis = [
         { 
             name: 'BCV Oficial (justcarlux)', 
@@ -345,19 +345,6 @@ async function cargarTasa() {
                     return { 
                         tasa: parseFloat(d.promedio), 
                         fecha: d.fechaActualizacion ? new Date(d.fechaActualizacion) : new Date() 
-                    };
-                }
-                return null;
-            }
-        },
-        { 
-            name: 'Pydolarve', 
-            url: 'https://pydolarve.org/api/v1/dollar?page=bcv', 
-            parse: (d) => {
-                if (d && d.price) {
-                    return { 
-                        tasa: parseFloat(d.price), 
-                        fecha: d.last_update ? new Date(d.last_update) : new Date() 
                     };
                 }
                 return null;
