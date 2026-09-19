@@ -105,6 +105,15 @@
                 </div>
             </div>
 
+            <!-- Botón para subir captura de pago -->
+            <div style="margin-bottom: 16px; text-align: center;">
+                <input type="file" id="inputFotoPago" accept="image/*" capture="environment" style="display:none;">
+                <button type="button" id="btnSubirCapturaPago" class="btn btn-secondary" style="width: 100%; padding: 14px; font-size: 15px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700;">
+                    📷 Subir Captura de Pago (Pago Móvil o Transferencia)
+                </button>
+                <div id="estadoFotoPago" style="display: none; margin-top: 10px; font-size: 13px; color: #28a745; font-weight: 600;"></div>
+            </div>
+
             <div class="filtros">
                 <input type="text" id="buscarPagos" placeholder="🔍 Buscar beneficiario..." class="input-buscar">
                 <div class="filtros-chips" id="chipsOrdenPagos">
@@ -311,6 +320,61 @@
                 <button class="btn btn-danger" id="btnEliminarEditarProducto" style="flex: 0 0 auto;">🗑️ Eliminar</button>
                 <button class="btn btn-cancelar" id="btnCancelarEditarProducto">Cancelar</button>
                 <button class="btn btn-primary" id="btnGuardarEditarProducto" style="background: #17a2b8;">💾 Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Confirmar Pago desde Captura -->
+    <div class="modal-overlay hidden" id="modalConfirmarPago">
+        <div class="modal">
+            <div class="modal-header" style="background: linear-gradient(135deg, #28a745, #1e7e34);">
+                <h3>💸 Confirmar Pago</h3>
+                <button class="btn-cerrar" id="btnCerrarConfirmarPago">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="datosPagoExtraidos" style="background: #f0fdf4; border-left: 4px solid #28a745; padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 13px;"></div>
+
+                <label>Tipo de Pago:</label>
+                <input type="text" id="pagoTipo" readonly style="background: #f0f0f0;">
+
+                <label>Monto (Bs):</label>
+                <div class="input-prefix">
+                    <span style="color:#28a745;">Bs</span>
+                    <input type="number" id="pagoMontoBs" step="0.01" style="padding-left: 50px;">
+                </div>
+
+                <div id="pagoEquivalenteUSD" style="background: #e7f3ff; border-left: 4px solid #007bff; padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 14px; font-weight: 600; color: #004085;">
+                    💵 Equivalente USD: --
+                </div>
+
+                <label>Referencia / N° Operación:</label>
+                <input type="text" id="pagoReferencia" placeholder="Ej: 123456789">
+
+                <label>Fecha:</label>
+                <input type="date" id="pagoFecha">
+
+                <label>Banco Receptor:</label>
+                <input type="text" id="pagoBanco" placeholder="Ej: Banesco, Mercantil...">
+
+                <label>Nombre del Receptor:</label>
+                <input type="text" id="pagoNombreReceptor" placeholder="Ej: Juan Pérez">
+
+                <label>Cédula o RIF del Receptor:</label>
+                <input type="text" id="pagoCedulaReceptor" placeholder="Ej: V-12345678">
+
+                <label>Teléfono (solo para Pago Móvil):</label>
+                <input type="text" id="pagoTelefonoReceptor" placeholder="Ej: 04141234567">
+
+                <label>Notas (opcional):</label>
+                <textarea id="pagoNotas" placeholder="Observaciones..."></textarea>
+
+                <div id="previewFotoPago" style="margin-top: 15px; text-align: center; display: none;">
+                    <img id="imgPreviewPago" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 2px solid #28a745;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancelar" id="btnCancelarConfirmarPago">Cancelar</button>
+                <button class="btn btn-primary" id="btnGuardarPago" style="background: #28a745;">💾 Guardar Pago</button>
             </div>
         </div>
     </div>
