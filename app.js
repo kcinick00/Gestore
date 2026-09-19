@@ -169,8 +169,19 @@ function configurarEventos() {
 
     // Convertir Bs a USD en el formulario de factura
     document.getElementById('formMontoBs').addEventListener('input', convertirBsAUSD);
-
     document.getElementById('formMontoUSD').addEventListener('input', actualizarEquivalente);
+
+    // Captura de pago
+    document.getElementById('btnSubirCapturaPago').addEventListener('click', () => {
+        document.getElementById('inputFotoPago').click();
+    });
+    document.getElementById('inputFotoPago').addEventListener('change', procesarCapturaPago);
+    
+    // Modal de confirmar pago
+    document.getElementById('btnCerrarConfirmarPago').addEventListener('click', cerrarModalConfirmarPago);
+    document.getElementById('btnCancelarConfirmarPago').addEventListener('click', cerrarModalConfirmarPago);
+    document.getElementById('btnGuardarPago').addEventListener('click', guardarPagoDesdeCaptura);
+    document.getElementById('pagoMontoBs').addEventListener('input', actualizarEquivalentePago);
 
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
@@ -256,7 +267,12 @@ function dbToPago(row) {
         tasaBCV: row.tasa_bcv,
         concepto: row.concepto || '',
         resultado: row.resultado || '',
-        notas: row.notas || ''
+        notas: row.notas || '',
+        tipoPago: row.tipo_pago || 'transferencia',
+        bancoReceptor: row.banco_receptor || '',
+        cedulaReceptor: row.cedula_receptor || '',
+        telefonoReceptor: row.telefono_receptor || '',
+        nombreReceptor: row.nombre_receptor || ''
     };
 }
 
@@ -329,9 +345,6 @@ async function cargarTasa() {
     }
 }
 
-// ============================================
-// Convertir Bs a USD
-// ============================================
 function convertirBsAUSD() {
     const montoBsInput = document.getElementById('formMontoBs');
     const montoBs = parseFloat(montoBsInput.value) || 0;
@@ -559,20 +572,24 @@ function renderizarPagos() {
         return;
     }
 
-    lista.innerHTML = filtrados.map(p => `
+    lista.innerHTML = filtrados.map(p => {
+        const tipoIcon = p.tipoPago === 'pago_movil' ? '📱' : '🏦';
+        return `
         <div class="card-item" data-id="${p.id}">
             <div class="card-header">
-                <div class="card-titulo">${escapeHtml(p.beneficiario)}</div>
+                <div class="card-titulo">${tipoIcon} ${escapeHtml(p.beneficiario)}</div>
                 <span class="card-fecha">${p.fecha}</span>
             </div>
             <div class="card-info">
                 <span class="card-monto">${p.monto} Bs</span>
                 <span class="card-monto-bs">$${p.montoUSD || '0.00'}</span>
             </div>
-            ${p.numeroRecibo && p.numeroRecibo !== 'N/A' ? `<div class="card-info"><span class="card-fecha">Recibo: ${p.numeroRecibo}</span></div>` : ''}
+            ${p.numeroRecibo && p.numeroRecibo !== 'N/A' ? `<div class="card-info"><span class="card-fecha">Ref: ${p.numeroRecibo}</span></div>` : ''}
+            ${p.bancoReceptor ? `<div class="card-info"><span class="card-fecha">🏦 ${escapeHtml(p.bancoReceptor)}</span>${p.telefonoReceptor ? `<span class="card-fecha">📱 ${escapeHtml(p.telefonoReceptor)}</span>` : ''}</div>` : ''}
             ${p.notas ? `<div class="card-notas">📝 ${escapeHtml(p.notas)}</div>` : ''}
         </div>
-    `).join('');
+        `;
+    }).join('');
 
     lista.querySelectorAll('.card-item').forEach(card => {
         card.addEventListener('click', () => {
@@ -776,14 +793,33 @@ function abrirDetalleFactura(f) {
 // DETALLE PAGO
 // ============================================
 function abrirDetallePago(p) {
+    let extraInfo = '';
+    
+    if (p.tipoPago === 'pago_movil') {
+        extraInfo = `
+            <div class="detalle-row"><div class="detalle-label">Tipo</div><div class="detalle-valor">📱 Pago Móvil</div></div>
+            ${p.bancoReceptor ? `<div class="detalle-row"><div class="detalle-label">Banco Receptor</div><div class="detalle-valor">${escapeHtml(p.bancoReceptor)}</div></div>` : ''}
+            ${p.telefonoReceptor ? `<div class="detalle-row"><div class="detalle-label">Teléfono Receptor</div><div class="detalle-valor">${escapeHtml(p.telefonoReceptor)}</div></div>` : ''}
+            ${p.cedulaReceptor ? `<div class="detalle-row"><div class="detalle-label">Cédula Receptor</div><div class="detalle-valor">${escapeHtml(p.cedulaReceptor)}</div></div>` : ''}
+            ${p.nombreReceptor ? `<div class="detalle-row"><div class="detalle-label">Nombre Receptor</div><div class="detalle-valor">${escapeHtml(p.nombreReceptor)}</div></div>` : ''}
+        `;
+    } else if (p.bancoReceptor || p.cedulaReceptor || p.nombreReceptor) {
+        extraInfo = `
+            <div class="detalle-row"><div class="detalle-label">Tipo</div><div class="detalle-valor">🏦 Transferencia</div></div>
+            ${p.bancoReceptor ? `<div class="detalle-row"><div class="detalle-label">Banco Receptor</div><div class="detalle-valor">${escapeHtml(p.bancoReceptor)}</div></div>` : ''}
+            ${p.nombreReceptor ? `<div class="detalle-row"><div class="detalle-label">Nombre Receptor</div><div class="detalle-valor">${escapeHtml(p.nombreReceptor)}</div></div>` : ''}
+            ${p.cedulaReceptor ? `<div class="detalle-row"><div class="detalle-label">Cédula/RIF Receptor</div><div class="detalle-valor">${escapeHtml(p.cedulaReceptor)}</div></div>` : ''}
+        `;
+    }
+
     const html = `
         <div class="detalle-grid">
             <div class="detalle-row"><div class="detalle-label">Beneficiario</div><div class="detalle-valor">${escapeHtml(p.beneficiario)}</div></div>
             <div class="detalle-row"><div class="detalle-label">Monto</div><div class="detalle-valor destacado">${p.monto} Bs</div></div>
             <div class="detalle-row"><div class="detalle-label">Equivalente USD</div><div class="detalle-valor">$${p.montoUSD || '0.00'}</div></div>
             <div class="detalle-row"><div class="detalle-label">Fecha</div><div class="detalle-valor">${p.fecha}</div></div>
-            <div class="detalle-row"><div class="detalle-label">N° Recibo</div><div class="detalle-valor">${p.numeroRecibo || 'N/A'}</div></div>
-            <div class="detalle-row"><div class="detalle-label">Concepto</div><div class="detalle-valor">${p.concepto || 'N/A'}</div></div>
+            <div class="detalle-row"><div class="detalle-label">Referencia</div><div class="detalle-valor">${p.numeroRecibo || 'N/A'}</div></div>
+            ${extraInfo}
             <div class="detalle-row"><div class="detalle-label">Tasa BCV</div><div class="detalle-valor">${p.tasaBCV ? p.tasaBCV.toFixed(2) + ' Bs/USD' : 'N/A'}</div></div>
             ${p.notas ? `<div class="detalle-row"><div class="detalle-label">Notas</div><div class="detalle-notas">${escapeHtml(p.notas)}</div></div>` : ''}
         </div>
@@ -1114,7 +1150,7 @@ async function eliminarPago(pago) {
 }
 
 // ============================================
-// OCR CON DEEPSEEK
+// OCR CON DEEPSEEK - FACTURAS
 // ============================================
 function obtenerApiKeyDeepSeek() {
     let key = localStorage.getItem('deepseek_api_key');
@@ -1147,7 +1183,7 @@ function archivoABase64(file) {
     });
 }
 
-// ✅ NUEVA VERSIÓN DEL PROMPT: Solo extrae productos con cantidad y precio reales
+// OCR para FACTURAS
 async function extraerDatosConDeepSeek(base64Image) {
     const apiKey = obtenerApiKeyDeepSeek();
     if (!apiKey) throw new Error('API Key no configurada');
@@ -1172,10 +1208,6 @@ La factura puede tener una sección "MONTO EXPRESADO EN USD SEGÚN TASA DE CAMBI
 Si está disponible, USA ESOS VALORES para el monto total en USD.
 Si no, convierte el total en Bs a USD usando la tasa que aparezca en la factura.
 
-⚠️ CONVERSIÓN DE PRECIOS:
-Si el precio unitario del producto está en Bs, conviértelo a USD usando la tasa de la factura.
-Si el total del producto está en Bs, conviértelo a USD también.
-
 Responde EXACTAMENTE en este formato JSON (sin texto adicional, sin markdown):
 
 {
@@ -1198,27 +1230,13 @@ Responde EXACTAMENTE en este formato JSON (sin texto adicional, sin markdown):
 }
 
 Reglas ESPECÍFICAS:
-- "proveedor": nombre de la empresa que emite la factura (no el cliente).
 - "monto_total": número decimal. Si la factura tiene "TOTAL MONTO USD", usa ese valor.
 - "monto_es_bs": true si el monto_total está en Bs, false si está en USD.
-- "numero_factura": número de factura.
-- "tasa_bcv": si la factura menciona la tasa (ejemplo "848,55"), inclúyela. Si no, null.
-- "productos": SOLO los productos con cantidad > 0 Y precio. Si no hay ninguno, array vacío [].
-  - "nombre": descripción del producto en MAYÚSCULAS.
-  - "cantidad": número decimal.
-  - "unidad": "UND", "KG", "LT", "CAJA", etc.
+- "tasa_bcv": si la factura menciona la tasa, inclúyela. Si no, null.
+- "productos": SOLO los productos con cantidad > 0 Y precio.
   - "precio_unitario": precio por unidad EN USD. Si está en Bs, conviértelo usando la tasa de la factura.
-  - "iva": número (16) o "E" si es exento.
-  - "exento": true si el producto tiene "(E)" en la descripción o está exento de IVA.
 
-EJEMPLO para una factura con catálogo de 50 productos pero SOLO 1 comprado:
-- El catálogo tiene 50 productos impresos pero SOLO 1 fila tiene cantidad, precio y total.
-- Los demás están vacíos.
-- Por lo tanto, "productos" debe tener SOLO 1 elemento.
-- Si la factura dice "TASA Bs/USD: 848,55" y "TOTAL MONTO USD: 98,04", usar esos valores.
-
-Si NO puedes leer algún campo, usa null.
-Si la imagen no es una factura, devuelve {"proveedor": null, "monto_total": null, "monto_es_bs": false, "numero_factura": null, "tasa_bcv": null, "productos": [], "confianza": "baja"}.`;
+Si NO puedes leer algún campo, usa null.`;
 
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
@@ -1242,13 +1260,12 @@ Si la imagen no es una factura, devuelve {"proveedor": null, "monto_total": null
 
     if (!response.ok) {
         const error = await response.text();
-        console.error('Error DeepSeek:', error);
         throw new Error(`Error API (${response.status}). Verifica tu API Key y saldo.`);
     }
 
     const data = await response.json();
     const contenido = data.choices?.[0]?.message?.content || '';
-    console.log('📝 Respuesta DeepSeek:', contenido);
+    console.log('📝 Respuesta DeepSeek (Factura):', contenido);
 
     try {
         const match = contenido.match(/\{[\s\S]*\}/);
@@ -1289,7 +1306,6 @@ function configurarFotoFactura() {
 
             if (datos.proveedor) document.getElementById('formProveedor').value = datos.proveedor;
             
-            // Detectar si el monto está en Bs o USD
             if (datos.monto_total) {
                 if (datos.monto_es_bs === true) {
                     document.getElementById('formMontoBs').value = datos.monto_total;
@@ -1299,9 +1315,6 @@ function configurarFotoFactura() {
                         document.getElementById('formMontoUSD').value = usd.toFixed(2);
                         estado.textContent = `💱 Monto en Bs detectado: ${formatearMontoBs(datos.monto_total)} → $${usd.toFixed(2)}`;
                         estado.style.color = '#ffc107';
-                    } else {
-                        estado.textContent = `⚠️ Monto en Bs detectado pero no hay tasa BCV. Ingresa el monto USD manualmente.`;
-                        estado.style.color = '#dc3545';
                     }
                 } else {
                     document.getElementById('formMontoUSD').value = parseFloat(datos.monto_total).toFixed(2);
@@ -1382,6 +1395,237 @@ function configurarFotoFactura() {
 
         event.target.value = '';
     });
+}
+
+// ============================================
+// OCR CON DEEPSEEK - PAGOS
+// ============================================
+async function procesarCapturaPago(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const estado = document.getElementById('estadoFotoPago');
+    const previewDiv = document.getElementById('previewFotoPago');
+    const imgPreview = document.getElementById('imgPreviewPago');
+
+    const urlImagen = URL.createObjectURL(file);
+    imgPreview.src = urlImagen;
+    previewDiv.style.display = 'block';
+
+    estado.style.display = 'block';
+    estado.textContent = '⏳ Procesando captura con IA... (5-10 seg)';
+    estado.style.color = '#28a745';
+
+    try {
+        const base64 = await archivoABase64(file);
+        const datos = await extraerPagoConDeepSeek(base64);
+
+        console.log('💸 Datos del pago extraídos:', datos);
+
+        if (datos.error) {
+            throw new Error(datos.error);
+        }
+
+        document.getElementById('pagoTipo').value = datos.tipo_pago === 'pago_movil' ? '📱 Pago Móvil' : '🏦 Transferencia';
+        document.getElementById('pagoMontoBs').value = datos.monto_bs || '';
+        document.getElementById('pagoReferencia').value = datos.referencia || '';
+        
+        if (datos.fecha) {
+            const [d, m, y] = datos.fecha.split('/');
+            document.getElementById('pagoFecha').value = `${y}-${m}-${d}`;
+        } else {
+            document.getElementById('pagoFecha').valueAsDate = new Date();
+        }
+        
+        document.getElementById('pagoBanco').value = datos.banco_receptor || '';
+        document.getElementById('pagoNombreReceptor').value = datos.nombre_receptor || '';
+        document.getElementById('pagoCedulaReceptor').value = datos.cedula_receptor || '';
+        document.getElementById('pagoTelefonoReceptor').value = datos.telefono_receptor || '';
+        document.getElementById('pagoNotas').value = '';
+
+        actualizarEquivalentePago();
+
+        const resumen = document.getElementById('datosPagoExtraidos');
+        let html = `<strong>Datos detectados:</strong><br>`;
+        html += `📋 Tipo: ${datos.tipo_pago === 'pago_movil' ? 'Pago Móvil' : 'Transferencia'}<br>`;
+        if (datos.monto_bs) html += `💵 Monto: ${formatearMontoBs(datos.monto_bs)} Bs<br>`;
+        if (datos.referencia) html += `🔖 Referencia: ${datos.referencia}<br>`;
+        if (datos.banco_receptor) html += `🏦 Banco: ${datos.banco_receptor}<br>`;
+        if (datos.nombre_receptor) html += `👤 Receptor: ${datos.nombre_receptor}<br>`;
+        if (datos.cedula_receptor) html += `🆔 Cédula/RIF: ${datos.cedula_receptor}<br>`;
+        if (datos.telefono_receptor) html += `📱 Teléfono: ${datos.telefono_receptor}<br>`;
+        html += `<br><em style="color:#28a745;">✅ Revisa y guarda</em>`;
+        resumen.innerHTML = html;
+
+        document.getElementById('modalConfirmarPago').classList.remove('hidden');
+        estado.textContent = '✅ Captura procesada. Revisa y guarda.';
+        estado.style.color = '#28a745';
+        setTimeout(() => { estado.style.display = 'none'; }, 3000);
+
+    } catch (error) {
+        console.error('❌ Error al procesar pago:', error);
+        estado.textContent = `❌ ${error.message}`;
+        estado.style.color = '#dc3545';
+        setTimeout(() => { estado.style.display = 'none'; }, 8000);
+    }
+
+    event.target.value = '';
+}
+
+async function extraerPagoConDeepSeek(base64Image) {
+    const apiKey = obtenerApiKeyDeepSeek();
+    if (!apiKey) throw new Error('API Key no configurada');
+
+    const prompt = `Analiza esta imagen de un PAGO realizado desde un banco venezolano.
+
+Puede ser:
+1. **PAGO MÓVIL** (desde una app bancaria): suele tener "Pago Móvil" o "PagoMóvil" en el título, y muestra: banco, cédula del receptor, teléfono del receptor, monto en Bs, referencia.
+2. **TRANSFERENCIA** bancaria: suele mostrar: banco receptor, nombre del receptor, cédula o RIF del receptor, monto en Bs, referencia, fecha.
+
+Extrae TODOS los datos visibles. Responde EXACTAMENTE en este formato JSON (sin texto adicional, sin markdown):
+
+{
+  "tipo_pago": "pago_movil" | "transferencia",
+  "monto_bs": 1500.50,
+  "referencia": "123456789",
+  "fecha": "15/09/2026",
+  "banco_receptor": "Banesco",
+  "nombre_receptor": "Juan Pérez",
+  "cedula_receptor": "V-12345678",
+  "telefono_receptor": "04141234567",
+  "confianza": "alta|media|baja",
+  "error": null
+}
+
+REGLAS:
+- "tipo_pago": "pago_movil" si dice "Pago Móvil", "PagoMóvil", o muestra teléfono del receptor. "transferencia" en caso contrario.
+- "monto_bs": SOLO el número, sin comas de miles, sin símbolos Bs. Ejemplo: 1500.50
+- "referencia": el número de referencia u operación. Es un número largo de 8-15 dígitos.
+- "fecha": en formato DD/MM/YYYY.
+- "banco_receptor": nombre del banco destino (ej: Banesco, Mercantil, Banco de Venezuela, BNC, Provincial, etc.)
+- "nombre_receptor": nombre completo de quien recibe el pago. En Pago Móvil puede no aparecer.
+- "cedula_receptor": cédula o RIF con formato (V-12345678 o J-123456789).
+- "telefono_receptor": número de teléfono (solo Pago Móvil). Formato 04XXXXXXXXX.
+- "confianza": alta si lees todo claro, media si algo está borroso, baja si es ilegible.
+- "error": si la imagen NO es un pago, escribe el motivo aquí y deja los demás campos en null.
+
+Si un campo no aparece, pon null.
+Si la imagen no es un comprobante de pago, devuelve: {"tipo_pago": null, "monto_bs": null, "referencia": null, "fecha": null, "banco_receptor": null, "nombre_receptor": null, "cedula_receptor": null, "telefono_receptor": null, "confianza": "baja", "error": "La imagen no es un comprobante de pago"}.`;
+
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+            model: 'deepseek-chat',
+            messages: [{
+                role: 'user',
+                content: [
+                    { type: 'text', text: prompt },
+                    { type: 'image_url', image_url: { url: base64Image } }
+                ]
+            }],
+            max_tokens: 1500,
+            temperature: 0.1
+        })
+    });
+
+    if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Error API (${response.status}). Verifica tu API Key.`);
+    }
+
+    const data = await response.json();
+    const contenido = data.choices?.[0]?.message?.content || '';
+    console.log('📝 Respuesta Pago:', contenido);
+
+    try {
+        const match = contenido.match(/\{[\s\S]*\}/);
+        if (match) return JSON.parse(match[0]);
+        throw new Error('No se encontró JSON');
+    } catch (e) {
+        console.error('Error al parsear:', contenido);
+        throw new Error('Respuesta inesperada de la IA');
+    }
+}
+
+function actualizarEquivalentePago() {
+    const montoBs = parseFloat(document.getElementById('pagoMontoBs').value) || 0;
+    const equival = document.getElementById('pagoEquivalenteUSD');
+    
+    if (montoBs > 0 && tasaActual) {
+        const usd = montoBs / tasaActual;
+        equival.innerHTML = `💵 Equivalente: <strong>$${usd.toFixed(2)}</strong> (Tasa: ${tasaActual.toFixed(2)} Bs/USD)`;
+    } else if (montoBs > 0 && !tasaActual) {
+        equival.innerHTML = `⚠️ Monto en Bs ingresado pero no hay tasa BCV`;
+    } else {
+        equival.innerHTML = `💵 Equivalente USD: --`;
+    }
+}
+
+function cerrarModalConfirmarPago() {
+    document.getElementById('modalConfirmarPago').classList.add('hidden');
+    document.getElementById('previewFotoPago').style.display = 'none';
+}
+
+async function guardarPagoDesdeCaptura() {
+    const tipoPagoRaw = document.getElementById('pagoTipo').value;
+    const tipoPago = tipoPagoRaw.includes('Pago Móvil') ? 'pago_movil' : 'transferencia';
+    const montoBs = parseFloat(document.getElementById('pagoMontoBs').value) || 0;
+    const referencia = document.getElementById('pagoReferencia').value.trim();
+    const fecha = document.getElementById('pagoFecha').value;
+    const banco = document.getElementById('pagoBanco').value.trim();
+    const nombreReceptor = document.getElementById('pagoNombreReceptor').value.trim();
+    const cedulaReceptor = document.getElementById('pagoCedulaReceptor').value.trim();
+    const telefonoReceptor = document.getElementById('pagoTelefonoReceptor').value.trim();
+    const notas = document.getElementById('pagoNotas').value.trim();
+
+    if (montoBs <= 0) {
+        mostrarToast('El monto es obligatorio', 'error');
+        return;
+    }
+
+    if (!fecha) {
+        mostrarToast('La fecha es obligatoria', 'error');
+        return;
+    }
+
+    const montoUSD = tasaActual ? (montoBs / tasaActual).toFixed(2) : null;
+    const fechaFormato = fecha.split('-').reverse().join('/');
+    const beneficiario = nombreReceptor || (tipoPago === 'pago_movil' ? `Pago Móvil a ${telefonoReceptor || cedulaReceptor || banco}` : `Transferencia a ${banco}`);
+
+    const pagoDB = {
+        id: Date.now(),
+        numero_recibo: referencia || 'N/A',
+        fecha: fechaFormato,
+        beneficiario: beneficiario,
+        monto: montoBs,
+        monto_usd: montoUSD ? parseFloat(montoUSD) : null,
+        tasa_bcv: tasaActual,
+        concepto: tipoPago === 'pago_movil' ? 'Pago Móvil' : 'Transferencia',
+        resultado: 'Operación Exitosa',
+        notas: notas,
+        tipo_pago: tipoPago,
+        banco_receptor: banco || null,
+        cedula_receptor: cedulaReceptor || null,
+        telefono_receptor: telefonoReceptor || null,
+        nombre_receptor: nombreReceptor || null,
+        created_at: new Date().toISOString()
+    };
+
+    try {
+        const { error } = await supabaseClient.from('pagos').insert([pagoDB]);
+        if (error) throw error;
+
+        mostrarToast('✅ Pago guardado correctamente', 'success');
+        cerrarModalConfirmarPago();
+        cargarDatos();
+    } catch (error) {
+        console.error('Error al guardar pago:', error);
+        mostrarToast('Error: ' + error.message, 'error');
+    }
 }
 
 // ============================================
