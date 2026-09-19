@@ -29,6 +29,7 @@ let tasaActual = null;
 let productosDetectados = [];
 let facturaTemporalParaProductos = null;
 let productoEditando = null;
+let pagoEditando = null;
 
 // ============================================
 // INICIALIZACIÓN
@@ -182,6 +183,13 @@ function configurarEventos() {
     document.getElementById('btnCancelarConfirmarPago').addEventListener('click', cerrarModalConfirmarPago);
     document.getElementById('btnGuardarPago').addEventListener('click', guardarPagoDesdeCaptura);
     document.getElementById('pagoMontoBs').addEventListener('input', actualizarEquivalentePago);
+
+    // Modal editar pago
+    document.getElementById('btnCerrarEditarPago').addEventListener('click', cerrarModalEditarPago);
+    document.getElementById('btnCancelarEditarPago').addEventListener('click', cerrarModalEditarPago);
+    document.getElementById('btnGuardarEditarPago').addEventListener('click', guardarEditarPago);
+    document.getElementById('btnEliminarPagoDesdeModal').addEventListener('click', eliminarPagoDesdeModal);
+    document.getElementById('editPagoMontoBs').addEventListener('input', actualizarEquivalenteEditPago);
 
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
@@ -365,7 +373,6 @@ async function cargarTasa() {
         try {
             console.log(`🌐 Consultando ${api.name}...`);
             
-            // Construir URL (con o sin proxy)
             let urlFinal = api.url;
             if (api.useCorsProxy) {
                 urlFinal = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(api.url);
@@ -391,7 +398,6 @@ async function cargarTasa() {
             if (resultado && resultado.tasa > 0) {
                 console.log(`✅ ${api.name}: ${resultado.tasa} (${resultado.fecha.toLocaleString('es-VE')})`);
                 
-                // ✅ Guardar siempre la tasa con la fecha más reciente
                 if (!tasaObtenida || resultado.fecha >= new Date(fechaMasReciente) || tasaMasReciente === 0) {
                     tasaMasReciente = resultado.tasa;
                     fechaMasReciente = resultado.fecha.toLocaleString('es-VE', { 
@@ -914,14 +920,23 @@ function abrirDetallePago(p) {
             <div class="detalle-row"><div class="detalle-label">Referencia</div><div class="detalle-valor">${p.numeroRecibo || 'N/A'}</div></div>
             ${extraInfo}
             <div class="detalle-row"><div class="detalle-label">Tasa BCV</div><div class="detalle-valor">${p.tasaBCV ? p.tasaBCV.toFixed(2) + ' Bs/USD' : 'N/A'}</div></div>
-            ${p.notas ? `<div class="detalle-row"><div class="detalle-label">Notas</div><div class="detalle-notas">${escapeHtml(p.notas)}</div></div>` : ''}
+            ${p.notas ? `<div class="detalle-row"><div class="detalle-label">Observaciones</div><div class="detalle-notas">${escapeHtml(p.notas)}</div></div>` : ''}
         </div>
     `;
 
     document.getElementById('detalleTitulo').textContent = 'Detalle de Pago';
     document.getElementById('detalleContenido').innerHTML = html;
-    document.getElementById('detalleAcciones').innerHTML = `<button class="btn btn-danger" id="btnEliminarPago">🗑️ Eliminar</button>`;
-    document.getElementById('btnEliminarPago').addEventListener('click', () => eliminarPago(p));
+    document.getElementById('detalleAcciones').innerHTML = `
+        <button class="btn btn-secondary" id="btnEditarPagoDetalle">✏️ Editar</button>
+        <button class="btn btn-danger" id="btnEliminarPagoDetalle">🗑️ Eliminar</button>
+    `;
+    
+    document.getElementById('btnEditarPagoDetalle').addEventListener('click', () => {
+        document.getElementById('modalDetalle').classList.add('hidden');
+        abrirModalEditarPago(p);
+    });
+    document.getElementById('btnEliminarPagoDetalle').addEventListener('click', () => eliminarPago(p));
+    
     document.getElementById('modalDetalle').classList.remove('hidden');
 }
 
@@ -1369,7 +1384,6 @@ Si NO puedes leer algún campo, usa null.`;
     }
 }
 
-// ✅ CONFIGURAR 2 BOTONES: Tomar Foto + Subir Imagen
 function configurarFotoFactura() {
     const btnTomar = document.getElementById('btnTomarFoto');
     const btnGaleria = document.getElementById('btnSubirGaleria');
@@ -1384,13 +1398,9 @@ function configurarFotoFactura() {
         return;
     }
 
-    // Botón "Tomar Foto" → abre la cámara
     btnTomar.addEventListener('click', () => inputCamara.click());
-
-    // Botón "Subir Imagen" → abre la galería
     btnGaleria.addEventListener('click', () => inputGaleria.click());
 
-    // Handler común para procesar la imagen (venga de cámara o galería)
     const procesarImagen = async (event) => {
         const file = event.target.files[0];
         if (!file) return;
@@ -1499,7 +1509,6 @@ function configurarFotoFactura() {
         event.target.value = '';
     };
 
-    // Asignar el mismo handler a ambos inputs
     inputCamara.addEventListener('change', procesarImagen);
     inputGaleria.addEventListener('change', procesarImagen);
 }
@@ -1609,15 +1618,14 @@ REGLAS:
 - "monto_bs": SOLO el número, sin comas de miles, sin símbolos Bs. Ejemplo: 1500.50
 - "referencia": el número de referencia u operación. Es un número largo de 8-15 dígitos.
 - "fecha": en formato DD/MM/YYYY.
-- "banco_receptor": nombre del banco destino (ej: Banesco, Mercantil, Banco de Venezuela, BNC, Provincial, etc.)
-- "nombre_receptor": nombre completo de quien recibe el pago. En Pago Móvil puede no aparecer.
+- "banco_receptor": nombre del banco destino.
+- "nombre_receptor": nombre completo de quien recibe el pago.
 - "cedula_receptor": cédula o RIF con formato (V-12345678 o J-123456789).
 - "telefono_receptor": número de teléfono (solo Pago Móvil). Formato 04XXXXXXXXX.
 - "confianza": alta si lees todo claro, media si algo está borroso, baja si es ilegible.
-- "error": si la imagen NO es un pago, escribe el motivo aquí y deja los demás campos en null.
+- "error": si la imagen NO es un pago, escribe el motivo aquí.
 
-Si un campo no aparece, pon null.
-Si la imagen no es un comprobante de pago, devuelve: {"tipo_pago": null, "monto_bs": null, "referencia": null, "fecha": null, "banco_receptor": null, "nombre_receptor": null, "cedula_receptor": null, "telefono_receptor": null, "confianza": "baja", "error": "La imagen no es un comprobante de pago"}.`;
+Si un campo no aparece, pon null.`;
 
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
@@ -1732,6 +1740,144 @@ async function guardarPagoDesdeCaptura() {
     } catch (error) {
         console.error('Error al guardar pago:', error);
         mostrarToast('Error: ' + error.message, 'error');
+    }
+}
+
+// ============================================
+// MODAL EDITAR PAGO
+// ============================================
+function abrirModalEditarPago(p) {
+    pagoEditando = p;
+    console.log("📝 Editando pago:", p.beneficiario);
+
+    document.getElementById('editPagoBeneficiario').value = p.beneficiario || '';
+    document.getElementById('editPagoMontoBs').value = parsearMontoBs(p.monto) || 0;
+    document.getElementById('editPagoReferencia').value = p.numeroRecibo || '';
+    
+    if (p.fecha) {
+        const [d, m, y] = p.fecha.split('/');
+        document.getElementById('editPagoFecha').value = `${y}-${m}-${d}`;
+    } else {
+        document.getElementById('editPagoFecha').valueAsDate = new Date();
+    }
+    
+    document.getElementById('editPagoBanco').value = p.bancoReceptor || '';
+    document.getElementById('editPagoNombreReceptor').value = p.nombreReceptor || '';
+    document.getElementById('editPagoCedulaReceptor').value = p.cedulaReceptor || '';
+    document.getElementById('editPagoTelefonoReceptor').value = p.telefonoReceptor || '';
+    document.getElementById('editPagoConcepto').value = p.concepto || '';
+    document.getElementById('editPagoNotas').value = p.notas || '';
+
+    setTimeout(() => {
+        actualizarEquivalenteEditPago();
+    }, 50);
+
+    document.getElementById('modalEditarPago').classList.remove('hidden');
+}
+
+function cerrarModalEditarPago() {
+    document.getElementById('modalEditarPago').classList.add('hidden');
+    pagoEditando = null;
+}
+
+function actualizarEquivalenteEditPago() {
+    const montoBs = parseFloat(document.getElementById('editPagoMontoBs').value) || 0;
+    const equival = document.getElementById('editPagoEquivalente');
+    
+    if (montoBs > 0 && tasaActual) {
+        const usd = montoBs / tasaActual;
+        equival.innerHTML = `💵 Equivalente: <strong>$${usd.toFixed(2)}</strong> (Tasa: ${tasaActual.toFixed(2)} Bs/USD)`;
+    } else if (montoBs > 0 && !tasaActual) {
+        equival.innerHTML = `⚠️ Monto en Bs ingresado pero no hay tasa BCV`;
+    } else {
+        equival.innerHTML = `💵 Equivalente USD: --`;
+    }
+}
+
+async function guardarEditarPago() {
+    if (!pagoEditando) return;
+
+    const beneficiario = document.getElementById('editPagoBeneficiario').value.trim();
+    if (!beneficiario) {
+        mostrarToast('El beneficiario es obligatorio', 'error');
+        return;
+    }
+
+    const montoBs = parseFloat(document.getElementById('editPagoMontoBs').value) || 0;
+    if (montoBs <= 0) {
+        mostrarToast('El monto debe ser mayor a 0', 'error');
+        return;
+    }
+
+    const referencia = document.getElementById('editPagoReferencia').value.trim();
+    const fecha = document.getElementById('editPagoFecha').value;
+    const banco = document.getElementById('editPagoBanco').value.trim();
+    const nombreReceptor = document.getElementById('editPagoNombreReceptor').value.trim();
+    const cedulaReceptor = document.getElementById('editPagoCedulaReceptor').value.trim();
+    const telefonoReceptor = document.getElementById('editPagoTelefonoReceptor').value.trim();
+    const concepto = document.getElementById('editPagoConcepto').value.trim();
+    const notas = document.getElementById('editPagoNotas').value.trim();
+
+    const tasaOriginal = pagoEditando.tasaBCV || tasaActual;
+    const montoUSD = tasaOriginal ? (montoBs / tasaOriginal).toFixed(2) : null;
+    const fechaFormato = fecha ? fecha.split('-').reverse().join('/') : pagoEditando.fecha;
+
+    const pagoActualizado = {
+        numero_recibo: referencia || 'N/A',
+        fecha: fechaFormato,
+        beneficiario: beneficiario,
+        monto: montoBs,
+        monto_usd: montoUSD ? parseFloat(montoUSD) : null,
+        tasa_bcv: tasaOriginal,
+        concepto: concepto || pagoEditando.concepto,
+        notas: notas,
+        banco_receptor: banco || null,
+        cedula_receptor: cedulaReceptor || null,
+        telefono_receptor: telefonoReceptor || null,
+        nombre_receptor: nombreReceptor || null,
+        updated_at: new Date().toISOString()
+    };
+
+    console.log("💾 Guardando cambios del pago:", pagoActualizado);
+
+    try {
+        const { error } = await supabaseClient
+            .from('pagos')
+            .update(pagoActualizado)
+            .eq('id', pagoEditando.id);
+
+        if (error) throw error;
+
+        mostrarToast('✅ Pago actualizado correctamente', 'success');
+        cerrarModalEditarPago();
+        cargarDatos();
+    } catch (error) {
+        console.error('Error al guardar pago:', error);
+        mostrarToast('Error al guardar: ' + error.message, 'error');
+    }
+}
+
+async function eliminarPagoDesdeModal() {
+    if (!pagoEditando) return;
+    
+    if (!confirm(`¿Eliminar el pago a "${pagoEditando.beneficiario}"?\n\nEsta acción no se puede deshacer.`)) {
+        return;
+    }
+
+    try {
+        const { error } = await supabaseClient
+            .from('pagos')
+            .delete()
+            .eq('id', pagoEditando.id);
+
+        if (error) throw error;
+
+        mostrarToast('✅ Pago eliminado', 'success');
+        cerrarModalEditarPago();
+        cargarDatos();
+    } catch (error) {
+        console.error('Error al eliminar pago:', error);
+        mostrarToast('Error al eliminar: ' + error.message, 'error');
     }
 }
 
