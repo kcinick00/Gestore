@@ -1183,7 +1183,6 @@ function archivoABase64(file) {
     });
 }
 
-// OCR para FACTURAS
 async function extraerDatosConDeepSeek(base64Image) {
     const apiKey = obtenerApiKeyDeepSeek();
     if (!apiKey) throw new Error('API Key no configurada');
@@ -1277,18 +1276,29 @@ Si NO puedes leer algún campo, usa null.`;
     }
 }
 
+// ✅ CONFIGURAR 2 BOTONES: Tomar Foto + Subir Imagen
 function configurarFotoFactura() {
-    const btn = document.getElementById('btnTomarFoto');
-    const input = document.getElementById('inputFoto');
+    const btnTomar = document.getElementById('btnTomarFoto');
+    const btnGaleria = document.getElementById('btnSubirGaleria');
+    const inputCamara = document.getElementById('inputFoto');
+    const inputGaleria = document.getElementById('inputFotoGaleria');
     const estado = document.getElementById('estadoFoto');
     const previewDiv = document.getElementById('previewFoto');
     const imgPreview = document.getElementById('imgPreview');
 
-    if (!btn) return;
+    if (!btnTomar || !btnGaleria) {
+        console.warn("⚠️ Botones de foto no encontrados");
+        return;
+    }
 
-    btn.addEventListener('click', () => input.click());
+    // Botón "Tomar Foto" → abre la cámara
+    btnTomar.addEventListener('click', () => inputCamara.click());
 
-    input.addEventListener('change', async (event) => {
+    // Botón "Subir Imagen" → abre la galería
+    btnGaleria.addEventListener('click', () => inputGaleria.click());
+
+    // Handler común para procesar la imagen (venga de cámara o galería)
+    const procesarImagen = async (event) => {
         const file = event.target.files[0];
         if (!file) return;
 
@@ -1394,7 +1404,11 @@ function configurarFotoFactura() {
         }
 
         event.target.value = '';
-    });
+    };
+
+    // Asignar el mismo handler a ambos inputs
+    inputCamara.addEventListener('change', procesarImagen);
+    inputGaleria.addEventListener('change', procesarImagen);
 }
 
 // ============================================
