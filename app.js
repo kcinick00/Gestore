@@ -299,49 +299,133 @@ function dbToProducto(row) {
 }
 
 // ============================================
-// TASA BCV
+// TASA BCV - SIEMPRE CONSULTA LA MÁS RECIENTE
 // ============================================
 async function cargarTasa() {
     const info = document.getElementById('tasaInfo');
     info.textContent = 'Consultando tasa BCV...';
 
+    // Solo usar la guardada como respaldo temporal mientras se consulta
     const ultimaTasa = localStorage.getItem('ultimaTasaBCV');
     const ultimaFecha = localStorage.getItem('ultimaFechaBCV');
+    
+    // Mostrar la guardada con indicador de actualización
     if (ultimaTasa && ultimaFecha) {
-        info.textContent = `💱 Tasa BCV: ${parseFloat(ultimaTasa).toFixed(2)} Bs/USD · ${ultimaFecha}`;
+        info.textContent = `💱 Tasa BCV: ${parseFloat(ultimaTasa).toFixed(2)} Bs/USD · ${ultimaFecha} (actualizando...)`;
         tasaActual = parseFloat(ultimaTasa);
     }
 
+    // Lista de APIs en orden de prioridad
     const apis = [
-        { name: 'DolarAPI', url: 'https://ve.dolarapi.com/v1/dolares/oficial', parse: (d) => d && d.promedio ? { tasa: parseFloat(d.promedio), fecha: new Date() } : null },
-        { name: 'Pydolarve', url: 'https://pydolarve.org/api/v1/dollar?page=bcv', parse: (d) => d && d.price ? { tasa: parseFloat(d.price), fecha: new Date() } : null },
-        { name: 'CriptoYa', url: 'https://criptoya.com/api/dolaroficial', parse: (d) => d && d.bcv && d.bcv.price ? { tasa: parseFloat(d.bcv.price), fecha: new Date() } : null }
+        { 
+            name: 'DolarAPI', 
+            url: 'https://ve.dolarapi.com/v1/dolares/oficial', 
+            parse: (d) => {
+                if (d && d.promedio) {
+                    return { 
+                        tasa: parseFloat(d.promedio), 
+                        fecha: d.fechaActualizacion ? new Date(d.fechaActualizacion) : new Date() 
+                    };
+                }
+                return null;
+            }
+        },
+        { 
+            name: 'Pydolarve', 
+            url: 'https://pydolarve.org/api/v1/dollar?page=bcv', 
+            parse: (d) => {
+                if (d && d.price) {
+                    return { 
+                        tasa: parseFloat(d.price), 
+                        fecha: d.last_update ? new Date(d.last_update) : new Date() 
+                    };
+                }
+                return null;
+            }
+        },
+        { 
+            name: 'CriptoYa', 
+            url: 'https://criptoya.com/api/dolaroficial', 
+            parse: (d) => {
+                if (d && d.bcv && d.bcv.price) {
+                    return { 
+                        tasa: parseFloat(d.bcv.price), 
+                        fecha: new Date() 
+                    };
+                }
+                return null;
+            }
+        }
     ];
+
+    let tasaObtenida = false;
 
     for (const api of apis) {
         try {
+            console.log(`🌐 Consultando ${api.name}...`);
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 8000);
-            const resp = await fetch(api.url, { signal: controller.signal });
+            
+            const resp = await fetch(api.url, { 
+                signal: controller.signal,
+                cache: 'no-cache'
+            });
             clearTimeout(timeoutId);
 
-            if (!resp.ok) continue;
+            if (!resp.ok) {
+                console.warn(`⚠️ ${api.name}: status ${resp.status}`);
+                continue;
+            }
+            
             const data = await resp.json();
             const resultado = api.parse(data);
 
             if (resultado && resultado.tasa > 0) {
+                // Detectar si la tasa cambió
+                const tasaAnterior = ultimaTasa ? parseFloat(ultimaTasa) : null;
+                const cambio = tasaAnterior && Math.abs(tasaAnterior - resultado.tasa) > 0.01;
+
                 tasaActual = resultado.tasa;
-                const fechaStr = resultado.fecha.toLocaleString('es-VE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                const fechaStr = resultado.fecha.toLocaleString('es-VE', { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    year: 'numeric',
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                
+                // Guardar nueva tasa
                 localStorage.setItem('ultimaTasaBCV', tasaActual);
                 localStorage.setItem('ultimaFechaBCV', fechaStr);
+                localStorage.setItem('ultimaTasaTimestamp', Date.now().toString());
+                
                 info.textContent = `💱 Tasa BCV: ${tasaActual.toFixed(2)} Bs/USD · ${fechaStr}`;
-                return;
+                console.log(`✅ Tasa obtenida de ${api.name}: ${tasaActual}`);
+                
+                if (cambio) {
+                    console.log(`📢 Tasa CAMBIÓ: ${tasaAnterior} → ${tasaActual}`);
+                    mostrarToast(`💱 Nueva tasa BCV: ${tasaActual.toFixed(2)} Bs/USD`, 'info');
+                }
+                
+                tasaObtenida = true;
+                break;
+            } else {
+                console.warn(`⚠️ ${api.name}: datos inválidos`, data);
             }
-        } catch (e) { console.warn(`⚠️ ${api.name} falló`); }
+        } catch (e) { 
+            console.warn(`⚠️ ${api.name} falló:`, e.message); 
+        }
     }
 
-    if (!tasaActual) {
-        info.textContent = '⚠️ Tasa BCV no disponible';
+    if (!tasaObtenida) {
+        if (ultimaTasa && ultimaFecha) {
+            info.textContent = `💱 Tasa BCV: ${parseFloat(ultimaTasa).toFixed(2)} Bs/USD · ${ultimaFecha} (guardada)`;
+            tasaActual = parseFloat(ultimaTasa);
+            console.warn("⚠️ No se pudo actualizar. Usando tasa guardada.");
+        } else {
+            info.textContent = '⚠️ Tasa BCV no disponible';
+            console.error("❌ No hay tasa disponible");
+        }
     }
 }
 
