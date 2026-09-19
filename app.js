@@ -307,7 +307,7 @@ function dbToProducto(row) {
 }
 
 // ============================================
-// TASA BCV - LEER DESDE SUPABASE (actualizada por la extensión)
+// TASA BCV - SUPABASE + FALLBACK A APIs DIRECTAS
 // ============================================
 async function cargarTasa() {
     const info = document.getElementById('tasaInfo');
@@ -321,8 +321,13 @@ async function cargarTasa() {
         tasaActual = parseFloat(ultimaTasa);
     }
 
+    let tasaSupabase = null;
+    let fechaSupabase = null;
+
+    // ==========================================
+    // 1. LEER DESDE SUPABASE
+    // ==========================================
     try {
-        // ✅ Leer la tasa desde Supabase (la extensión la actualiza automáticamente)
         console.log('🌐 Leyendo tasa desde Supabase...');
         const { data, error } = await supabaseClient
             .from('tasa_bcv')
@@ -330,41 +335,169 @@ async function cargarTasa() {
             .eq('id', 1)
             .single();
         
-        if (error) {
-            console.warn('⚠️ Error leyendo tasa de Supabase:', error.message);
-        } else if (data && data.tasa && data.tasa > 0) {
-            const tasa = parseFloat(data.tasa);
-            const fechaStr = data.fecha || 'Sin fecha';
-            
-            console.log(`✅ Tasa desde Supabase: ${tasa} (${fechaStr})`);
-            
-            const tasaAnterior = ultimaTasa ? parseFloat(ultimaTasa) : null;
-            const cambio = tasaAnterior && Math.abs(tasaAnterior - tasa) > 0.01;
-
-            tasaActual = tasa;
-            localStorage.setItem('ultimaTasaBCV', tasaActual);
-            localStorage.setItem('ultimaFechaBCV', fechaStr);
-            
-            info.textContent = `💱 Tasa BCV: ${tasaActual.toFixed(2)} Bs/USD · ${fechaStr}`;
-            console.log(`✅ Tasa final: ${tasaActual}`);
-            
-            if (cambio) {
-                mostrarToast(`💱 Nueva tasa BCV: ${tasaActual.toFixed(2)} Bs/USD`, 'info');
-            }
-            return;
+        if (!error && data && data.tasa && data.tasa > 0) {
+            tasaSupabase = parseFloat(data.tasa);
+            fechaSupabase = data.fecha || 'Sin fecha';
+            console.log(`✅ Tasa desde Supabase: ${tasaSupabase} (${fechaSupabase})`);
         }
     } catch (e) {
-        console.warn('⚠️ Error consultando Supabase:', e.message);
+        console.warn('⚠️ Error leyendo Supabase:', e.message);
     }
 
-    // Respaldo: si Supabase no tiene tasa, usar la guardada en localStorage
+    // ==========================================
+    // 2. VERIFICAR SI LA TASA DE SUPABASE ES RECIENTE
+    //    (menos de 3 días de antigüedad)
+    // ==========================================
+    let tasaEsReciente = false;
+    if (fechaSupabase && fechaSupabase !== 'Sin fecha') {
+        try {
+            const [fechaParte] = fechaSupabase.split(',');
+            const [dia, mes, anio] = fechaParte.trim().split('/').map(Number);
+            const fechaTasa = new Date(anio, mes - 1, dia);
+            const diffDias = Math.floor((new Date() - fechaTasa) / (1000 * 60 * 60 * 24));
+            
+            if (diffDias <= 2) {
+                tasaEsReciente = true;
+                console.log(`✅ Tasa de Supabase es reciente (${diffDias} días)`);
+            } else {
+                console.log(`⚠️ Tasa de Supabase es vieja (${diffDias} días). Intentando APIs...`);
+            }
+        } catch (e) {
+            console.warn('⚠️ No se pudo parsear la fecha:', e.message);
+        }
+    }
+
+    // ==========================================
+    // 3. SI LA TASA ES RECIENTE, USARLA
+    // ==========================================
+    if (tasaSupabase && tasaEsReciente) {
+        aplicarTasa(tasaSupabase, fechaSupabase, 'Supabase');
+        return;
+    }
+
+    // ==========================================
+    // 4. SI LA TASA ES VIEJA O NO EXISTE, INTENTAR APIs DIRECTAS
+    // ==========================================
+    console.log('🌐 Consultando APIs directas (sin proxy)...');
+    
+    const apis = [
+        { 
+            name: 'DolarAPI', 
+            url: 'https://ve.dolarapi.com/v1/dolares/oficial',
+            parse: (d) => {
+                if (d && d.promedio) {
+                    return { 
+                        tasa: parseFloat(d.promedio), 
+                        fecha: d.fechaActualizacion ? new Date(d.fechaActualizacion) : new Date() 
+                    };
+                }
+                return null;
+            }
+        },
+        { 
+            name: 'CriptoYa', 
+            url: 'https://criptoya.com/api/dolaroficial',
+            parse: (d) => {
+                if (d && d.bcv && d.bcv.price) {
+                    return { 
+                        tasa: parseFloat(d.bcv.price), 
+                        fecha: new Date() 
+                    };
+                }
+                return null;
+            }
+        }
+    ];
+
+    for (const api of apis) {
+        try {
+            console.log(`🌐 Probando ${api.name}...`);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
+            
+            const resp = await fetch(api.url, { 
+                signal: controller.signal,
+                cache: 'no-cache'
+            });
+            clearTimeout(timeoutId);
+            
+            if (!resp.ok) continue;
+            const data = await resp.json();
+            const resultado = api.parse(data);
+            
+            if (resultado && resultado.tasa > 0) {
+                const fechaStr = resultado.fecha.toLocaleString('es-VE', { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    year: 'numeric',
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                
+                console.log(`✅ ${api.name}: ${resultado.tasa} (${fechaStr})`);
+                
+                // Actualizar Supabase con esta tasa (oportunista)
+                try {
+                    await supabaseClient
+                        .from('tasa_bcv')
+                        .upsert({
+                            id: 1,
+                            tasa: resultado.tasa,
+                            fecha: fechaStr,
+                            updated_at: new Date().toISOString()
+                        });
+                    console.log(`✅ Tasa actualizada en Supabase`);
+                } catch (e) {
+                    console.warn('⚠️ No se pudo actualizar Supabase:', e.message);
+                }
+                
+                aplicarTasa(resultado.tasa, fechaStr, api.name);
+                return;
+            }
+        } catch (e) {
+            console.warn(`⚠️ ${api.name} falló:`, e.message);
+        }
+    }
+
+    // ==========================================
+    // 5. SI TODO FALLA, USAR LA DE SUPABASE AUNQUE SEA VIEJA
+    // ==========================================
+    if (tasaSupabase) {
+        console.log('⚠️ Usando tasa de Supabase (aunque sea vieja)');
+        aplicarTasa(tasaSupabase, fechaSupabase + ' (vieja)', 'Supabase (respaldo)');
+        return;
+    }
+
+    // ==========================================
+    // 6. ÚLTIMO RECURSO: TASA GUARDADA LOCAL
+    // ==========================================
     if (ultimaTasa && ultimaFecha) {
-        info.textContent = `💱 Tasa BCV: ${parseFloat(ultimaTasa).toFixed(2)} Bs/USD · ${ultimaFecha} (guardada)`;
+        info.textContent = `💱 Tasa BCV: ${parseFloat(ultimaTasa).toFixed(2)} Bs/USD · ${ultimaFecha} (local)`;
         tasaActual = parseFloat(ultimaTasa);
         console.warn("⚠️ Usando tasa guardada localmente.");
     } else {
         info.textContent = '⚠️ Tasa BCV no disponible';
         console.error("❌ No hay tasa disponible");
+    }
+}
+
+// Función auxiliar para aplicar la tasa
+function aplicarTasa(tasa, fechaStr, fuente) {
+    const info = document.getElementById('tasaInfo');
+    const ultimaTasa = localStorage.getItem('ultimaTasaBCV');
+    
+    const tasaAnterior = ultimaTasa ? parseFloat(ultimaTasa) : null;
+    const cambio = tasaAnterior && Math.abs(tasaAnterior - tasa) > 0.01;
+
+    tasaActual = tasa;
+    localStorage.setItem('ultimaTasaBCV', tasaActual);
+    localStorage.setItem('ultimaFechaBCV', fechaStr);
+    
+    info.textContent = `💱 Tasa BCV: ${tasaActual.toFixed(2)} Bs/USD · ${fechaStr}`;
+    console.log(`✅ Tasa final (${fuente}): ${tasaActual} (${fechaStr})`);
+    
+    if (cambio) {
+        mostrarToast(`💱 Nueva tasa BCV: ${tasaActual.toFixed(2)} Bs/USD`, 'info');
     }
 }
 
