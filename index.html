@@ -12,7 +12,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icons/icon-192.png">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <link rel="stylesheet" href="styles.css?v=8.0">
+    <link rel="stylesheet" href="styles.css?v=8.1">
 </head>
 <body>
     <!-- Header -->
@@ -21,7 +21,7 @@
             <div class="logo">
                 <span class="logo-icon">💰</span>
                 <span class="logo-text">Gestore</span>
-                <span class="version-badge">v8.0</span>
+                <span class="version-badge">v8.1</span>
             </div>
             <button class="btn-icon" id="btnRefresh" title="Actualizar">🔄</button>
         </div>
@@ -183,7 +183,7 @@
 
         <!-- VENTAS DIARIAS -->
         <section id="seccionVentas" class="seccion hidden">
-            <!-- 5 BADGES NUEVOS -->
+            <!-- 5 BADGES -->
             <div class="stats-ventas-5">
                 <div class="stat-venta-card stat-venta-mes">
                     <div class="stat-venta-label">MES</div>
@@ -343,6 +343,7 @@
                 <div style="background: rgba(245, 158, 11, 0.1); border-left: 4px solid var(--warning); padding: 10px; border-radius: 8px; margin-bottom: 12px; font-size: 12px; color: var(--text);">
                     💡 Revisa y ajusta los productos detectados. El <strong>margen</strong> se aplica a todos, pero puedes cambiarlo individual.
                     <br>💡 <strong>Unid/Caja</strong>: si la factura vino por caja, el precio se divide automáticamente.
+                    <br>💡 <strong>¿IVA?</strong>: marca si el producto lleva IVA 16%. El precio de venta se recalcula al instante.
                 </div>
 
                 <div style="display: flex; gap: 8px; margin-bottom: 12px; align-items: center; flex-wrap: wrap;">
@@ -382,10 +383,13 @@
                 <label>Stock actual:</label>
                 <input type="number" id="editStock" step="0.01" min="0" inputmode="decimal">
 
-                <label>Precio de Compra (USD):</label>
+                <label>Precio de Compra (USD) - SIN IVA:</label>
                 <div class="input-prefix">
                     <span>$</span>
                     <input type="number" id="editPrecioCompra" step="0.01" min="0" inputmode="decimal">
+                </div>
+                <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">
+                    💡 Ingresa el precio BASE (sin IVA). Si el producto lleva IVA, se suma automáticamente.
                 </div>
 
                 <label>Unidades por Caja (0 = venta por unidad):</label>
@@ -403,6 +407,17 @@
                 <label>Margen de Ganancia (%):</label>
                 <input type="number" id="editMargen" step="1" min="0" max="500" inputmode="decimal">
 
+                <label>¿Este producto lleva IVA (16%)?</label>
+                <div style="display: flex; align-items: center; gap: 12px; padding: 14px; background: rgba(6, 182, 212, 0.08); border: 2px solid #06b6d4; border-radius: var(--r-md); margin-top: 4px;">
+                    <input type="checkbox" id="editTieneIva" style="width: 24px; height: 24px; cursor: pointer; accent-color: #06b6d4;">
+                    <label for="editTieneIva" style="margin: 0; font-weight: 700; font-size: 14px; color: var(--text); cursor: pointer; text-transform: none; letter-spacing: -0.01em;">
+                        ✅ Aplicar IVA 16% al costo
+                    </label>
+                </div>
+                <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 6px;">
+                    💡 Si está marcado: costo = precio_base × 1.16. Si no, el precio base ya es el costo final.
+                </div>
+
                 <label>Precio de Venta (USD) - calculado automáticamente:</label>
                 <div class="input-prefix">
                     <span>$</span>
@@ -410,9 +425,6 @@
                 </div>
 
                 <div id="infoCalculo" style="background: rgba(6, 182, 212, 0.08); border-left: 4px solid #06b6d4; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 12px; line-height: 1.5; display: none; color: var(--text);"></div>
-
-                <label>IVA:</label>
-                <input type="text" id="editIva" placeholder="16 o E (exento)" autocomplete="off">
 
                 <label>Notas (opcional):</label>
                 <textarea id="editNotas"></textarea>
@@ -771,7 +783,7 @@
     <script src="libs/pdf.min.js"></script>
     <script src="tasas-bcv.js"></script>
     <script src="importar-pdf.js"></script>
-    <script src="app.js?v=8.0"></script>
+    <script src="app.js?v=8.1"></script>
 
     <script>
         if ('serviceWorker' in navigator) {
