@@ -18,11 +18,12 @@ try {
 // ============================================
 const DIAS_VENCIMIENTO = 10;
 
-let datos = { facturas: [], pagos: [], productos: [] };
+let datos = { facturas: [], pagos: [], productos: [], ventas_diarias: [] };
 let filtros = { 
     facturas: { texto: '', estatus: 'activas', orden: 'fecha', direccion: 'asc' },
     pagos: { texto: '', orden: 'fecha', direccion: 'desc' },
-    productos: { texto: '', orden: 'nombre', direccion: 'asc' }
+    productos: { texto: '', orden: 'nombre', direccion: 'asc' },
+    ventas: { texto: '', mes: 'todos', vista: 'diaria', orden: 'fecha', direccion: 'desc' }
 };
 let tasaActual = null;
 
@@ -30,6 +31,7 @@ let productosDetectados = [];
 let facturaTemporalParaProductos = null;
 let productoEditando = null;
 let pagoEditando = null;
+let ventaEditando = null;
 
 // ============================================
 // INICIALIZACIÓN
@@ -66,10 +68,24 @@ function configurarEventos() {
         filtros.productos.texto = e.target.value.toLowerCase();
         renderizarProductos();
     });
+    document.getElementById('buscarVentas').addEventListener('input', (e) => {
+        filtros.ventas.texto = e.target.value.toLowerCase();
+        renderizarVentas();
+    });
 
     document.getElementById('filtroEstatusFacturas').addEventListener('change', (e) => {
         filtros.facturas.estatus = e.target.value;
         renderizarFacturas();
+    });
+
+    document.getElementById('filtroMesVentas').addEventListener('change', (e) => {
+        filtros.ventas.mes = e.target.value;
+        renderizarVentas();
+    });
+
+    document.getElementById('vistaVentas').addEventListener('change', (e) => {
+        filtros.ventas.vista = e.target.value;
+        renderizarVentas();
     });
 
     document.querySelectorAll('#chipsOrdenFacturas .chip').forEach(chip => {
@@ -168,7 +184,6 @@ function configurarEventos() {
         }
     });
 
-    // Convertir Bs a USD en el formulario de factura
     document.getElementById('formMontoBs').addEventListener('input', convertirBsAUSD);
     document.getElementById('formMontoUSD').addEventListener('input', actualizarEquivalente);
 
@@ -191,6 +206,25 @@ function configurarEventos() {
     document.getElementById('btnEliminarPagoDesdeModal').addEventListener('click', eliminarPagoDesdeModal);
     document.getElementById('editPagoMontoBs').addEventListener('input', actualizarEquivalenteEditPago);
 
+    // ========== VENTAS DIARIAS ==========
+    document.getElementById('btnNuevaVenta').addEventListener('click', () => abrirModalVenta(null));
+    document.getElementById('btnImportarVentas').addEventListener('click', abrirModalPegarVentas);
+    document.getElementById('btnExportarVentasCSV').addEventListener('click', exportarVentasCSV);
+    document.getElementById('btnExportarVentasExcel').addEventListener('click', exportarVentasExcel);
+
+    document.getElementById('btnCerrarVenta').addEventListener('click', cerrarModalVenta);
+    document.getElementById('btnCancelarVenta').addEventListener('click', cerrarModalVenta);
+    document.getElementById('btnGuardarVenta').addEventListener('click', guardarVentaDiaria);
+    document.getElementById('btnEliminarVenta').addEventListener('click', eliminarVentaDiaria);
+    document.getElementById('ventaEfectivo').addEventListener('input', recalcularTotalVenta);
+    document.getElementById('ventaZelle').addEventListener('input', recalcularTotalVenta);
+    document.getElementById('ventaPuntoUsd').addEventListener('input', recalcularTotalVenta);
+
+    document.getElementById('btnCerrarPegar').addEventListener('click', cerrarModalPegarVentas);
+    document.getElementById('btnCancelarPegar').addEventListener('click', cerrarModalPegarVentas);
+    document.getElementById('btnProcesarPegar').addEventListener('click', procesarPegadoVentas);
+    document.getElementById('textoPegarVentas').addEventListener('input', previewPegadoVentas);
+
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) overlay.classList.add('hidden');
@@ -204,6 +238,7 @@ function cambiarTab(tab) {
     document.getElementById('seccionFacturas').classList.toggle('hidden', tab !== 'facturas');
     document.getElementById('seccionPagos').classList.toggle('hidden', tab !== 'pagos');
     document.getElementById('seccionInventario').classList.toggle('hidden', tab !== 'inventario');
+    document.getElementById('seccionVentas').classList.toggle('hidden', tab !== 'ventas');
     document.getElementById('fabNuevaFactura').classList.toggle('hidden', tab !== 'facturas');
 }
 
@@ -216,27 +251,32 @@ async function cargarDatos() {
     try {
         console.log("📥 Cargando datos desde Supabase...");
 
-        const [facturasResp, pagosResp, productosResp] = await Promise.all([
+        const [facturasResp, pagosResp, productosResp, ventasResp] = await Promise.all([
             supabaseClient.from('facturas').select('*'),
             supabaseClient.from('pagos').select('*'),
-            supabaseClient.from('productos').select('*')
+            supabaseClient.from('productos').select('*'),
+            supabaseClient.from('ventas_diarias').select('*').order('fecha', { ascending: false })
         ]);
 
         if (facturasResp.error) throw facturasResp.error;
         if (pagosResp.error) throw pagosResp.error;
         if (productosResp.error) throw productosResp.error;
+        if (ventasResp.error) throw ventasResp.error;
 
         datos.facturas = (facturasResp.data || []).map(dbToFactura);
         datos.pagos = (pagosResp.data || []).map(dbToPago);
         datos.productos = (productosResp.data || []).map(dbToProducto);
+        datos.ventas_diarias = (ventasResp.data || []).map(dbToVentaDiaria);
 
-        console.log(`✅ Cargados: ${datos.facturas.length} facturas, ${datos.pagos.length} pagos, ${datos.productos.length} productos`);
+        console.log(`✅ Cargados: ${datos.facturas.length} facturas, ${datos.pagos.length} pagos, ${datos.productos.length} productos, ${datos.ventas_diarias.length} ventas`);
 
         renderizarFacturas();
         renderizarPagos();
         renderizarProductos();
+        renderizarVentas();
         actualizarEstadisticas();
         actualizarEstadisticasInventario();
+        actualizarEstadisticasVentas();
         actualizarBadge();
     } catch (error) {
         console.error('❌ Error al cargar:', error);
@@ -306,8 +346,94 @@ function dbToProducto(row) {
     };
 }
 
+function dbToVentaDiaria(row) {
+    // Conversión ISO (YYYY-MM-DD) → DD/MM/YYYY
+    let fechaLatina = '';
+    if (row.fecha) {
+        const partes = String(row.fecha).split('-');
+        if (partes.length === 3) {
+            fechaLatina = `${partes[2]}/${partes[1]}/${partes[0]}`;
+        } else {
+            fechaLatina = row.fecha;
+        }
+    }
+    return {
+        id: row.id,
+        fecha: fechaLatina,
+        efectivo_usd: parseFloat(row.efectivo_usd) || 0,
+        zelle_usd: parseFloat(row.zelle_usd) || 0,
+        punto_bs: parseFloat(row.punto_bs) || 0,
+        punto_usd: parseFloat(row.punto_usd) || 0,
+        tasa_bcv: parseFloat(row.tasa_bcv) || 0,
+        total_usd: parseFloat(row.total_usd) || 0,
+        nota: row.nota || ''
+    };
+}
+
 // ============================================
-// TASA BCV - SUPABASE + FALLBACK A APIs DIRECTAS
+// HELPERS DE FECHA
+// ============================================
+function fechaLatinaToISO(fechaStr) {
+    if (!fechaStr) return null;
+    const partes = String(fechaStr).split('/');
+    if (partes.length !== 3) return null;
+    const [d, m, y] = partes;
+    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+}
+
+function fechaStrToDate(fechaStr) {
+    if (!fechaStr) return null;
+    const partes = fechaStr.split('/');
+    if (partes.length !== 3) return null;
+    const [d, m, y] = partes.map(Number);
+    if (!d || !m || !y) return null;
+    return new Date(y, m - 1, d);
+}
+
+function dateToFechaStr(date) {
+    const d = String(date.getDate()).padStart(2, '0');
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const y = date.getFullYear();
+    return `${d}/${m}/${y}`;
+}
+
+function getLunesDeSemana(date) {
+    const d = new Date(date);
+    const dia = d.getDay();
+    const diff = (dia === 0 ? -6 : 1 - dia);
+    d.setDate(d.getDate() + diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+}
+
+function getDomingoDeSemana(date) {
+    const lunes = getLunesDeSemana(date);
+    const dom = new Date(lunes);
+    dom.setDate(dom.getDate() + 6);
+    return dom;
+}
+
+function nombreMes(date) {
+    const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    return `${meses[date.getMonth()]} ${date.getFullYear()}`;
+}
+
+function claveSemana(fechaStr) {
+    const date = fechaStrToDate(fechaStr);
+    if (!date) return null;
+    const lunes = getLunesDeSemana(date);
+    return dateToFechaStr(lunes);
+}
+
+function claveMes(fechaStr) {
+    const date = fechaStrToDate(fechaStr);
+    if (!date) return null;
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    return `${date.getFullYear()}-${m}`;
+}
+
+// ============================================
+// TASA BCV
 // ============================================
 async function cargarTasa() {
     const info = document.getElementById('tasaInfo');
@@ -324,9 +450,6 @@ async function cargarTasa() {
     let tasaSupabase = null;
     let fechaSupabase = null;
 
-    // ==========================================
-    // 1. LEER DESDE SUPABASE
-    // ==========================================
     try {
         console.log('🌐 Leyendo tasa desde Supabase...');
         const { data, error } = await supabaseClient
@@ -344,10 +467,6 @@ async function cargarTasa() {
         console.warn('⚠️ Error leyendo Supabase:', e.message);
     }
 
-    // ==========================================
-    // 2. VERIFICAR SI LA TASA DE SUPABASE ES RECIENTE
-    //    (menos de 3 días de antigüedad)
-    // ==========================================
     let tasaEsReciente = false;
     if (fechaSupabase && fechaSupabase !== 'Sin fecha') {
         try {
@@ -367,17 +486,11 @@ async function cargarTasa() {
         }
     }
 
-    // ==========================================
-    // 3. SI LA TASA ES RECIENTE, USARLA
-    // ==========================================
     if (tasaSupabase && tasaEsReciente) {
         aplicarTasa(tasaSupabase, fechaSupabase, 'Supabase');
         return;
     }
 
-    // ==========================================
-    // 4. SI LA TASA ES VIEJA O NO EXISTE, INTENTAR APIs DIRECTAS
-    // ==========================================
     console.log('🌐 Consultando APIs directas (sin proxy)...');
     
     const apis = [
@@ -436,7 +549,6 @@ async function cargarTasa() {
                 
                 console.log(`✅ ${api.name}: ${resultado.tasa} (${fechaStr})`);
                 
-                // Actualizar Supabase con esta tasa (oportunista)
                 try {
                     await supabaseClient
                         .from('tasa_bcv')
@@ -459,18 +571,12 @@ async function cargarTasa() {
         }
     }
 
-    // ==========================================
-    // 5. SI TODO FALLA, USAR LA DE SUPABASE AUNQUE SEA VIEJA
-    // ==========================================
     if (tasaSupabase) {
         console.log('⚠️ Usando tasa de Supabase (aunque sea vieja)');
         aplicarTasa(tasaSupabase, fechaSupabase + ' (vieja)', 'Supabase (respaldo)');
         return;
     }
 
-    // ==========================================
-    // 6. ÚLTIMO RECURSO: TASA GUARDADA LOCAL
-    // ==========================================
     if (ultimaTasa && ultimaFecha) {
         info.textContent = `💱 Tasa BCV: ${parseFloat(ultimaTasa).toFixed(2)} Bs/USD · ${ultimaFecha} (local)`;
         tasaActual = parseFloat(ultimaTasa);
@@ -481,7 +587,6 @@ async function cargarTasa() {
     }
 }
 
-// Función auxiliar para aplicar la tasa
 function aplicarTasa(tasa, fechaStr, fuente) {
     const info = document.getElementById('tasaInfo');
     const ultimaTasa = localStorage.getItem('ultimaTasaBCV');
@@ -573,6 +678,10 @@ function getIconoEstatus(est) {
     if (est === 'Pagada') return '🟢';
     if (est === 'Vencida') return '🔴';
     return '🟡';
+}
+
+function formatearUSD(n) {
+    return '$' + (parseFloat(n) || 0).toFixed(2);
 }
 
 function normalizarNombre(nombre) {
@@ -813,7 +922,679 @@ function renderizarProductos() {
 }
 
 // ============================================
-// ESTADÍSTICAS
+// RENDERIZAR VENTAS (Diaria / Semanal / Mensual)
+// ============================================
+function renderizarVentas() {
+    const lista = document.getElementById('listaVentas');
+    if (!lista) return;
+
+    let filtradas = [...datos.ventas_diarias];
+
+    // Filtro por mes
+    if (filtros.ventas.mes !== 'todos') {
+        const hoy = new Date();
+        let mesObjetivo = hoy.getMonth();
+        let anioObjetivo = hoy.getFullYear();
+        if (filtros.ventas.mes === 'anterior') {
+            mesObjetivo -= 1;
+            if (mesObjetivo < 0) { mesObjetivo = 11; anioObjetivo -= 1; }
+        }
+        filtradas = filtradas.filter(v => {
+            const date = fechaStrToDate(v.fecha);
+            if (!date) return false;
+            return date.getMonth() === mesObjetivo && date.getFullYear() === anioObjetivo;
+        });
+    }
+
+    if (filtros.ventas.texto) {
+        const t = filtros.ventas.texto;
+        filtradas = filtradas.filter(v =>
+            (v.fecha || '').toLowerCase().includes(t) ||
+            (v.nota || '').toLowerCase().includes(t)
+        );
+    }
+
+    if (filtros.ventas.vista === 'diaria') {
+        renderizarVentasDiaria(lista, filtradas);
+    } else if (filtros.ventas.vista === 'semanal') {
+        renderizarVentasAgrupada(lista, filtradas, 'semanal');
+    } else {
+        renderizarVentasAgrupada(lista, filtradas, 'mensual');
+    }
+
+    let sumEfectivo = 0, sumZelle = 0, sumPuntoUsd = 0, sumTotal = 0;
+    filtradas.forEach(v => {
+        const ef = parseFloat(v.efectivo_usd) || 0;
+        const ze = parseFloat(v.zelle_usd) || 0;
+        const pu = parseFloat(v.punto_usd) || 0;
+        const tot = parseFloat(v.total_usd) || (ef + ze + pu);
+        sumEfectivo += ef;
+        sumZelle += ze;
+        sumPuntoUsd += pu;
+        sumTotal += tot;
+    });
+    document.getElementById('resumenVentas').innerHTML = 
+        `📊 <b>${filtradas.length}</b> registros · Ef: <b>${formatearUSD(sumEfectivo)}</b> · Ze: <b>${formatearUSD(sumZelle)}</b> · Pu: <b>${formatearUSD(sumPuntoUsd)}</b> · <b style="color:#28a745;">TOTAL: ${formatearUSD(sumTotal)}</b>`;
+}
+
+// ============================================
+// VISTA DIARIA
+// ============================================
+function renderizarVentasDiaria(lista, filtradas) {
+    const mult = filtros.ventas.direccion === 'asc' ? 1 : -1;
+    filtradas.sort((a, b) => {
+        const fa = a.fecha ? a.fecha.split('/').reverse().join('') : '';
+        const fb = b.fecha ? b.fecha.split('/').reverse().join('') : '';
+        return fa.localeCompare(fb) * mult;
+    });
+
+    if (filtradas.length === 0) {
+        lista.innerHTML = `<div class="vacio"><span class="vacio-icon">💵</span>No hay ventas registradas</div>`;
+        return;
+    }
+
+    lista.innerHTML = filtradas.map(v => {
+        const ef = parseFloat(v.efectivo_usd) || 0;
+        const ze = parseFloat(v.zelle_usd) || 0;
+        const pu = parseFloat(v.punto_usd) || 0;
+        const tot = parseFloat(v.total_usd) || (ef + ze + pu);
+
+        return `
+            <div class="card-item estatus-Pagada" data-id-venta="${v.id}">
+                <div class="card-header">
+                    <div class="card-titulo">📅 ${v.fecha}</div>
+                    <span class="card-estatus" style="background:#d4edda; color:#155724; font-weight:700;">${formatearUSD(tot)}</span>
+                </div>
+                <div class="card-info">
+                    <span class="card-fecha">💵 Ef: <b>${formatearUSD(ef)}</b></span>
+                    <span class="card-fecha">📲 Ze: <b>${formatearUSD(ze)}</b></span>
+                    <span class="card-fecha">🏧 Pu: <b>${formatearUSD(pu)}</b></span>
+                </div>
+                ${v.nota ? `<div class="card-notas">📝 ${escapeHtml(v.nota)}</div>` : ''}
+            </div>
+        `;
+    }).join('');
+
+    lista.querySelectorAll('[data-id-venta]').forEach(card => {
+        card.addEventListener('click', () => {
+            const id = card.dataset.idVenta;
+            const venta = datos.ventas_diarias.find(v => String(v.id) === String(id));
+            if (venta) abrirModalVenta(venta);
+        });
+    });
+}
+
+// ============================================
+// VISTA AGRUPADA (SEMANAL / MENSUAL)
+// ============================================
+function renderizarVentasAgrupada(lista, filtradas, tipo) {
+    const grupos = new Map();
+
+    filtradas.forEach(v => {
+        const clave = tipo === 'semanal' ? claveSemana(v.fecha) : claveMes(v.fecha);
+        if (!clave) return;
+        if (!grupos.has(clave)) {
+            grupos.set(clave, {
+                clave,
+                efectivo: 0, zelle: 0, punto_usd: 0, total: 0,
+                registros: []
+            });
+        }
+        const g = grupos.get(clave);
+        const ef = parseFloat(v.efectivo_usd) || 0;
+        const ze = parseFloat(v.zelle_usd) || 0;
+        const pu = parseFloat(v.punto_usd) || 0;
+        const tot = parseFloat(v.total_usd) || (ef + ze + pu);
+
+        g.efectivo += ef;
+        g.zelle += ze;
+        g.punto_usd += pu;
+        g.total += tot;
+        g.registros.push(v);
+    });
+
+    let gruposArray = Array.from(grupos.values());
+    const mult = filtros.ventas.direccion === 'asc' ? 1 : -1;
+
+    gruposArray.sort((a, b) => {
+        if (tipo === 'semanal') {
+            const fa = a.clave.split('/').reverse().join('');
+            const fb = b.clave.split('/').reverse().join('');
+            return fa.localeCompare(fb) * mult;
+        } else {
+            return a.clave.localeCompare(b.clave) * mult;
+        }
+    });
+
+    if (gruposArray.length === 0) {
+        lista.innerHTML = `<div class="vacio"><span class="vacio-icon">💵</span>No hay ventas registradas</div>`;
+        return;
+    }
+
+    let html = '';
+
+    gruposArray.forEach((g, idx) => {
+        let etiqueta;
+        if (tipo === 'semanal') {
+            const lunes = fechaStrToDate(g.clave);
+            const domingo = getDomingoDeSemana(lunes);
+            etiqueta = `📆 Semana del ${g.clave} al ${dateToFechaStr(domingo)}`;
+        } else {
+            const [y, m] = g.clave.split('-').map(Number);
+            const fecha = new Date(y, m - 1, 1);
+            etiqueta = `🗓️ ${nombreMes(fecha)}`;
+        }
+
+        html += `
+            <div class="card-item estatus-Pagada" data-grupo="${idx}" style="cursor:pointer;">
+                <div class="card-header">
+                    <div class="card-titulo">${etiqueta}</div>
+                    <span class="card-estatus" style="background:#d4edda; color:#155724; font-weight:700; font-size:12px;">${formatearUSD(g.total)}</span>
+                </div>
+                <div class="card-info">
+                    <span class="card-fecha">💵 Ef: <b>${formatearUSD(g.efectivo)}</b></span>
+                    <span class="card-fecha">📲 Ze: <b>${formatearUSD(g.zelle)}</b></span>
+                    <span class="card-fecha">🏧 Pu: <b>${formatearUSD(g.punto_usd)}</b></span>
+                </div>
+                <div class="card-info">
+                    <span class="card-fecha">📊 ${g.registros.length} día${g.registros.length !== 1 ? 's' : ''} · clic para expandir ▼</span>
+                </div>
+            </div>
+            <div id="grupo-detalle-${idx}" class="hidden" style="display:flex; flex-direction:column; gap:8px; margin-top:-6px; margin-bottom:8px; padding-left:20px;">
+        `;
+
+        g.registros.sort((a, b) => {
+            const fa = a.fecha.split('/').reverse().join('');
+            const fb = b.fecha.split('/').reverse().join('');
+            return fa.localeCompare(fb);
+        });
+
+        g.registros.forEach(v => {
+            const ef = parseFloat(v.efectivo_usd) || 0;
+            const ze = parseFloat(v.zelle_usd) || 0;
+            const pu = parseFloat(v.punto_usd) || 0;
+            const tot = parseFloat(v.total_usd) || (ef + ze + pu);
+
+            html += `
+                <div class="card-item" style="padding: 10px; background: #fafafa;" data-id-venta="${v.id}">
+                    <div class="card-header" style="margin-bottom:4px;">
+                        <div class="card-titulo" style="font-size:13px;">↳ ${v.fecha}</div>
+                        <span class="card-estatus" style="background:#d4edda; color:#155724; font-weight:700; font-size:11px;">${formatearUSD(tot)}</span>
+                    </div>
+                    <div class="card-info" style="font-size:11px;">
+                        <span class="card-fecha">Ef: <b>${formatearUSD(ef)}</b></span>
+                        <span class="card-fecha">Ze: <b>${formatearUSD(ze)}</b></span>
+                        <span class="card-fecha">Pu: <b>${formatearUSD(pu)}</b></span>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `</div>`;
+    });
+
+    lista.innerHTML = html;
+
+    // Toggle de grupos
+    lista.querySelectorAll('[data-grupo]').forEach(card => {
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('[data-id-venta]')) return;
+            const idx = card.dataset.grupo;
+            const detalle = document.getElementById(`grupo-detalle-${idx}`);
+            if (detalle) {
+                detalle.classList.toggle('hidden');
+                const small = card.querySelector('.card-fecha:last-child');
+                if (small) {
+                    small.textContent = detalle.classList.contains('hidden')
+                        ? small.textContent.replace('colapsar ▲', 'expandir ▼')
+                        : small.textContent.replace('expandir ▼', 'colapsar ▲');
+                }
+            }
+        });
+    });
+
+    // Click en venta individual
+    lista.querySelectorAll('[data-id-venta]').forEach(card => {
+        card.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = card.dataset.idVenta;
+            const venta = datos.ventas_diarias.find(v => String(v.id) === String(id));
+            if (venta) abrirModalVenta(venta);
+        });
+    });
+}
+
+// ============================================
+// ESTADÍSTICAS VENTAS
+// ============================================
+function actualizarEstadisticasVentas() {
+    const hoy = new Date();
+    const hoyStr = dateToFechaStr(hoy);
+    const mesActual = hoy.getMonth();
+    const anioActual = hoy.getFullYear();
+
+    let hoyTotal = 0, mesTotal = 0, efectivoTotal = 0, zelleTotal = 0;
+    let hoyDet = '—';
+    let mesCount = 0;
+
+    datos.ventas_diarias.forEach(v => {
+        const ef = parseFloat(v.efectivo_usd) || 0;
+        const ze = parseFloat(v.zelle_usd) || 0;
+        const pu = parseFloat(v.punto_usd) || 0;
+        const tot = parseFloat(v.total_usd) || (ef + ze + pu);
+
+        efectivoTotal += ef;
+        zelleTotal += ze;
+
+        if (v.fecha === hoyStr) {
+            hoyTotal = tot;
+            hoyDet = `Ef: ${formatearUSD(ef)} · Ze: ${formatearUSD(ze)} · Pu: ${formatearUSD(pu)}`;
+        }
+
+        const date = fechaStrToDate(v.fecha);
+        if (date && date.getMonth() === mesActual && date.getFullYear() === anioActual) {
+            mesTotal += tot;
+            mesCount++;
+        }
+    });
+
+    document.getElementById('statVentasHoy').textContent = formatearUSD(hoyTotal);
+    document.getElementById('statVentasHoyDetalle').textContent = hoyDet;
+    document.getElementById('statVentasMes').textContent = formatearUSD(mesTotal);
+    document.getElementById('statVentasMesDetalle').textContent = `${mesCount} día${mesCount !== 1 ? 's' : ''}`;
+    document.getElementById('statEfectivoTotal').textContent = formatearUSD(efectivoTotal);
+    document.getElementById('statZelleTotal').textContent = formatearUSD(zelleTotal);
+}
+
+// ============================================
+// MODAL NUEVA / EDITAR VENTA
+// ============================================
+function abrirModalVenta(venta) {
+    ventaEditando = venta;
+    const titulo = document.getElementById('tituloModalVenta');
+    const btnEliminar = document.getElementById('btnEliminarVenta');
+
+    if (venta) {
+        titulo.textContent = '✏️ Editar Venta Diaria';
+        btnEliminar.style.display = 'inline-block';
+
+        const partes = (venta.fecha || '').split('/');
+        if (partes.length === 3 && partes[0] && partes[1] && partes[2]) {
+            const [d, m, y] = partes;
+            document.getElementById('ventaFecha').value = `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+        } else {
+            document.getElementById('ventaFecha').valueAsDate = new Date();
+        }
+
+        document.getElementById('ventaEfectivo').value = venta.efectivo_usd || 0;
+        document.getElementById('ventaZelle').value = venta.zelle_usd || 0;
+        document.getElementById('ventaPuntoUsd').value = venta.punto_usd || 0;
+        document.getElementById('ventaNota').value = venta.nota || '';
+    } else {
+        titulo.textContent = '➕ Nueva Venta Diaria';
+        btnEliminar.style.display = 'none';
+
+        document.getElementById('ventaFecha').valueAsDate = new Date();
+        document.getElementById('ventaEfectivo').value = 0;
+        document.getElementById('ventaZelle').value = 0;
+        document.getElementById('ventaPuntoUsd').value = 0;
+        document.getElementById('ventaNota').value = '';
+    }
+
+    recalcularTotalVenta();
+    document.getElementById('modalVentaDiaria').classList.remove('hidden');
+}
+
+function recalcularTotalVenta() {
+    const ef = parseFloat(document.getElementById('ventaEfectivo').value) || 0;
+    const ze = parseFloat(document.getElementById('ventaZelle').value) || 0;
+    const pu = parseFloat(document.getElementById('ventaPuntoUsd').value) || 0;
+
+    const total = ef + ze + pu;
+
+    document.getElementById('ventaTotal').value = total.toFixed(2);
+
+    const info = document.getElementById('ventaInfoTasa');
+    info.innerHTML = `💵 Efectivo: <b>${formatearUSD(ef)}</b> · Zelle: <b>${formatearUSD(ze)}</b> · Punto: <b>${formatearUSD(pu)}</b>`;
+}
+
+function cerrarModalVenta() {
+    document.getElementById('modalVentaDiaria').classList.add('hidden');
+    ventaEditando = null;
+}
+
+async function guardarVentaDiaria() {
+    const fechaInput = document.getElementById('ventaFecha').value;
+    if (!fechaInput) {
+        mostrarToast('La fecha es obligatoria', 'error');
+        return;
+    }
+
+    const ef = parseFloat(document.getElementById('ventaEfectivo').value) || 0;
+    const ze = parseFloat(document.getElementById('ventaZelle').value) || 0;
+    const pu = parseFloat(document.getElementById('ventaPuntoUsd').value) || 0;
+    const nota = document.getElementById('ventaNota').value.trim();
+
+    const total = ef + ze + pu;
+
+    const fechaISO = fechaInput; // Ya está en YYYY-MM-DD
+
+    const payload = {
+        fecha: fechaISO,
+        efectivo_usd: ef,
+        zelle_usd: ze,
+        punto_bs: 0,
+        punto_usd: pu,
+        tasa_bcv: tasaActual || 0,
+        total_usd: parseFloat(total.toFixed(2)),
+        nota: nota
+    };
+
+    try {
+        if (ventaEditando) {
+            const { error } = await supabaseClient
+                .from('ventas_diarias')
+                .update({ ...payload, updated_at: new Date().toISOString() })
+                .eq('id', ventaEditando.id);
+            if (error) throw error;
+            mostrarToast('✅ Venta actualizada', 'success');
+        } else {
+            // Verificar si ya existe
+            const { data: existente } = await supabaseClient
+                .from('ventas_diarias')
+                .select('id')
+                .eq('fecha', fechaISO)
+                .maybeSingle();
+
+            if (existente) {
+                const { error } = await supabaseClient
+                    .from('ventas_diarias')
+                    .update({ ...payload, updated_at: new Date().toISOString() })
+                    .eq('id', existente.id);
+                if (error) throw error;
+                mostrarToast('✅ Venta actualizada (fecha existente)', 'success');
+            } else {
+                const { error } = await supabaseClient
+                    .from('ventas_diarias')
+                    .insert([payload]);
+                if (error) throw error;
+                mostrarToast('✅ Venta guardada', 'success');
+            }
+        }
+
+        cerrarModalVenta();
+        cargarDatos();
+    } catch (error) {
+        console.error('Error al guardar venta:', error);
+        mostrarToast('Error: ' + error.message, 'error');
+    }
+}
+
+async function eliminarVentaDiaria() {
+    if (!ventaEditando) return;
+    if (!confirm('¿Eliminar esta venta diaria?')) return;
+
+    try {
+        const { error } = await supabaseClient
+            .from('ventas_diarias')
+            .delete()
+            .eq('id', ventaEditando.id);
+        if (error) throw error;
+        mostrarToast('✅ Venta eliminada', 'success');
+        cerrarModalVenta();
+        cargarDatos();
+    } catch (error) {
+        mostrarToast('Error al eliminar: ' + error.message, 'error');
+    }
+}
+
+// ============================================
+// PEGAR DESDE EXCEL
+// ============================================
+function abrirModalPegarVentas() {
+    document.getElementById('textoPegarVentas').value = '';
+    document.getElementById('previewPegarVentas').innerHTML = '';
+    document.getElementById('modalPegarVentas').classList.remove('hidden');
+}
+
+function cerrarModalPegarVentas() {
+    document.getElementById('modalPegarVentas').classList.add('hidden');
+}
+
+function parsearFechaExcel(str) {
+    if (!str) return null;
+    str = String(str).trim();
+
+    let m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+    if (m) {
+        let d = parseInt(m[1]);
+        let mo = parseInt(m[2]);
+        let y = parseInt(m[3]);
+        if (y < 100) y += 2000;
+        return `${String(d).padStart(2,'0')}/${String(mo).padStart(2,'0')}/${y}`;
+    }
+    
+    m = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+    if (m) {
+        let y = parseInt(m[1]);
+        let mo = parseInt(m[2]);
+        let d = parseInt(m[3]);
+        return `${String(d).padStart(2,'0')}/${String(mo).padStart(2,'0')}/${y}`;
+    }
+    
+    return null;
+}
+
+function parsearMontoExcel(str) {
+    if (str === null || str === undefined || str === '') return 0;
+    let s = String(str).trim();
+    s = s.replace(/\$/g, '').replace(/\s/g, '');
+    if (s.includes(',') && s.includes('.')) {
+        s = s.replace(/\./g, '').replace(',', '.');
+    } else if (s.includes(',')) {
+        s = s.replace(',', '.');
+    }
+    const n = parseFloat(s);
+    return isNaN(n) ? 0 : n;
+}
+
+function previewPegadoVentas() {
+    const texto = document.getElementById('textoPegarVentas').value.trim();
+    const preview = document.getElementById('previewPegarVentas');
+    
+    if (!texto) {
+        preview.innerHTML = '';
+        return;
+    }
+    
+    const filas = texto.split('\n').map(l => l.trim()).filter(l => l);
+    let html = `<strong>Vista previa (${filas.length} filas):</strong><br>`;
+    html += `<table style="width:100%; border-collapse:collapse; font-size:11px; margin-top:6px;">
+        <tr style="background:#e9ecef;"><th style="padding:4px; border:1px solid #ccc;">Fecha</th><th style="padding:4px; border:1px solid #ccc;">Efec.</th><th style="padding:4px; border:1px solid #ccc;">Zelle</th><th style="padding:4px; border:1px solid #ccc;">Punto $</th></tr>`;
+    
+    filas.slice(0, 20).forEach(fila => {
+        const partes = fila.split('\t');
+        if (partes.length < 4) {
+            html += `<tr><td colspan="4" style="padding:4px; border:1px solid #ccc; color:#dc3545;">⚠️ Fila inválida</td></tr>`;
+            return;
+        }
+        const fecha = parsearFechaExcel(partes[0]);
+        const ef = parsearMontoExcel(partes[1]);
+        const ze = parsearMontoExcel(partes[2]);
+        const pu = parsearMontoExcel(partes[3]);
+        
+        html += `<tr>
+            <td style="padding:4px; border:1px solid #ccc;">${fecha || `<span style="color:#dc3545;">❌ ${escapeHtml(partes[0])}</span>`}</td>
+            <td style="padding:4px; border:1px solid #ccc;">$${ef.toFixed(2)}</td>
+            <td style="padding:4px; border:1px solid #ccc;">$${ze.toFixed(2)}</td>
+            <td style="padding:4px; border:1px solid #ccc;">$${pu.toFixed(2)}</td>
+        </tr>`;
+    });
+    
+    if (filas.length > 20) {
+        html += `<tr><td colspan="4" style="padding:4px; text-align:center; color:#6c757d;">... y ${filas.length - 20} filas más</td></tr>`;
+    }
+    
+    html += `</table>`;
+    preview.innerHTML = html;
+}
+
+async function procesarPegadoVentas() {
+    const texto = document.getElementById('textoPegarVentas').value.trim();
+    if (!texto) {
+        mostrarToast('Pega primero los datos de Excel', 'error');
+        return;
+    }
+
+    const filas = texto.split('\n').map(l => l.trim()).filter(l => l);
+    const ventas = [];
+    let errores = 0;
+
+    filas.forEach(fila => {
+        const partes = fila.split('\t');
+        if (partes.length < 4) { errores++; return; }
+        
+        const fechaLatina = parsearFechaExcel(partes[0]);
+        if (!fechaLatina) { errores++; return; }
+        
+        const fechaISO = fechaLatinaToISO(fechaLatina);
+        if (!fechaISO) { errores++; return; }
+        
+        const ef = parsearMontoExcel(partes[1]);
+        const ze = parsearMontoExcel(partes[2]);
+        const pu = parsearMontoExcel(partes[3]);
+        const total = ef + ze + pu;
+        
+        ventas.push({
+            fecha: fechaISO,
+            efectivo_usd: ef,
+            zelle_usd: ze,
+            punto_bs: 0,
+            punto_usd: pu,
+            tasa_bcv: tasaActual || 0,
+            total_usd: parseFloat(total.toFixed(2)),
+            nota: ''
+        });
+    });
+
+    if (ventas.length === 0) {
+        mostrarToast('No se pudieron procesar filas válidas', 'error');
+        return;
+    }
+
+    if (!confirm(`📥 Importar ${ventas.length} ventas\n\n${errores > 0 ? `⚠️ ${errores} filas con error serán ignoradas\n\n` : ''}Las fechas existentes se actualizarán.\n\n¿Continuar?`)) return;
+
+    mostrarToast(`⏳ Importando ${ventas.length} ventas...`, 'info');
+    const btn = document.getElementById('btnProcesarPegar');
+    btn.disabled = true;
+    btn.textContent = '⏳ Procesando...';
+
+    try {
+        let importadas = 0, actualizadas = 0, errCount = 0;
+
+        for (const v of ventas) {
+            try {
+                const { data: existente } = await supabaseClient
+                    .from('ventas_diarias')
+                    .select('id')
+                    .eq('fecha', v.fecha)
+                    .maybeSingle();
+
+                if (existente) {
+                    const { error } = await supabaseClient
+                        .from('ventas_diarias')
+                        .update({
+                            efectivo_usd: v.efectivo_usd,
+                            zelle_usd: v.zelle_usd,
+                            punto_bs: 0,
+                            punto_usd: v.punto_usd,
+                            tasa_bcv: v.tasa_bcv,
+                            total_usd: v.total_usd,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', existente.id);
+                    if (error) { errCount++; } else { actualizadas++; }
+                } else {
+                    const { error } = await supabaseClient
+                        .from('ventas_diarias')
+                        .insert([v]);
+                    if (error) { errCount++; } else { importadas++; }
+                }
+            } catch (e) {
+                console.error('Error en fila:', v.fecha, e);
+                errCount++;
+            }
+        }
+
+        btn.disabled = false;
+        btn.textContent = '✅ Procesar e Importar';
+
+        mostrarToast(`✅ ${importadas} nuevas, ${actualizadas} actualizadas${errCount > 0 ? `, ${errCount} errores` : ''}`, errCount > 0 ? 'info' : 'success');
+        cerrarModalPegarVentas();
+        document.getElementById('filtroMesVentas').value = 'todos';
+        filtros.ventas.mes = 'todos';
+        cargarDatos();
+    } catch (error) {
+        btn.disabled = false;
+        btn.textContent = '✅ Procesar e Importar';
+        console.error('Error al importar:', error);
+        mostrarToast('Error: ' + error.message, 'error');
+    }
+}
+
+// ============================================
+// EXPORTAR VENTAS
+// ============================================
+function exportarVentasCSV() {
+    if (datos.ventas_diarias.length === 0) { alert("No hay ventas para exportar."); return; }
+    const sep = ';';
+    let csv = `Fecha${sep}Efectivo USD${sep}Zelle USD${sep}Punto USD${sep}Total USD${sep}Nota\n`;
+    datos.ventas_diarias.forEach(v => {
+        csv += `"${v.fecha}"${sep}"${v.efectivo_usd || 0}"${sep}"${v.zelle_usd || 0}"${sep}"${v.punto_usd || 0}"${sep}"${v.total_usd || 0}"${sep}"${v.nota || ''}"\n`;
+    });
+    
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Ventas_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    mostrarToast('✅ CSV descargado', 'success');
+}
+
+function exportarVentasExcel() {
+    if (datos.ventas_diarias.length === 0) { alert("No hay ventas para exportar."); return; }
+    const encabezados = ['Fecha', 'Efectivo USD', 'Zelle USD', 'Punto USD', 'Total USD', 'Nota'];
+    const filas = datos.ventas_diarias.map(v => [v.fecha, v.efectivo_usd, v.zelle_usd, v.punto_usd, v.total_usd, v.nota]);
+    
+    let html = `<html><head><meta charset="UTF-8"><style>
+        table { border-collapse: collapse; font-family: Arial; font-size: 11pt; }
+        th { background-color: #28a745; color: #fff; font-weight: bold; border: 1px solid #000; padding: 8px; }
+        td { border: 1px solid #ccc; padding: 6px; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+    </style></head><body><table><thead><tr>`;
+    encabezados.forEach(h => html += `<th>${h}</th>`);
+    html += `</tr></thead><tbody>`;
+    filas.forEach(fila => {
+        html += `<tr>`;
+        fila.forEach(c => html += `<td>${c || ''}</td>`);
+        html += `</tr>`;
+    });
+    html += `</tbody></table></body></html>`;
+    
+    const blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Ventas_${new Date().toISOString().slice(0,10)}.xls`;
+    a.click();
+    URL.revokeObjectURL(url);
+    mostrarToast('✅ Excel descargado', 'success');
+}
+
+// ============================================
+// ESTADÍSTICAS (Facturas y Pagos)
 // ============================================
 function actualizarEstadisticas() {
     const hoy = new Date();
@@ -1894,8 +2675,6 @@ async function guardarEditarPago() {
         nombre_receptor: nombreReceptor || null,
         updated_at: new Date().toISOString()
     };
-
-    console.log("💾 Guardando cambios del pago:", pagoActualizado);
 
     try {
         const { error } = await supabaseClient
