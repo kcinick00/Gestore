@@ -42,6 +42,10 @@
             <span class="tab-icon">📦</span>
             <span class="tab-label">Inventario</span>
         </button>
+        <button class="tab" data-tab="ventas">
+            <span class="tab-icon">💵</span>
+            <span class="tab-label">Ventas</span>
+        </button>
     </nav>
 
     <!-- Contenido -->
@@ -105,7 +109,6 @@
                 </div>
             </div>
 
-            <!-- Botón para subir captura de pago -->
             <div style="margin-bottom: 16px; text-align: center;">
                 <input type="file" id="inputFotoPago" accept="image/*" style="display:none;">
                 <button type="button" id="btnSubirCapturaPago" class="btn btn-secondary" style="width: 100%; padding: 14px; font-size: 15px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700;">
@@ -155,6 +158,74 @@
 
             <div id="listaProductos" class="lista"></div>
         </section>
+
+        <!-- VENTAS DIARIAS -->
+        <section id="seccionVentas" class="seccion hidden">
+            <div class="stats-grid">
+                <div class="stat-card stat-verde">
+                    <div class="stat-label">Hoy</div>
+                    <div class="stat-value" id="statVentasHoy">$0.00</div>
+                    <div class="stat-sub" id="statVentasHoyDetalle">—</div>
+                </div>
+                <div class="stat-card stat-azul">
+                    <div class="stat-label">Este Mes</div>
+                    <div class="stat-value" id="statVentasMes">$0.00</div>
+                    <div class="stat-sub" id="statVentasMesDetalle">—</div>
+                </div>
+                <div class="stat-card stat-amarillo">
+                    <div class="stat-label">Efectivo</div>
+                    <div class="stat-value" id="statEfectivoTotal">$0.00</div>
+                    <div class="stat-sub">histórico</div>
+                </div>
+                <div class="stat-card stat-gris">
+                    <div class="stat-label">Zelle</div>
+                    <div class="stat-value" id="statZelleTotal">$0.00</div>
+                    <div class="stat-sub">histórico</div>
+                </div>
+            </div>
+
+            <!-- Botones de acción -->
+            <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+                <button type="button" id="btnNuevaVenta" class="btn" style="flex: 1; padding: 12px; font-size: 14px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700;">
+                    ➕ Nueva Venta
+                </button>
+                <button type="button" id="btnImportarVentas" class="btn" style="flex: 1; padding: 12px; font-size: 14px; background: #17a2b8; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700;">
+                    📥 Pegar desde Excel
+                </button>
+            </div>
+
+            <!-- Filtros -->
+            <div class="filtros">
+                <input type="text" id="buscarVentas" placeholder="🔍 Buscar por fecha o nota..." class="input-buscar">
+                <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                    <select id="filtroMesVentas" class="select-filtro" style="flex: 1; margin-bottom: 0;">
+                        <option value="todos" selected>Todos los meses</option>
+                        <option value="actual">Mes actual</option>
+                        <option value="anterior">Mes anterior</option>
+                    </select>
+                    <select id="vistaVentas" class="select-filtro" style="flex: 1; margin-bottom: 0; font-weight: 700;">
+                        <option value="diaria" selected>📅 Diaria</option>
+                        <option value="semanal">📆 Semanal</option>
+                        <option value="mensual">🗓️ Mensual</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="listaVentas" class="lista"></div>
+
+            <div id="resumenVentas" style="margin-top: 16px; padding: 12px; background: white; border-radius: var(--radius); box-shadow: var(--shadow); font-size: 13px; color: var(--text); text-align: center; font-weight: 600;">
+                —
+            </div>
+
+            <div style="display: flex; gap: 8px; margin-top: 12px;">
+                <button type="button" id="btnExportarVentasCSV" class="btn" style="flex: 1; padding: 10px; font-size: 13px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700;">
+                    📊 CSV
+                </button>
+                <button type="button" id="btnExportarVentasExcel" class="btn" style="flex: 1; padding: 10px; font-size: 13px; background: #217346; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700;">
+                    📈 Excel
+                </button>
+            </div>
+        </section>
     </main>
 
     <!-- Botón flotante -->
@@ -168,7 +239,6 @@
                 <button class="btn-cerrar" id="btnCerrarModal">✕</button>
             </div>
             <div class="modal-body">
-                <!-- DOS BOTONES: Tomar foto y Subir desde galería -->
                 <div id="seccionFoto" style="margin-bottom: 15px;">
                     <input type="file" id="inputFoto" accept="image/*" capture="environment" style="display:none;">
                     <input type="file" id="inputFotoGaleria" accept="image/*" style="display:none;">
@@ -238,7 +308,7 @@
         </div>
     </div>
 
-    <!-- Modal: Revisión de Productos (post-foto) -->
+    <!-- Modal: Revisión de Productos -->
     <div class="modal-overlay hidden" id="modalProductos">
         <div class="modal" style="max-height: 95vh;">
             <div class="modal-header" style="background: linear-gradient(135deg, #17a2b8, #0d6e7e);">
@@ -448,6 +518,85 @@
             </div>
             <div class="modal-body" id="detalleContenido"></div>
             <div class="modal-footer" id="detalleAcciones"></div>
+        </div>
+    </div>
+
+    <!-- Modal: Nueva / Editar Venta Diaria -->
+    <div class="modal-overlay hidden" id="modalVentaDiaria">
+        <div class="modal">
+            <div class="modal-header" style="background: linear-gradient(135deg, #28a745, #1e7e34);">
+                <h3 id="tituloModalVenta">➕ Nueva Venta Diaria</h3>
+                <button class="btn-cerrar" id="btnCerrarVenta">✕</button>
+            </div>
+            <div class="modal-body">
+                <label>Fecha:</label>
+                <input type="date" id="ventaFecha">
+
+                <label>Efectivo $ (USD):</label>
+                <div class="input-prefix">
+                    <span>$</span>
+                    <input type="number" id="ventaEfectivo" step="0.01" min="0" value="0">
+                </div>
+
+                <label>Zelle $ (USD):</label>
+                <div class="input-prefix">
+                    <span>$</span>
+                    <input type="number" id="ventaZelle" step="0.01" min="0" value="0">
+                </div>
+
+                <label>Punto $ (USD):</label>
+                <div class="input-prefix">
+                    <span>$</span>
+                    <input type="number" id="ventaPuntoUsd" step="0.01" min="0" value="0">
+                </div>
+
+                <div id="ventaInfoTasa" style="background:#e7f3ff; border-left:4px solid #007bff; padding:12px; border-radius:8px; margin-top:12px; font-size:13px;">
+                    💵 Todos los montos se ingresan en USD
+                </div>
+
+                <label>Total del día (USD):</label>
+                <div class="input-prefix">
+                    <span style="color:#28a745;">$</span>
+                    <input type="number" id="ventaTotal" step="0.01" readonly style="padding-left: 30px; background:#f0fdf4; color:#155724; font-weight:700;">
+                </div>
+
+                <label>Notas (opcional):</label>
+                <textarea id="ventaNota" placeholder="Ej: ventas del lunes feriado..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="btnEliminarVenta" style="flex: 0 0 auto; display:none;">🗑️ Eliminar</button>
+                <button class="btn btn-cancelar" id="btnCancelarVenta">Cancelar</button>
+                <button class="btn btn-primary" id="btnGuardarVenta" style="background:#28a745;">💾 Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Pegar desde Excel -->
+    <div class="modal-overlay hidden" id="modalPegarVentas">
+        <div class="modal">
+            <div class="modal-header" style="background: linear-gradient(135deg, #28a745, #1e7e34);">
+                <h3>📥 Pegar desde Excel</h3>
+                <button class="btn-cerrar" id="btnCerrarPegar">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="background:#fff3cd; border-left:4px solid #ffc107; padding:10px; border-radius:6px; margin-bottom:12px; font-size:12px;">
+                    <strong>Instrucciones:</strong><br>
+                    1. En Excel selecciona las filas (sin encabezados) con:<br>
+                    <code style="background:#fff; padding:2px 4px; border-radius:3px;">Fecha · Efectivo $ · Zelle $ · Punto $</code><br>
+                    2. Copia con <b>Ctrl+C</b>.<br>
+                    3. Pega abajo con <b>Ctrl+V</b>.<br>
+                    4. Presiona <b>Procesar e Importar</b>.<br><br>
+                    📅 <b>Fechas en formato DD/MM/YYYY</b> (latino).<br>
+                    💵 <b>Todos los montos en USD</b>.<br>
+                    📌 Si la fecha ya existe, se <b>actualiza</b>.
+                </div>
+                <textarea id="textoPegarVentas" style="width:100%; height:180px; font-family:monospace; font-size:12px; padding:10px; border:2px solid #28a745; border-radius:6px;" placeholder="Pega aquí desde Excel..."></textarea>
+                <div id="previewPegarVentas" style="margin-top:12px; font-size:12px; color:#555; max-height:200px; overflow-y:auto;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancelar" id="btnCancelarPegar">Cancelar</button>
+                <button class="btn btn-primary" id="btnProcesarPegar" style="background:#28a745;">✅ Procesar e Importar</button>
+            </div>
         </div>
     </div>
 
