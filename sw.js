@@ -1,5 +1,5 @@
 // Service Worker para Gestore PWA
-const CACHE_NAME = 'gestore-v6.12';
+const CACHE_NAME = 'gestore-v6.13';
 const URLS_TO_CACHE = [
     './',
     './index.html',
@@ -27,7 +27,6 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-    // No cachear llamadas a Supabase ni API BCV
     if (event.request.url.includes('supabase.co') || 
         event.request.url.includes('justcarlux.dev') ||
         event.request.url.includes('cdn.jsdelivr.net')) {
