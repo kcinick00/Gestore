@@ -1668,6 +1668,7 @@ function actualizarEstadisticas() {
         if (est === 'Pagada') { pag++; pagUSD += usd; pagBs += bs; }
         else if (est === 'Vencida') { venc++; vencUSD += usd; vencBs += bs; }
         else { pend++; pendUSD += usd; pendBs += bs; }
+        // (pag, pagUSD, pagBs se siguen calculando por si acaso)
     });
 
     document.getElementById('statPendientes').textContent = pend;
@@ -1677,10 +1678,6 @@ function actualizarEstadisticas() {
     document.getElementById('statVencidas').textContent = venc;
     document.getElementById('statVencidasUSD').textContent = '$' + vencUSD.toFixed(2);
     document.getElementById('statVencidasBs').textContent = formatearMontoBs(vencBs) + ' Bs';
-
-    document.getElementById('statPagadas').textContent = pag;
-    document.getElementById('statPagadasUSD').textContent = '$' + pagUSD.toFixed(2);
-    document.getElementById('statPagadasBs').textContent = formatearMontoBs(pagBs) + ' Bs';
 
     let totalBs = 0, totalUSD = 0, mes = 0, mesBs = 0, mesUSD = 0;
     datos.pagos.forEach(p => {
