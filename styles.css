@@ -1701,3 +1701,28 @@ main {
 #editTieneIva:checked + label {
     color: #0891b2;
 }
+/* ============================================
+   v8.1 - Estilos para checkbox de IVA
+   ============================================ */
+
+.tabla-productos-edit input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--primary);
+    margin: 0 auto;
+    display: block;
+}
+
+.tabla-productos-edit input[type="checkbox"]:hover {
+    transform: scale(1.15);
+}
+
+#editTieneIva {
+    accent-color: #06b6d4;
+    border-radius: 4px;
+}
+
+#editTieneIva:checked + label {
+    color: #0891b2;
+}
