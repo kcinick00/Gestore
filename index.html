@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#6f42c1">
+    <meta name="theme-color" content="#0070BA">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Gestore">
@@ -12,7 +12,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icons/icon-192.png">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <link rel="stylesheet" href="styles.css?v=6.15">
+    <link rel="stylesheet" href="styles.css?v=8.0">
 </head>
 <body>
     <!-- Header -->
@@ -21,7 +21,7 @@
             <div class="logo">
                 <span class="logo-icon">💰</span>
                 <span class="logo-text">Gestore</span>
-                <span class="version-badge">v7.0</span>
+                <span class="version-badge">v8.0</span>
             </div>
             <button class="btn-icon" id="btnRefresh" title="Actualizar">🔄</button>
         </div>
@@ -110,11 +110,21 @@
                 </div>
             </div>
 
-            <div style="margin-bottom: 16px; text-align: center;">
-                <input type="file" id="inputFotoPago" accept="image/*" style="display:none;">
-                <button type="button" id="btnSubirCapturaPago" class="btn btn-secondary" style="width: 100%; padding: 14px; font-size: 15px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 800; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
-                    📷 Subir Captura de Pago
+            <!-- Botones de acción pagos -->
+            <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+                <button type="button" id="btnSubirCapturaPago" class="btn btn-accion-verde">
+                    📷 Captura
                 </button>
+                <button type="button" id="btnNuevoPagoManual" class="btn btn-accion-azul">
+                    ➕ Nuevo Pago
+                </button>
+                <button type="button" id="btnImportarPdfPago" class="btn btn-accion-naranja">
+                    📄 PDF Banesco
+                </button>
+            </div>
+
+            <div style="margin-bottom: 12px; text-align: center;">
+                <input type="file" id="inputFotoPago" accept="image/*" style="display:none;">
                 <div id="estadoFotoPago" style="display: none; margin-top: 10px; font-size: 13px; color: #10b981; font-weight: 700;"></div>
             </div>
 
@@ -129,6 +139,12 @@
             </div>
 
             <div id="listaPagos" class="lista"></div>
+
+            <div style="margin-top: 20px; padding-top: 16px; border-top: 2px dashed var(--danger); text-align: center;">
+                <button type="button" id="btnBorrarTodosPagos" style="background: linear-gradient(135deg, #F43F5E, #E53935); color: white; border: none; padding: 12px 20px; border-radius: 12px; cursor: pointer; font-weight: 800; font-size: 13px; box-shadow: 0 4px 12px rgba(229, 57, 53, 0.3); width: 100%;">
+                    🗑️ Borrar TODOS los pagos
+                </button>
+            </div>
         </section>
 
         <!-- INVENTARIO -->
@@ -143,6 +159,11 @@
                     <div class="stat-label">Valor Inventario</div>
                     <div class="stat-value" id="statValorInventario">$0.00</div>
                     <div class="stat-sub" id="statValorInventarioBs">0,00 Bs</div>
+                </div>
+                <div class="stat-card stat-naranja" id="cardMargenPromedio" style="cursor: pointer;" title="Clic para aplicar margen masivo">
+                    <div class="stat-label">Margen Promedio ✏️</div>
+                    <div class="stat-value" id="statMargenPromedio">0%</div>
+                    <div class="stat-sub">clic para aplicar a todos</div>
                 </div>
             </div>
 
@@ -162,41 +183,41 @@
 
         <!-- VENTAS DIARIAS -->
         <section id="seccionVentas" class="seccion hidden">
-            <!-- 5 TARJETAS DE ESTADÍSTICAS -->
+            <!-- 5 BADGES NUEVOS -->
             <div class="stats-ventas-5">
-                <div class="stat-venta-card stat-venta-hoy">
-                    <div class="stat-venta-label">HOY</div>
-                    <div class="stat-venta-value" id="statVentasHoy">$0.00</div>
-                    <div class="stat-venta-sub" id="statVentasHoyDetalle">—</div>
-                </div>
                 <div class="stat-venta-card stat-venta-mes">
-                    <div class="stat-venta-label">ESTE MES</div>
-                    <div class="stat-venta-value" id="statVentasMes">$0.00</div>
-                    <div class="stat-venta-sub" id="statVentasMesDetalle">—</div>
+                    <div class="stat-venta-label">MES</div>
+                    <div class="stat-venta-value" id="badgeMes">$0.00</div>
+                    <div class="stat-venta-sub" id="badgeMesSub">—</div>
                 </div>
-                <div class="stat-venta-card stat-venta-efectivo">
-                    <div class="stat-venta-label">EFECTIVO</div>
-                    <div class="stat-venta-value" id="statEfectivoTotal">$0.00</div>
-                    <div class="stat-venta-sub">histórico</div>
+                <div class="stat-venta-card stat-venta-sem">
+                    <div class="stat-venta-label">SEM</div>
+                    <div class="stat-venta-value" id="badgeSem">$0.00</div>
+                    <div class="stat-venta-sub" id="badgeSemSub">—</div>
                 </div>
-                <div class="stat-venta-card stat-venta-zelle">
-                    <div class="stat-venta-label">ZELLE</div>
-                    <div class="stat-venta-value" id="statZelleTotal">$0.00</div>
-                    <div class="stat-venta-sub">histórico</div>
+                <div class="stat-venta-card stat-venta-sem-pas">
+                    <div class="stat-venta-label">SEM.PAS</div>
+                    <div class="stat-venta-value" id="badgeSemPas">$0.00</div>
+                    <div class="stat-venta-sub" id="badgeSemPasSub">—</div>
                 </div>
-                <div class="stat-venta-card stat-venta-punto">
-                    <div class="stat-venta-label">PUNTO $</div>
-                    <div class="stat-venta-value" id="statPuntoTotal">$0.00</div>
-                    <div class="stat-venta-sub">histórico</div>
+                <div class="stat-venta-card stat-venta-ult-dia">
+                    <div class="stat-venta-label">ÚLT.DÍA</div>
+                    <div class="stat-venta-value" id="badgeUltDia">$0.00</div>
+                    <div class="stat-venta-sub" id="badgeUltDiaSub">—</div>
+                </div>
+                <div class="stat-venta-card stat-venta-prom-dia">
+                    <div class="stat-venta-label">PROM.DÍA</div>
+                    <div class="stat-venta-value" id="badgePromDia">$0.00</div>
+                    <div class="stat-venta-sub" id="badgePromDiaSub">—</div>
                 </div>
             </div>
 
             <!-- Botones de acción -->
             <div style="display: flex; gap: 8px; margin-bottom: 14px;">
-                <button type="button" id="btnNuevaVenta" class="btn" style="flex: 1; padding: 13px; font-size: 14px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 800; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+                <button type="button" id="btnNuevaVenta" class="btn btn-accion-verde">
                     ➕ Nueva Venta
                 </button>
-                <button type="button" id="btnImportarVentas" class="btn" style="flex: 1; padding: 13px; font-size: 14px; background: linear-gradient(135deg, #06b6d4, #0891b2); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 800; box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);">
+                <button type="button" id="btnImportarVentas" class="btn btn-accion-cyan">
                     📥 Pegar desde Excel
                 </button>
             </div>
@@ -220,15 +241,15 @@
 
             <div id="listaVentas" class="lista"></div>
 
-            <div id="resumenVentas" style="margin-top: 16px; padding: 14px; background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow-sm); font-size: 13px; color: var(--text); text-align: center; font-weight: 700;">
+            <div id="resumenVentas" style="margin-top: 16px; padding: 14px; background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); font-size: 13px; color: var(--text); text-align: center; font-weight: 700;">
                 —
             </div>
 
             <div style="display: flex; gap: 8px; margin-top: 12px;">
-                <button type="button" id="btnExportarVentasCSV" class="btn" style="flex: 1; padding: 11px; font-size: 13px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 800;">
+                <button type="button" id="btnExportarVentasCSV" class="btn btn-accion-verde">
                     📊 CSV
                 </button>
-                <button type="button" id="btnExportarVentasExcel" class="btn" style="flex: 1; padding: 11px; font-size: 13px; background: linear-gradient(135deg, #217346, #185c37); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 800;">
+                <button type="button" id="btnExportarVentasExcel" class="btn btn-accion-excel">
                     📈 Excel
                 </button>
             </div>
@@ -250,12 +271,8 @@
                     <input type="file" id="inputFoto" accept="image/*" capture="environment" style="display:none;">
                     <input type="file" id="inputFotoGaleria" accept="image/*" style="display:none;">
                     <div style="display: flex; gap: 8px;">
-                        <button type="button" id="btnTomarFoto" class="btn btn-secondary" style="flex: 1; padding: 14px; font-size: 14px; background: linear-gradient(135deg, #06b6d4, #0891b2); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 800;">
-                            📷 Tomar Foto
-                        </button>
-                        <button type="button" id="btnSubirGaleria" class="btn btn-secondary" style="flex: 1; padding: 14px; font-size: 14px; background: linear-gradient(135deg, #6b7280, #4b5563); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 800;">
-                            🖼️ Subir Imagen
-                        </button>
+                        <button type="button" id="btnTomarFoto" class="btn btn-accion-cyan" style="flex: 1;">📷 Tomar Foto</button>
+                        <button type="button" id="btnSubirGaleria" class="btn btn-accion-gris" style="flex: 1;">🖼️ Subir Imagen</button>
                     </div>
                     <div id="estadoFoto" style="display: none; margin-top: 10px; font-size: 13px; color: #06b6d4; font-weight: 700; text-align: center;"></div>
                     <div id="previewFoto" style="margin-top: 10px; display: none; text-align: center;">
@@ -289,7 +306,7 @@
                     <span style="color: var(--success);">Bs</span>
                     <input type="number" id="formMontoBs" step="0.01" placeholder="87150.73" style="padding-left: 50px;" inputmode="decimal">
                 </div>
-                <div style="font-size: 11px; color: var(--text-light); margin-top: 4px;">
+                <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">
                     💡 Si ingresas el monto en Bs, se convierte automáticamente a USD con la tasa del día.
                 </div>
 
@@ -330,7 +347,7 @@
 
                 <div style="display: flex; gap: 8px; margin-bottom: 12px; align-items: center; flex-wrap: wrap;">
                     <label style="font-size: 12px; font-weight: 700; margin: 0; color: var(--text-secondary);">Margen global (%):</label>
-                    <input type="number" id="margenGlobal" value="30" step="1" min="0" max="500" style="width: 70px; padding: 6px; border: 2px solid #06b6d4; border-radius: 6px; font-size: 13px; background: var(--bg-elevated); color: var(--text);" inputmode="decimal">
+                    <input type="number" id="margenGlobal" value="30" step="1" min="0" max="500" style="width: 70px; padding: 6px; border: 2px solid #06b6d4; border-radius: 6px; font-size: 13px; background: var(--surface); color: var(--text);" inputmode="decimal">
                     <button type="button" id="btnAplicarMargenGlobal" style="padding: 6px 12px; background: #06b6d4; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 700;">
                         Aplicar a todos
                     </button>
@@ -373,7 +390,7 @@
 
                 <label>Unidades por Caja (0 = venta por unidad):</label>
                 <input type="number" id="editUnidadesCaja" step="1" min="0" placeholder="Ej: 24, 12, 0" inputmode="numeric">
-                <div style="font-size: 11px; color: var(--text-light); margin-top: 4px;">
+                <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">
                     💡 Si el precio de compra es por caja, ingresa cuántas unidades tiene. Si es por unidad, deja 0.
                 </div>
 
@@ -463,6 +480,114 @@
         </div>
     </div>
 
+    <!-- Modal: Nuevo Pago Manual -->
+    <div class="modal-overlay hidden" id="modalNuevoPago">
+        <div class="modal">
+            <div class="modal-header" style="background: linear-gradient(135deg, #2196F3, #0070BA);">
+                <h3>➕ Nuevo Pago Manual</h3>
+                <button class="btn-cerrar" id="btnCerrarNuevoPago">✕</button>
+            </div>
+            <div class="modal-body">
+                <label>Beneficiario:</label>
+                <input type="text" id="nuevoPagoBeneficiario" placeholder="Ej: Juan Pérez" autocomplete="off" required>
+
+                <label>Tipo de Pago:</label>
+                <select id="nuevoPagoTipo">
+                    <option value="transferencia">🏦 Transferencia</option>
+                    <option value="pago_movil">📱 Pago Móvil</option>
+                </select>
+
+                <label>Monto (Bs):</label>
+                <div class="input-prefix">
+                    <span style="color: var(--success);">Bs</span>
+                    <input type="number" id="nuevoPagoMontoBs" step="0.01" style="padding-left: 50px;" inputmode="decimal" required>
+                </div>
+
+                <div id="nuevoPagoEquivalente" style="background: rgba(6, 182, 212, 0.08); border-left: 4px solid #06b6d4; padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 14px; font-weight: 700; color: #0891b2;">
+                    💵 Equivalente USD: --
+                </div>
+
+                <label>Referencia / N° Operación:</label>
+                <input type="text" id="nuevoPagoReferencia" placeholder="Ej: 123456789" autocomplete="off">
+
+                <label>Fecha:</label>
+                <input type="date" id="nuevoPagoFecha">
+
+                <label>Banco Receptor:</label>
+                <input type="text" id="nuevoPagoBanco" placeholder="Ej: Banesco, Mercantil..." autocomplete="off">
+
+                <label>Nombre del Receptor:</label>
+                <input type="text" id="nuevoPagoNombreReceptor" placeholder="Ej: Juan Pérez" autocomplete="off">
+
+                <label>Cédula o RIF del Receptor:</label>
+                <input type="text" id="nuevoPagoCedulaReceptor" placeholder="Ej: V-12345678" autocomplete="off">
+
+                <label>Teléfono (solo Pago Móvil):</label>
+                <input type="tel" id="nuevoPagoTelefonoReceptor" placeholder="Ej: 04141234567" autocomplete="off" inputmode="tel">
+
+                <label>Concepto:</label>
+                <input type="text" id="nuevoPagoConcepto" placeholder="Pago Móvil, Transferencia, etc." autocomplete="off">
+
+                <label>Notas (opcional):</label>
+                <textarea id="nuevoPagoNotas" placeholder="Observaciones..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancelar" id="btnCancelarNuevoPago">Cancelar</button>
+                <button class="btn btn-primary" id="btnGuardarNuevoPago">💾 Guardar Pago</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Importar PDF Banesco -->
+    <div class="modal-overlay hidden" id="modalImportarPdf">
+        <div class="modal">
+            <div class="modal-header" style="background: linear-gradient(135deg, #FF6B00, #FF8534);">
+                <h3>📄 Importar PDFs de Banesco</h3>
+                <button class="btn-cerrar" id="btnCerrarImportarPdf">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="background: rgba(255, 107, 0, 0.08); border-left: 4px solid #FF6B00; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 12px; color: var(--text);">
+                    <strong>Instrucciones:</strong><br>
+                    1. Descarga los PDFs de transferencias desde Banesco.<br>
+                    2. Selecciona uno o varios PDFs aquí.<br>
+                    3. La app extraerá los datos automáticamente.<br>
+                    4. Usa la <b>tasa BCV histórica</b> para convertir a USD.<br>
+                    <br>
+                    📌 Detecta duplicados automáticamente.
+                </div>
+
+                <input type="file" id="inputPdfsBanesco" accept=".pdf,application/pdf" multiple style="display: none;">
+
+                <div id="dropZonePdf" style="border: 3px dashed #FF6B00; border-radius: var(--r-lg); padding: 40px 20px; text-align: center; cursor: pointer; background: rgba(255, 107, 0, 0.04); transition: all 0.2s;">
+                    <div style="font-size: 48px; margin-bottom: 12px;">📄</div>
+                    <div style="font-weight: 800; color: #FF6B00; font-size: 15px; margin-bottom: 6px;">
+                        Toca para seleccionar PDFs
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-tertiary);">
+                        o arrastra varios archivos aquí
+                    </div>
+                </div>
+
+                <div id="progresoPdf" style="display: none; margin-top: 15px;">
+                    <div style="font-size: 13px; font-weight: 700; color: #FF6B00; margin-bottom: 6px;" id="progresoPdfTexto">
+                        Procesando...
+                    </div>
+                    <div style="width: 100%; height: 8px; background: var(--bg-subtle); border-radius: var(--r-full); overflow: hidden;">
+                        <div id="progresoPdfBarra" style="height: 100%; background: linear-gradient(90deg, #FF6B00, #FF8534); width: 0%; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+
+                <div id="resultadosPdf" style="margin-top: 15px;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancelar" id="btnCancelarImportarPdf">Cerrar</button>
+                <button class="btn btn-primary" id="btnImportarPdfGuardar" style="background: linear-gradient(135deg, #FF6B00, #FF8534); box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);" disabled>
+                    💾 Guardar Pagos
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal: Editar Pago -->
     <div class="modal-overlay hidden" id="modalEditarPago">
         <div class="modal">
@@ -473,6 +598,12 @@
             <div class="modal-body">
                 <label>Beneficiario:</label>
                 <input type="text" id="editPagoBeneficiario" autocomplete="off">
+
+                <label>Tipo de Pago:</label>
+                <select id="editPagoTipo">
+                    <option value="transferencia">🏦 Transferencia</option>
+                    <option value="pago_movil">📱 Pago Móvil</option>
+                </select>
 
                 <label>Monto (Bs):</label>
                 <div class="input-prefix">
@@ -512,6 +643,32 @@
                 <button class="btn btn-danger" id="btnEliminarPagoDesdeModal" style="flex: 0 0 auto;">🗑️</button>
                 <button class="btn btn-cancelar" id="btnCancelarEditarPago">Cancelar</button>
                 <button class="btn btn-primary" id="btnGuardarEditarPago" style="background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">💾 Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Margen Masivo -->
+    <div class="modal-overlay hidden" id="modalMargenMasivo">
+        <div class="modal">
+            <div class="modal-header" style="background: linear-gradient(135deg, #FFA000, #FF6B00);">
+                <h3>📊 Aplicar Margen Masivo</h3>
+                <button class="btn-cerrar" id="btnCerrarMargenMasivo">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="background: rgba(255, 160, 0, 0.1); border-left: 4px solid #FFA000; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; color: var(--text);">
+                    ⚠️ Esto aplicará el nuevo margen a <b>TODOS los productos</b> del inventario y recalculará sus precios de venta.
+                </div>
+
+                <label>Nuevo margen (%):</label>
+                <input type="number" id="inputMargenMasivo" step="1" min="0" max="500" placeholder="Ej: 35" inputmode="decimal">
+
+                <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 8px;">
+                    💡 El precio de venta se recalcula como: <code>precio_compra × (1 + margen/100)</code>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancelar" id="btnCancelarMargenMasivo">Cancelar</button>
+                <button class="btn btn-primary" id="btnAplicarMargenMasivo" style="background: linear-gradient(135deg, #FFA000, #FF6B00); box-shadow: 0 4px 12px rgba(255, 160, 0, 0.3);">✅ Aplicar a Todos</button>
             </div>
         </div>
     </div>
@@ -597,7 +754,7 @@
                     💵 <b>Todos los montos en USD</b>.<br>
                     📌 Si la fecha ya existe, se <b>actualiza</b>.
                 </div>
-                <textarea id="textoPegarVentas" style="width:100%; height:180px; font-family: 'SF Mono', Monaco, 'Courier New', monospace; font-size:12px; padding:12px; border:2px solid var(--success); border-radius:10px; background: var(--bg-elevated); color: var(--text);" placeholder="Pega aquí desde Excel..." autocomplete="off" spellcheck="false"></textarea>
+                <textarea id="textoPegarVentas" style="width:100%; height:180px; font-family: 'SF Mono', Monaco, 'Courier New', monospace; font-size:12px; padding:12px; border:2px solid var(--success); border-radius:10px; background: var(--surface); color: var(--text);" placeholder="Pega aquí desde Excel..." autocomplete="off" spellcheck="false"></textarea>
                 <div id="previewPegarVentas" style="margin-top:12px; font-size:12px; color:var(--text-secondary); max-height:200px; overflow-y:auto;"></div>
             </div>
             <div class="modal-footer">
@@ -611,7 +768,10 @@
     <div class="toast hidden" id="toast"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="app.js?v=6.15"></script>
+    <script src="libs/pdf.min.js"></script>
+    <script src="tasas-bcv.js"></script>
+    <script src="importar-pdf.js"></script>
+    <script src="app.js?v=8.0"></script>
 
     <script>
         if ('serviceWorker' in navigator) {
