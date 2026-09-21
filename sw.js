@@ -1,5 +1,5 @@
 // Service Worker para Gestore PWA
-const CACHE_NAME = 'gestore-v6.13';
+const CACHE_NAME = 'gestore-v6.14';
 const URLS_TO_CACHE = [
     './',
     './index.html',
