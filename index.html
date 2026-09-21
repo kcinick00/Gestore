@@ -12,7 +12,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icons/icon-192.png">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <link rel="stylesheet" href="styles.css?v=8.1">
+    <link rel="stylesheet" href="styles.css?v=8.2">
 </head>
 <body>
     <!-- Header -->
@@ -21,7 +21,7 @@
             <div class="logo">
                 <span class="logo-icon">💰</span>
                 <span class="logo-text">Gestore</span>
-                <span class="version-badge">v8.1</span>
+                <span class="version-badge">v8.2</span>
             </div>
             <button class="btn-icon" id="btnRefresh" title="Actualizar">🔄</button>
         </div>
@@ -110,7 +110,6 @@
                 </div>
             </div>
 
-            <!-- Botones de acción pagos -->
             <div style="display: flex; gap: 8px; margin-bottom: 14px;">
                 <button type="button" id="btnSubirCapturaPago" class="btn btn-accion-verde">
                     📷 Captura
@@ -183,7 +182,6 @@
 
         <!-- VENTAS DIARIAS -->
         <section id="seccionVentas" class="seccion hidden">
-            <!-- 5 BADGES -->
             <div class="stats-ventas-5">
                 <div class="stat-venta-card stat-venta-mes">
                     <div class="stat-venta-label">MES</div>
@@ -212,7 +210,6 @@
                 </div>
             </div>
 
-            <!-- Botones de acción -->
             <div style="display: flex; gap: 8px; margin-bottom: 14px;">
                 <button type="button" id="btnNuevaVenta" class="btn btn-accion-verde">
                     ➕ Nueva Venta
@@ -222,7 +219,6 @@
                 </button>
             </div>
 
-            <!-- Filtros -->
             <div class="filtros">
                 <input type="text" id="buscarVentas" placeholder="Buscar por fecha o nota..." class="input-buscar" enterkeyhint="search" autocomplete="off">
                 <div style="display: flex; gap: 8px; margin-bottom: 10px;">
@@ -383,13 +379,13 @@
                 <label>Stock actual:</label>
                 <input type="number" id="editStock" step="0.01" min="0" inputmode="decimal">
 
-                <label>Precio de Compra (USD) - SIN IVA:</label>
+                <label>Precio de Compra (USD) - BASE sin IVA:</label>
                 <div class="input-prefix">
                     <span>$</span>
-                    <input type="number" id="editPrecioCompra" step="0.01" min="0" inputmode="decimal">
+                    <input type="number" id="editPrecioCompra" step="0.0001" min="0" inputmode="decimal">
                 </div>
                 <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">
-                    💡 Ingresa el precio BASE (sin IVA). Si el producto lleva IVA, se suma automáticamente.
+                    💡 Ingresa el precio BASE tal como aparece en la factura (SIN IVA). El sistema aplica IVA si corresponde.
                 </div>
 
                 <label>Unidades por Caja (0 = venta por unidad):</label>
@@ -783,7 +779,7 @@
     <script src="libs/pdf.min.js"></script>
     <script src="tasas-bcv.js"></script>
     <script src="importar-pdf.js"></script>
-    <script src="app.js?v=8.1"></script>
+    <script src="app.js?v=8.2"></script>
 
     <script>
         if ('serviceWorker' in navigator) {
