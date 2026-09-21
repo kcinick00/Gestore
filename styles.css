@@ -672,3 +672,70 @@ main { padding: 16px; }
     .modal { border-radius: 20px; margin-bottom: 20px; max-height: 90vh; }
     .modal-overlay { align-items: center; }
 }
+
+
+/* ============================================
+   TARJETAS DE VENTAS DIARIAS (5 tarjetas)
+   ============================================ */
+.stats-ventas-5 {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.stat-venta-card {
+    padding: 10px 6px;
+    border-radius: var(--radius);
+    color: white;
+    text-align: center;
+    box-shadow: var(--shadow);
+    min-width: 0;
+}
+
+.stat-venta-hoy     { background: linear-gradient(135deg, #28a745, #1e7e34); }
+.stat-venta-mes     { background: linear-gradient(135deg, #007bff, #0056b3); }
+.stat-venta-efectivo{ background: linear-gradient(135deg, #ffc107, #e0a800); color: #333; }
+.stat-venta-zelle   { background: linear-gradient(135deg, #6c757d, #495057); }
+.stat-venta-punto   { background: linear-gradient(135deg, #17a2b8, #0d6e7e); }
+
+.stat-venta-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    opacity: 0.9;
+    margin-bottom: 3px;
+    font-weight: 700;
+}
+
+.stat-venta-value {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 2px;
+    word-break: break-word;
+    line-height: 1.2;
+}
+
+.stat-venta-sub {
+    font-size: 8px;
+    opacity: 0.85;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+/* En móvil muy pequeño, las tarjetas se achican un poco */
+@media (max-width: 400px) {
+    .stats-ventas-5 {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 4px;
+    }
+    .stat-venta-card {
+        padding: 8px 4px;
+    }
+    .stat-venta-value {
+        font-size: 12px;
+    }
+    .stat-venta-label {
+        font-size: 8px;
+    }
+}
