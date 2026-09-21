@@ -1,5 +1,5 @@
 // ============================================
-// GESTORE PWA - v6.14
+// GESTORE PWA - v7
 // Changelog:
 // v6.14 - Agregada 5ta tarjeta "PUNTO $" en Ventas Diarias
 // v6.13 - Pestaña Ventas Diarias (diaria/semanal/mensual)
