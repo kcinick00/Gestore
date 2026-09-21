@@ -1,5 +1,8 @@
 // ============================================
-// GESTORE PWA - Lógica principal
+// GESTORE PWA - v6.14
+// Changelog:
+// v6.14 - Agregada 5ta tarjeta "PUNTO $" en Ventas Diarias
+// v6.13 - Pestaña Ventas Diarias (diaria/semanal/mensual)
 // ============================================
 
 const SUPABASE_URL = "https://kpsurjxypipxtjizlyon.supabase.co";
@@ -37,7 +40,7 @@ let ventaEditando = null;
 // INICIALIZACIÓN
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("🚀 Gestore PWA iniciado");
+    console.log("🚀 Gestore PWA v6.14 iniciado");
     configurarEventos();
     cargarTasa();
     cargarDatos();
@@ -151,13 +154,11 @@ function configurarEventos() {
         document.getElementById('modalDetalle').classList.add('hidden');
     });
 
-    // Modal editar producto
     document.getElementById('btnCerrarEditarProducto').addEventListener('click', cerrarModalEditarProducto);
     document.getElementById('btnCancelarEditarProducto').addEventListener('click', cerrarModalEditarProducto);
     document.getElementById('btnGuardarEditarProducto').addEventListener('click', guardarEditarProducto);
     document.getElementById('btnEliminarEditarProducto').addEventListener('click', eliminarProductoDesdeModal);
 
-    // Cálculo automático del precio de venta
     document.getElementById('editPrecioCompra').addEventListener('input', recalcularPrecioVenta);
     document.getElementById('editPrecioCompra').addEventListener('change', recalcularPrecioVenta);
     document.getElementById('editMargen').addEventListener('input', recalcularPrecioVenta);
@@ -187,19 +188,16 @@ function configurarEventos() {
     document.getElementById('formMontoBs').addEventListener('input', convertirBsAUSD);
     document.getElementById('formMontoUSD').addEventListener('input', actualizarEquivalente);
 
-    // Captura de pago
     document.getElementById('btnSubirCapturaPago').addEventListener('click', () => {
         document.getElementById('inputFotoPago').click();
     });
     document.getElementById('inputFotoPago').addEventListener('change', procesarCapturaPago);
     
-    // Modal de confirmar pago
     document.getElementById('btnCerrarConfirmarPago').addEventListener('click', cerrarModalConfirmarPago);
     document.getElementById('btnCancelarConfirmarPago').addEventListener('click', cerrarModalConfirmarPago);
     document.getElementById('btnGuardarPago').addEventListener('click', guardarPagoDesdeCaptura);
     document.getElementById('pagoMontoBs').addEventListener('input', actualizarEquivalentePago);
 
-    // Modal editar pago
     document.getElementById('btnCerrarEditarPago').addEventListener('click', cerrarModalEditarPago);
     document.getElementById('btnCancelarEditarPago').addEventListener('click', cerrarModalEditarPago);
     document.getElementById('btnGuardarEditarPago').addEventListener('click', guardarEditarPago);
@@ -347,7 +345,6 @@ function dbToProducto(row) {
 }
 
 function dbToVentaDiaria(row) {
-    // Conversión ISO (YYYY-MM-DD) → DD/MM/YYYY
     let fechaLatina = '';
     if (row.fecha) {
         const partes = String(row.fecha).split('-');
@@ -930,7 +927,6 @@ function renderizarVentas() {
 
     let filtradas = [...datos.ventas_diarias];
 
-    // Filtro por mes
     if (filtros.ventas.mes !== 'todos') {
         const hoy = new Date();
         let mesObjetivo = hoy.getMonth();
@@ -1135,7 +1131,6 @@ function renderizarVentasAgrupada(lista, filtradas, tipo) {
 
     lista.innerHTML = html;
 
-    // Toggle de grupos
     lista.querySelectorAll('[data-grupo]').forEach(card => {
         card.addEventListener('click', (e) => {
             if (e.target.closest('[data-id-venta]')) return;
@@ -1153,7 +1148,6 @@ function renderizarVentasAgrupada(lista, filtradas, tipo) {
         });
     });
 
-    // Click en venta individual
     lista.querySelectorAll('[data-id-venta]').forEach(card => {
         card.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -1173,7 +1167,7 @@ function actualizarEstadisticasVentas() {
     const mesActual = hoy.getMonth();
     const anioActual = hoy.getFullYear();
 
-    let hoyTotal = 0, mesTotal = 0, efectivoTotal = 0, zelleTotal = 0;
+    let hoyTotal = 0, mesTotal = 0, efectivoTotal = 0, zelleTotal = 0, puntoTotal = 0;
     let hoyDet = '—';
     let mesCount = 0;
 
@@ -1185,6 +1179,7 @@ function actualizarEstadisticasVentas() {
 
         efectivoTotal += ef;
         zelleTotal += ze;
+        puntoTotal += pu;
 
         if (v.fecha === hoyStr) {
             hoyTotal = tot;
@@ -1204,6 +1199,7 @@ function actualizarEstadisticasVentas() {
     document.getElementById('statVentasMesDetalle').textContent = `${mesCount} día${mesCount !== 1 ? 's' : ''}`;
     document.getElementById('statEfectivoTotal').textContent = formatearUSD(efectivoTotal);
     document.getElementById('statZelleTotal').textContent = formatearUSD(zelleTotal);
+    document.getElementById('statPuntoTotal').textContent = formatearUSD(puntoTotal);
 }
 
 // ============================================
@@ -1277,7 +1273,7 @@ async function guardarVentaDiaria() {
 
     const total = ef + ze + pu;
 
-    const fechaISO = fechaInput; // Ya está en YYYY-MM-DD
+    const fechaISO = fechaInput;
 
     const payload = {
         fecha: fechaISO,
@@ -1299,7 +1295,6 @@ async function guardarVentaDiaria() {
             if (error) throw error;
             mostrarToast('✅ Venta actualizada', 'success');
         } else {
-            // Verificar si ya existe
             const { data: existente } = await supabaseClient
                 .from('ventas_diarias')
                 .select('id')
