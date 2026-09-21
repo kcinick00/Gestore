@@ -12,7 +12,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icons/icon-192.png">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <link rel="stylesheet" href="styles.css?v=6.14">
+    <link rel="stylesheet" href="styles.css?v=6.15">
 </head>
 <body>
     <!-- Header -->
@@ -21,7 +21,7 @@
             <div class="logo">
                 <span class="logo-icon">💰</span>
                 <span class="logo-text">Gestore</span>
-                <span style="font-size: 10px; opacity: 0.7; margin-left: 6px; background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 6px;">v6.14</span>
+                <span class="version-badge">v6.15</span>
             </div>
             <button class="btn-icon" id="btnRefresh" title="Actualizar">🔄</button>
         </div>
@@ -75,7 +75,7 @@
             </div>
 
             <div class="filtros">
-                <input type="text" id="buscarFacturas" placeholder="🔍 Buscar proveedor..." class="input-buscar">
+                <input type="text" id="buscarFacturas" placeholder="Buscar proveedor..." class="input-buscar" enterkeyhint="search" autocomplete="off">
                 <select id="filtroEstatusFacturas" class="select-filtro">
                     <option value="activas" selected>Vencidas + Pendientes</option>
                     <option value="vencidas">Solo Vencidas</option>
@@ -112,14 +112,14 @@
 
             <div style="margin-bottom: 16px; text-align: center;">
                 <input type="file" id="inputFotoPago" accept="image/*" style="display:none;">
-                <button type="button" id="btnSubirCapturaPago" class="btn btn-secondary" style="width: 100%; padding: 14px; font-size: 15px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700;">
-                    📷 Subir Captura de Pago (Pago Móvil o Transferencia)
+                <button type="button" id="btnSubirCapturaPago" class="btn btn-secondary" style="width: 100%; padding: 14px; font-size: 15px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 800; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+                    📷 Subir Captura de Pago
                 </button>
-                <div id="estadoFotoPago" style="display: none; margin-top: 10px; font-size: 13px; color: #28a745; font-weight: 600;"></div>
+                <div id="estadoFotoPago" style="display: none; margin-top: 10px; font-size: 13px; color: #10b981; font-weight: 700;"></div>
             </div>
 
             <div class="filtros">
-                <input type="text" id="buscarPagos" placeholder="🔍 Buscar beneficiario..." class="input-buscar">
+                <input type="text" id="buscarPagos" placeholder="Buscar beneficiario..." class="input-buscar" enterkeyhint="search" autocomplete="off">
                 <div class="filtros-chips" id="chipsOrdenPagos">
                     <button class="chip active" data-orden="fecha">📅 Fecha</button>
                     <button class="chip" data-orden="beneficiario">👤 Beneficiario</button>
@@ -147,7 +147,7 @@
             </div>
 
             <div class="filtros">
-                <input type="text" id="buscarProductos" placeholder="🔍 Buscar producto..." class="input-buscar">
+                <input type="text" id="buscarProductos" placeholder="Buscar producto..." class="input-buscar" enterkeyhint="search" autocomplete="off">
                 <div class="filtros-chips" id="chipsOrdenProductos">
                     <button class="chip active" data-orden="nombre">🔤 Nombre</button>
                     <button class="chip" data-orden="stock">📦 Stock</button>
@@ -193,17 +193,17 @@
 
             <!-- Botones de acción -->
             <div style="display: flex; gap: 8px; margin-bottom: 14px;">
-                <button type="button" id="btnNuevaVenta" class="btn" style="flex: 1; padding: 12px; font-size: 14px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700;">
+                <button type="button" id="btnNuevaVenta" class="btn" style="flex: 1; padding: 13px; font-size: 14px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 800; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
                     ➕ Nueva Venta
                 </button>
-                <button type="button" id="btnImportarVentas" class="btn" style="flex: 1; padding: 12px; font-size: 14px; background: #17a2b8; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700;">
+                <button type="button" id="btnImportarVentas" class="btn" style="flex: 1; padding: 13px; font-size: 14px; background: linear-gradient(135deg, #06b6d4, #0891b2); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 800; box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);">
                     📥 Pegar desde Excel
                 </button>
             </div>
 
             <!-- Filtros -->
             <div class="filtros">
-                <input type="text" id="buscarVentas" placeholder="🔍 Buscar por fecha o nota..." class="input-buscar">
+                <input type="text" id="buscarVentas" placeholder="Buscar por fecha o nota..." class="input-buscar" enterkeyhint="search" autocomplete="off">
                 <div style="display: flex; gap: 8px; margin-bottom: 10px;">
                     <select id="filtroMesVentas" class="select-filtro" style="flex: 1; margin-bottom: 0;">
                         <option value="todos" selected>Todos los meses</option>
@@ -220,15 +220,15 @@
 
             <div id="listaVentas" class="lista"></div>
 
-            <div id="resumenVentas" style="margin-top: 16px; padding: 12px; background: white; border-radius: var(--radius); box-shadow: var(--shadow); font-size: 13px; color: var(--text); text-align: center; font-weight: 600;">
+            <div id="resumenVentas" style="margin-top: 16px; padding: 14px; background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow-sm); font-size: 13px; color: var(--text); text-align: center; font-weight: 700;">
                 —
             </div>
 
             <div style="display: flex; gap: 8px; margin-top: 12px;">
-                <button type="button" id="btnExportarVentasCSV" class="btn" style="flex: 1; padding: 10px; font-size: 13px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700;">
+                <button type="button" id="btnExportarVentasCSV" class="btn" style="flex: 1; padding: 11px; font-size: 13px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 800;">
                     📊 CSV
                 </button>
-                <button type="button" id="btnExportarVentasExcel" class="btn" style="flex: 1; padding: 10px; font-size: 13px; background: #217346; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700;">
+                <button type="button" id="btnExportarVentasExcel" class="btn" style="flex: 1; padding: 11px; font-size: 13px; background: linear-gradient(135deg, #217346, #185c37); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 800;">
                     📈 Excel
                 </button>
             </div>
@@ -250,16 +250,16 @@
                     <input type="file" id="inputFoto" accept="image/*" capture="environment" style="display:none;">
                     <input type="file" id="inputFotoGaleria" accept="image/*" style="display:none;">
                     <div style="display: flex; gap: 8px;">
-                        <button type="button" id="btnTomarFoto" class="btn btn-secondary" style="flex: 1; padding: 14px; font-size: 14px; background: #17a2b8; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700;">
+                        <button type="button" id="btnTomarFoto" class="btn btn-secondary" style="flex: 1; padding: 14px; font-size: 14px; background: linear-gradient(135deg, #06b6d4, #0891b2); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 800;">
                             📷 Tomar Foto
                         </button>
-                        <button type="button" id="btnSubirGaleria" class="btn btn-secondary" style="flex: 1; padding: 14px; font-size: 14px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700;">
+                        <button type="button" id="btnSubirGaleria" class="btn btn-secondary" style="flex: 1; padding: 14px; font-size: 14px; background: linear-gradient(135deg, #6b7280, #4b5563); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 800;">
                             🖼️ Subir Imagen
                         </button>
                     </div>
-                    <div id="estadoFoto" style="display: none; margin-top: 10px; font-size: 13px; color: #17a2b8; font-weight: 600; text-align: center;"></div>
+                    <div id="estadoFoto" style="display: none; margin-top: 10px; font-size: 13px; color: #06b6d4; font-weight: 700; text-align: center;"></div>
                     <div id="previewFoto" style="margin-top: 10px; display: none; text-align: center;">
-                        <img id="imgPreview" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 2px solid #17a2b8;">
+                        <img id="imgPreview" style="max-width: 100%; max-height: 200px; border-radius: 12px; border: 2px solid #06b6d4;">
                     </div>
                 </div>
 
@@ -267,10 +267,10 @@
                 <input type="date" id="formFecha" required>
 
                 <label>Proveedor:</label>
-                <input type="text" id="formProveedor" placeholder="Ej: AGRO INDUSTRIAS..." required>
+                <input type="text" id="formProveedor" placeholder="Ej: AGRO INDUSTRIAS..." required autocomplete="off">
 
                 <label>N° Factura:</label>
-                <input type="text" id="formNumeroFactura" placeholder="Ej: 00123">
+                <input type="text" id="formNumeroFactura" placeholder="Ej: 00123" autocomplete="off">
                 <div class="checkbox-inline">
                     <input type="checkbox" id="formSinNumero">
                     <label for="formSinNumero">Sin número</label>
@@ -279,17 +279,17 @@
                 <label>Monto (USD):</label>
                 <div class="input-prefix">
                     <span>$</span>
-                    <input type="number" id="formMontoUSD" step="0.01" placeholder="102.84" required>
+                    <input type="number" id="formMontoUSD" step="0.01" placeholder="102.84" required inputmode="decimal">
                 </div>
 
                 <div class="equivalente-bs" id="equivalenteBs">💱 Equivalente en Bs: --</div>
 
                 <label>💱 O si tienes el monto en Bolívares:</label>
                 <div class="input-prefix" style="position: relative;">
-                    <span style="color: #28a745;">Bs</span>
-                    <input type="number" id="formMontoBs" step="0.01" placeholder="87150.73" style="padding-left: 50px;">
+                    <span style="color: var(--success);">Bs</span>
+                    <input type="number" id="formMontoBs" step="0.01" placeholder="87150.73" style="padding-left: 50px;" inputmode="decimal">
                 </div>
-                <div style="font-size: 11px; color: #6c757d; margin-top: 4px;">
+                <div style="font-size: 11px; color: var(--text-light); margin-top: 4px;">
                     💡 Si ingresas el monto en Bs, se convierte automáticamente a USD con la tasa del día.
                 </div>
 
@@ -303,9 +303,9 @@
                 <label>Notas (opcional):</label>
                 <textarea id="formNotas" placeholder="Ej: Factura de leche pasteurizada..."></textarea>
 
-                <div id="previewProductos" class="hidden" style="margin-top: 20px; padding: 12px; background: #f0f8ff; border-radius: 8px; border-left: 4px solid #007bff;">
-                    <h4 style="margin-bottom: 8px; color: #007bff; font-size: 14px;">📦 Productos detectados</h4>
-                    <div id="listaProductosPreview" style="font-size: 12px; color: #333; max-height: 150px; overflow-y: auto;"></div>
+                <div id="previewProductos" class="hidden" style="margin-top: 20px; padding: 12px; background: rgba(6, 182, 212, 0.08); border-radius: 12px; border-left: 4px solid #06b6d4;">
+                    <h4 style="margin-bottom: 8px; color: #06b6d4; font-size: 14px; font-weight: 800;">📦 Productos detectados</h4>
+                    <div id="listaProductosPreview" style="font-size: 12px; color: var(--text); max-height: 150px; overflow-y: auto;"></div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -318,31 +318,31 @@
     <!-- Modal: Revisión de Productos -->
     <div class="modal-overlay hidden" id="modalProductos">
         <div class="modal" style="max-height: 95vh;">
-            <div class="modal-header" style="background: linear-gradient(135deg, #17a2b8, #0d6e7e);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #06b6d4, #0891b2);">
                 <h3>📦 Revisar Productos</h3>
                 <button class="btn-cerrar" id="btnCerrarProductos">✕</button>
             </div>
             <div class="modal-body" style="padding: 12px;">
-                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px; border-radius: 6px; margin-bottom: 12px; font-size: 12px;">
+                <div style="background: rgba(245, 158, 11, 0.1); border-left: 4px solid var(--warning); padding: 10px; border-radius: 8px; margin-bottom: 12px; font-size: 12px; color: var(--text);">
                     💡 Revisa y ajusta los productos detectados. El <strong>margen</strong> se aplica a todos, pero puedes cambiarlo individual.
                     <br>💡 <strong>Unid/Caja</strong>: si la factura vino por caja, el precio se divide automáticamente.
                 </div>
 
                 <div style="display: flex; gap: 8px; margin-bottom: 12px; align-items: center; flex-wrap: wrap;">
-                    <label style="font-size: 12px; font-weight: 600; margin: 0;">Margen global (%):</label>
-                    <input type="number" id="margenGlobal" value="30" step="1" min="0" max="500" style="width: 70px; padding: 6px; border: 2px solid #17a2b8; border-radius: 5px; font-size: 13px;">
-                    <button type="button" id="btnAplicarMargenGlobal" style="padding: 6px 12px; background: #17a2b8; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                    <label style="font-size: 12px; font-weight: 700; margin: 0; color: var(--text-secondary);">Margen global (%):</label>
+                    <input type="number" id="margenGlobal" value="30" step="1" min="0" max="500" style="width: 70px; padding: 6px; border: 2px solid #06b6d4; border-radius: 6px; font-size: 13px; background: var(--bg-elevated); color: var(--text);" inputmode="decimal">
+                    <button type="button" id="btnAplicarMargenGlobal" style="padding: 6px 12px; background: #06b6d4; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 700;">
                         Aplicar a todos
                     </button>
                 </div>
 
-                <div id="tablaProductosEdit" style="max-height: 55vh; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 6px;">
+                <div id="tablaProductosEdit" style="max-height: 55vh; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px;">
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-cancelar" id="btnCancelarProductos">Cancelar</button>
-                <button class="btn btn-primary" id="btnConfirmarProductos" style="background: #17a2b8;">
-                    ✅ Confirmar y Agregar al Inventario
+                <button class="btn btn-primary" id="btnConfirmarProductos" style="background: linear-gradient(135deg, #06b6d4, #0891b2); box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);">
+                    ✅ Confirmar
                 </button>
             </div>
         </div>
@@ -351,59 +351,59 @@
     <!-- Modal: Editar Producto -->
     <div class="modal-overlay hidden" id="modalEditarProducto">
         <div class="modal">
-            <div class="modal-header" style="background: linear-gradient(135deg, #17a2b8, #0d6e7e);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #06b6d4, #0891b2);">
                 <h3>✏️ Editar Producto</h3>
                 <button class="btn-cerrar" id="btnCerrarEditarProducto">✕</button>
             </div>
             <div class="modal-body">
                 <label>Nombre del producto:</label>
-                <input type="text" id="editNombre">
+                <input type="text" id="editNombre" autocomplete="off">
 
                 <label>Unidad:</label>
-                <input type="text" id="editUnidad" placeholder="UND, KG, LT, CAJA">
+                <input type="text" id="editUnidad" placeholder="UND, KG, LT, CAJA" autocomplete="off">
 
                 <label>Stock actual:</label>
-                <input type="number" id="editStock" step="0.01" min="0">
+                <input type="number" id="editStock" step="0.01" min="0" inputmode="decimal">
 
                 <label>Precio de Compra (USD):</label>
                 <div class="input-prefix">
                     <span>$</span>
-                    <input type="number" id="editPrecioCompra" step="0.01" min="0">
+                    <input type="number" id="editPrecioCompra" step="0.01" min="0" inputmode="decimal">
                 </div>
 
                 <label>Unidades por Caja (0 = venta por unidad):</label>
-                <input type="number" id="editUnidadesCaja" step="1" min="0" placeholder="Ej: 24, 12, 0">
-                <div style="font-size: 11px; color: #6c757d; margin-top: 4px;">
+                <input type="number" id="editUnidadesCaja" step="1" min="0" placeholder="Ej: 24, 12, 0" inputmode="numeric">
+                <div style="font-size: 11px; color: var(--text-light); margin-top: 4px;">
                     💡 Si el precio de compra es por caja, ingresa cuántas unidades tiene. Si es por unidad, deja 0.
                 </div>
 
                 <label>Precio de la Caja (USD) - opcional:</label>
                 <div class="input-prefix">
                     <span>$</span>
-                    <input type="number" id="editPrecioCaja" step="0.01" min="0" placeholder="0.00">
+                    <input type="number" id="editPrecioCaja" step="0.01" min="0" placeholder="0.00" inputmode="decimal">
                 </div>
 
                 <label>Margen de Ganancia (%):</label>
-                <input type="number" id="editMargen" step="1" min="0" max="500">
+                <input type="number" id="editMargen" step="1" min="0" max="500" inputmode="decimal">
 
                 <label>Precio de Venta (USD) - calculado automáticamente:</label>
                 <div class="input-prefix">
                     <span>$</span>
-                    <input type="number" id="editPrecioVenta" step="0.01" readonly style="background: #f0fdf4; color: #155724; font-weight: 700;">
+                    <input type="number" id="editPrecioVenta" step="0.01" readonly style="background: rgba(16, 185, 129, 0.12); color: var(--success); font-weight: 800;">
                 </div>
 
-                <div id="infoCalculo" style="background: #e7f3ff; border-left: 4px solid #007bff; padding: 10px; border-radius: 6px; margin-top: 10px; font-size: 12px; line-height: 1.5; display: none;"></div>
+                <div id="infoCalculo" style="background: rgba(6, 182, 212, 0.08); border-left: 4px solid #06b6d4; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 12px; line-height: 1.5; display: none; color: var(--text);"></div>
 
                 <label>IVA:</label>
-                <input type="text" id="editIva" placeholder="16 o E (exento)">
+                <input type="text" id="editIva" placeholder="16 o E (exento)" autocomplete="off">
 
                 <label>Notas (opcional):</label>
                 <textarea id="editNotas"></textarea>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-danger" id="btnEliminarEditarProducto" style="flex: 0 0 auto;">🗑️ Eliminar</button>
+                <button class="btn btn-danger" id="btnEliminarEditarProducto" style="flex: 0 0 auto;">🗑️</button>
                 <button class="btn btn-cancelar" id="btnCancelarEditarProducto">Cancelar</button>
-                <button class="btn btn-primary" id="btnGuardarEditarProducto" style="background: #17a2b8;">💾 Guardar</button>
+                <button class="btn btn-primary" id="btnGuardarEditarProducto" style="background: linear-gradient(135deg, #06b6d4, #0891b2); box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);">💾 Guardar</button>
             </div>
         </div>
     </div>
@@ -411,54 +411,54 @@
     <!-- Modal: Confirmar Pago desde Captura -->
     <div class="modal-overlay hidden" id="modalConfirmarPago">
         <div class="modal">
-            <div class="modal-header" style="background: linear-gradient(135deg, #28a745, #1e7e34);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #10b981, #059669);">
                 <h3>💸 Confirmar Pago</h3>
                 <button class="btn-cerrar" id="btnCerrarConfirmarPago">✕</button>
             </div>
             <div class="modal-body">
-                <div id="datosPagoExtraidos" style="background: #f0fdf4; border-left: 4px solid #28a745; padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 13px;"></div>
+                <div id="datosPagoExtraidos" style="background: rgba(16, 185, 129, 0.08); border-left: 4px solid var(--success); padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; color: var(--text);"></div>
 
                 <label>Tipo de Pago:</label>
-                <input type="text" id="pagoTipo" readonly style="background: #f0f0f0;">
+                <input type="text" id="pagoTipo" readonly style="background: var(--bg); color: var(--text);">
 
                 <label>Monto (Bs):</label>
                 <div class="input-prefix">
-                    <span style="color:#28a745;">Bs</span>
-                    <input type="number" id="pagoMontoBs" step="0.01" style="padding-left: 50px;">
+                    <span style="color: var(--success);">Bs</span>
+                    <input type="number" id="pagoMontoBs" step="0.01" style="padding-left: 50px;" inputmode="decimal">
                 </div>
 
-                <div id="pagoEquivalenteUSD" style="background: #e7f3ff; border-left: 4px solid #007bff; padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 14px; font-weight: 600; color: #004085;">
+                <div id="pagoEquivalenteUSD" style="background: rgba(6, 182, 212, 0.08); border-left: 4px solid #06b6d4; padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 14px; font-weight: 700; color: #0891b2;">
                     💵 Equivalente USD: --
                 </div>
 
                 <label>Referencia / N° Operación:</label>
-                <input type="text" id="pagoReferencia" placeholder="Ej: 123456789">
+                <input type="text" id="pagoReferencia" placeholder="Ej: 123456789" autocomplete="off">
 
                 <label>Fecha:</label>
                 <input type="date" id="pagoFecha">
 
                 <label>Banco Receptor:</label>
-                <input type="text" id="pagoBanco" placeholder="Ej: Banesco, Mercantil...">
+                <input type="text" id="pagoBanco" placeholder="Ej: Banesco, Mercantil..." autocomplete="off">
 
                 <label>Nombre del Receptor:</label>
-                <input type="text" id="pagoNombreReceptor" placeholder="Ej: Juan Pérez">
+                <input type="text" id="pagoNombreReceptor" placeholder="Ej: Juan Pérez" autocomplete="off">
 
                 <label>Cédula o RIF del Receptor:</label>
-                <input type="text" id="pagoCedulaReceptor" placeholder="Ej: V-12345678">
+                <input type="text" id="pagoCedulaReceptor" placeholder="Ej: V-12345678" autocomplete="off">
 
                 <label>Teléfono (solo para Pago Móvil):</label>
-                <input type="text" id="pagoTelefonoReceptor" placeholder="Ej: 04141234567">
+                <input type="tel" id="pagoTelefonoReceptor" placeholder="Ej: 04141234567" autocomplete="off" inputmode="tel">
 
                 <label>Notas (opcional):</label>
                 <textarea id="pagoNotas" placeholder="Observaciones..."></textarea>
 
                 <div id="previewFotoPago" style="margin-top: 15px; text-align: center; display: none;">
-                    <img id="imgPreviewPago" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 2px solid #28a745;">
+                    <img id="imgPreviewPago" style="max-width: 100%; max-height: 200px; border-radius: 12px; border: 2px solid var(--success);">
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-cancelar" id="btnCancelarConfirmarPago">Cancelar</button>
-                <button class="btn btn-primary" id="btnGuardarPago" style="background: #28a745;">💾 Guardar Pago</button>
+                <button class="btn btn-primary" id="btnGuardarPago" style="background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">💾 Guardar Pago</button>
             </div>
         </div>
     </div>
@@ -466,52 +466,52 @@
     <!-- Modal: Editar Pago -->
     <div class="modal-overlay hidden" id="modalEditarPago">
         <div class="modal">
-            <div class="modal-header" style="background: linear-gradient(135deg, #28a745, #1e7e34);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #10b981, #059669);">
                 <h3>✏️ Editar Pago</h3>
                 <button class="btn-cerrar" id="btnCerrarEditarPago">✕</button>
             </div>
             <div class="modal-body">
                 <label>Beneficiario:</label>
-                <input type="text" id="editPagoBeneficiario">
+                <input type="text" id="editPagoBeneficiario" autocomplete="off">
 
                 <label>Monto (Bs):</label>
                 <div class="input-prefix">
-                    <span style="color:#28a745;">Bs</span>
-                    <input type="number" id="editPagoMontoBs" step="0.01" style="padding-left: 50px;">
+                    <span style="color: var(--success);">Bs</span>
+                    <input type="number" id="editPagoMontoBs" step="0.01" style="padding-left: 50px;" inputmode="decimal">
                 </div>
 
-                <div id="editPagoEquivalente" style="background: #e7f3ff; border-left: 4px solid #007bff; padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 14px; font-weight: 600; color: #004085;">
+                <div id="editPagoEquivalente" style="background: rgba(6, 182, 212, 0.08); border-left: 4px solid #06b6d4; padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 14px; font-weight: 700; color: #0891b2;">
                     💵 Equivalente USD: --
                 </div>
 
                 <label>Referencia / N° Operación:</label>
-                <input type="text" id="editPagoReferencia">
+                <input type="text" id="editPagoReferencia" autocomplete="off">
 
                 <label>Fecha:</label>
                 <input type="date" id="editPagoFecha">
 
                 <label>Banco Receptor:</label>
-                <input type="text" id="editPagoBanco">
+                <input type="text" id="editPagoBanco" autocomplete="off">
 
                 <label>Nombre del Receptor:</label>
-                <input type="text" id="editPagoNombreReceptor">
+                <input type="text" id="editPagoNombreReceptor" autocomplete="off">
 
                 <label>Cédula o RIF del Receptor:</label>
-                <input type="text" id="editPagoCedulaReceptor">
+                <input type="text" id="editPagoCedulaReceptor" autocomplete="off">
 
                 <label>Teléfono (solo Pago Móvil):</label>
-                <input type="text" id="editPagoTelefonoReceptor">
+                <input type="tel" id="editPagoTelefonoReceptor" autocomplete="off" inputmode="tel">
 
                 <label>Concepto:</label>
-                <input type="text" id="editPagoConcepto" placeholder="Pago Móvil, Transferencia, etc.">
+                <input type="text" id="editPagoConcepto" placeholder="Pago Móvil, Transferencia, etc." autocomplete="off">
 
                 <label>Observaciones / Notas:</label>
                 <textarea id="editPagoNotas" placeholder="Escribe aquí cualquier observación sobre este pago..." style="min-height: 100px;"></textarea>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-danger" id="btnEliminarPagoDesdeModal" style="flex: 0 0 auto;">🗑️ Eliminar</button>
+                <button class="btn btn-danger" id="btnEliminarPagoDesdeModal" style="flex: 0 0 auto;">🗑️</button>
                 <button class="btn btn-cancelar" id="btnCancelarEditarPago">Cancelar</button>
-                <button class="btn btn-primary" id="btnGuardarEditarPago" style="background: #28a745;">💾 Guardar</button>
+                <button class="btn btn-primary" id="btnGuardarEditarPago" style="background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">💾 Guardar</button>
             </div>
         </div>
     </div>
@@ -531,7 +531,7 @@
     <!-- Modal: Nueva / Editar Venta Diaria -->
     <div class="modal-overlay hidden" id="modalVentaDiaria">
         <div class="modal">
-            <div class="modal-header" style="background: linear-gradient(135deg, #28a745, #1e7e34);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #10b981, #059669);">
                 <h3 id="tituloModalVenta">➕ Nueva Venta Diaria</h3>
                 <button class="btn-cerrar" id="btnCerrarVenta">✕</button>
             </div>
@@ -542,38 +542,38 @@
                 <label>Efectivo $ (USD):</label>
                 <div class="input-prefix">
                     <span>$</span>
-                    <input type="number" id="ventaEfectivo" step="0.01" min="0" value="0">
+                    <input type="number" id="ventaEfectivo" step="0.01" min="0" value="0" inputmode="decimal">
                 </div>
 
                 <label>Zelle $ (USD):</label>
                 <div class="input-prefix">
                     <span>$</span>
-                    <input type="number" id="ventaZelle" step="0.01" min="0" value="0">
+                    <input type="number" id="ventaZelle" step="0.01" min="0" value="0" inputmode="decimal">
                 </div>
 
                 <label>Punto $ (USD):</label>
                 <div class="input-prefix">
                     <span>$</span>
-                    <input type="number" id="ventaPuntoUsd" step="0.01" min="0" value="0">
+                    <input type="number" id="ventaPuntoUsd" step="0.01" min="0" value="0" inputmode="decimal">
                 </div>
 
-                <div id="ventaInfoTasa" style="background:#e7f3ff; border-left:4px solid #007bff; padding:12px; border-radius:8px; margin-top:12px; font-size:13px;">
+                <div id="ventaInfoTasa" style="background: rgba(6, 182, 212, 0.08); border-left: 4px solid #06b6d4; padding: 12px; border-radius: 8px; margin-top: 12px; font-size: 13px; color: var(--text);">
                     💵 Todos los montos se ingresan en USD
                 </div>
 
                 <label>Total del día (USD):</label>
                 <div class="input-prefix">
-                    <span style="color:#28a745;">$</span>
-                    <input type="number" id="ventaTotal" step="0.01" readonly style="padding-left: 30px; background:#f0fdf4; color:#155724; font-weight:700;">
+                    <span style="color: var(--success);">$</span>
+                    <input type="number" id="ventaTotal" step="0.01" readonly style="padding-left: 32px; background: rgba(16, 185, 129, 0.12); color: var(--success); font-weight: 800;">
                 </div>
 
                 <label>Notas (opcional):</label>
                 <textarea id="ventaNota" placeholder="Ej: ventas del lunes feriado..."></textarea>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-danger" id="btnEliminarVenta" style="flex: 0 0 auto; display:none;">🗑️ Eliminar</button>
+                <button class="btn btn-danger" id="btnEliminarVenta" style="flex: 0 0 auto; display:none;">🗑️</button>
                 <button class="btn btn-cancelar" id="btnCancelarVenta">Cancelar</button>
-                <button class="btn btn-primary" id="btnGuardarVenta" style="background:#28a745;">💾 Guardar</button>
+                <button class="btn btn-primary" id="btnGuardarVenta" style="background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">💾 Guardar</button>
             </div>
         </div>
     </div>
@@ -581,15 +581,15 @@
     <!-- Modal: Pegar desde Excel -->
     <div class="modal-overlay hidden" id="modalPegarVentas">
         <div class="modal">
-            <div class="modal-header" style="background: linear-gradient(135deg, #28a745, #1e7e34);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #10b981, #059669);">
                 <h3>📥 Pegar desde Excel</h3>
                 <button class="btn-cerrar" id="btnCerrarPegar">✕</button>
             </div>
             <div class="modal-body">
-                <div style="background:#fff3cd; border-left:4px solid #ffc107; padding:10px; border-radius:6px; margin-bottom:12px; font-size:12px;">
+                <div style="background: rgba(245, 158, 11, 0.1); border-left: 4px solid var(--warning); padding: 10px; border-radius: 8px; margin-bottom: 12px; font-size: 12px; color: var(--text);">
                     <strong>Instrucciones:</strong><br>
                     1. En Excel selecciona las filas (sin encabezados) con:<br>
-                    <code style="background:#fff; padding:2px 4px; border-radius:3px;">Fecha · Efectivo $ · Zelle $ · Punto $</code><br>
+                    <code style="background: var(--bg); padding: 2px 6px; border-radius: 4px;">Fecha · Efectivo $ · Zelle $ · Punto $</code><br>
                     2. Copia con <b>Ctrl+C</b>.<br>
                     3. Pega abajo con <b>Ctrl+V</b>.<br>
                     4. Presiona <b>Procesar e Importar</b>.<br><br>
@@ -597,12 +597,12 @@
                     💵 <b>Todos los montos en USD</b>.<br>
                     📌 Si la fecha ya existe, se <b>actualiza</b>.
                 </div>
-                <textarea id="textoPegarVentas" style="width:100%; height:180px; font-family:monospace; font-size:12px; padding:10px; border:2px solid #28a745; border-radius:6px;" placeholder="Pega aquí desde Excel..."></textarea>
-                <div id="previewPegarVentas" style="margin-top:12px; font-size:12px; color:#555; max-height:200px; overflow-y:auto;"></div>
+                <textarea id="textoPegarVentas" style="width:100%; height:180px; font-family: 'SF Mono', Monaco, 'Courier New', monospace; font-size:12px; padding:12px; border:2px solid var(--success); border-radius:10px; background: var(--bg-elevated); color: var(--text);" placeholder="Pega aquí desde Excel..." autocomplete="off" spellcheck="false"></textarea>
+                <div id="previewPegarVentas" style="margin-top:12px; font-size:12px; color:var(--text-secondary); max-height:200px; overflow-y:auto;"></div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-cancelar" id="btnCancelarPegar">Cancelar</button>
-                <button class="btn btn-primary" id="btnProcesarPegar" style="background:#28a745;">✅ Procesar e Importar</button>
+                <button class="btn btn-primary" id="btnProcesarPegar" style="background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">✅ Procesar e Importar</button>
             </div>
         </div>
     </div>
@@ -611,7 +611,7 @@
     <div class="toast hidden" id="toast"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="app.js?v=6.14"></script>
+    <script src="app.js?v=6.15"></script>
 
     <script>
         if ('serviceWorker' in navigator) {
