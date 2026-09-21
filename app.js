@@ -1,19 +1,16 @@
 // ============================================
-// GESTORE PWA - v8.0 (con fix de IVA)
+// GESTORE PWA - v8.1 (con checkbox de IVA)
 // Changelog:
-// v8.0 - Portadas todas las funciones de la extensión:
-//        - Badges Ventas (Mes/Sem/Sem.Pas/Últ.Día/Prom.Día)
-//        - Nuevo Pago Manual
-//        - Importar PDFs Banesco
-//        - Margen masivo clickeable
-//        - Borrar todos los pagos
-//        - FIX IVA: costo y precio de venta ahora incluyen IVA
-// v6.14 - 5ta tarjeta PUNTO $ en Ventas Diarias
-// v6.13 - Pestaña Ventas Diarias
+// v8.1 - Checkbox "¿Tiene IVA?" reemplaza input de texto
+//        - IVA fijo al 16% cuando está marcado
+//        - Cálculo automático en vivo
+//        - El OCR decide por defecto (E = desmarcado, otro = marcado)
+// v8.0 - Portadas todas las funciones de la extensión
 // ============================================
 
 const SUPABASE_URL = "https://kpsurjxypipxtjizlyon.supabase.co";
 const SUPABASE_KEY = "sb_publishable_sA8BVuihO3RaIcZrqTPzyA_HkYahfV5";
+const TASA_IVA = 16; // ✅ v8.1 - IVA fijo al 16%
 
 let supabaseClient;
 try {
@@ -22,6 +19,7 @@ try {
     window.supabaseClient = supabaseClient;
     window.SUPABASE_URL = SUPABASE_URL;
     window.SUPABASE_KEY = SUPABASE_KEY;
+    window.TASA_IVA = TASA_IVA;
 } catch (e) {
     console.error("❌ Error al crear cliente Supabase:", e);
 }
@@ -50,7 +48,7 @@ let ventaEditando = null;
 // INICIALIZACIÓN
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("🚀 Gestore PWA v8.0 iniciado");
+    console.log("🚀 Gestore PWA v8.1 iniciado");
     configurarEventos();
     cargarTasa();
     cargarDatos();
@@ -175,8 +173,8 @@ function configurarEventos() {
     document.getElementById('editMargen').addEventListener('change', recalcularPrecioVenta);
     document.getElementById('editUnidadesCaja').addEventListener('input', recalcularPrecioVenta);
     document.getElementById('editUnidadesCaja').addEventListener('change', recalcularPrecioVenta);
-    document.getElementById('editIva').addEventListener('input', recalcularPrecioVenta);
-    document.getElementById('editIva').addEventListener('change', recalcularPrecioVenta);
+    // ✅ v8.1 - Checkbox IVA
+    document.getElementById('editTieneIva').addEventListener('change', recalcularPrecioVenta);
     
     document.getElementById('editPrecioCaja').addEventListener('input', () => {
         const precioCaja = parseFloat(document.getElementById('editPrecioCaja').value) || 0;
@@ -371,7 +369,7 @@ function dbToProducto(row) {
         precioCompraUSD: parseFloat(row.precio_compra_usd) || 0,
         precioVentaUSD: parseFloat(row.precio_venta_usd) || 0,
         margen: parseFloat(row.margen) || 30,
-        iva: parseFloat(row.iva) || 16,
+        iva: parseFloat(row.iva) || 0,
         exento: row.exento || false,
         ultimoProveedor: row.ultimo_proveedor || '',
         ultimaFactura: row.ultima_factura || '',
@@ -937,7 +935,7 @@ function renderizarProductos() {
                 </div>
                 <div class="card-info">
                     <span class="card-fecha">📊 Margen: ${p.margen}%</span>
-                    <span class="card-fecha">${p.exento ? '🚫 Exento' : `IVA: ${p.iva}%`}</span>
+                    <span class="card-fecha">${p.exento ? '🚫 Exento' : `✅ IVA ${p.iva}%`}</span>
                 </div>
                 ${infoCaja ? `<div class="card-info">${infoCaja}</div>` : ''}
                 ${p.ultimoProveedor ? `<div class="card-info"><span class="card-fecha">🏢 ${escapeHtml(p.ultimoProveedor)}</span></div>` : ''}
@@ -955,7 +953,7 @@ function renderizarProductos() {
 }
 
 // ============================================
-// RENDERIZAR VENTAS (Diaria / Semanal / Mensual)
+// RENDERIZAR VENTAS
 // ============================================
 function renderizarVentas() {
     const lista = document.getElementById('listaVentas');
@@ -1189,13 +1187,12 @@ function renderizarVentasAgrupada(lista, filtradas, tipo) {
 }
 
 // ============================================
-// ESTADÍSTICAS VENTAS - BADGES v8.0
+// ESTADÍSTICAS VENTAS - BADGES
 // ============================================
 function actualizarEstadisticasVentas() {
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
     
-    // ====== BADGE 1: MES ACTUAL ======
     const mesActual = hoy.getMonth();
     const anioActual = hoy.getFullYear();
     let mesTotal = 0;
@@ -1210,7 +1207,6 @@ function actualizarEstadisticasVentas() {
     document.getElementById('badgeMes').textContent = formatearUSD(mesTotal);
     document.getElementById('badgeMesSub').textContent = `${mesCount} día${mesCount !== 1 ? 's' : ''}`;
     
-    // ====== BADGE 2: SEMANA ACTUAL (Lunes a Domingo) ======
     const lunesActual = getLunesDeSemana(hoy);
     const domingoActual = getDomingoDeSemana(hoy);
     let semTotal = 0;
@@ -1225,7 +1221,6 @@ function actualizarEstadisticasVentas() {
     document.getElementById('badgeSem').textContent = formatearUSD(semTotal);
     document.getElementById('badgeSemSub').textContent = `${semCount} día${semCount !== 1 ? 's' : ''}`;
     
-    // ====== BADGE 3: SEMANA PASADA ======
     const lunesAnterior = new Date(lunesActual);
     lunesAnterior.setDate(lunesAnterior.getDate() - 7);
     const domingoAnterior = new Date(domingoActual);
@@ -1242,7 +1237,6 @@ function actualizarEstadisticasVentas() {
     document.getElementById('badgeSemPas').textContent = formatearUSD(semPasTotal);
     document.getElementById('badgeSemPasSub').textContent = `${semPasCount} día${semPasCount !== 1 ? 's' : ''}`;
     
-    // ====== BADGE 4: ÚLTIMO DÍA CON VENTA ======
     const ventasOrdenadas = [...datos.ventas_diarias]
         .filter(v => v.fecha)
         .sort((a, b) => {
@@ -1261,7 +1255,6 @@ function actualizarEstadisticasVentas() {
         document.getElementById('badgeUltDiaSub').textContent = '—';
     }
     
-    // ====== BADGE 5: PROMEDIO POR DÍA (del mes actual) ======
     if (mesCount > 0) {
         const promedio = mesTotal / mesCount;
         document.getElementById('badgePromDia').textContent = formatearUSD(promedio);
@@ -1777,8 +1770,7 @@ async function aplicarMargenMasivo() {
 
     for (const p of datos.productos) {
         try {
-            // ✅ precioCompraUSD ya está guardado CON IVA en la BD
-            // Solo aplicamos el margen
+            // precioCompraUSD ya está guardado CON IVA (si aplica)
             const precioVenta = p.precioCompraUSD * (1 + nuevoMargen / 100);
 
             const { error } = await supabaseClient
@@ -1923,7 +1915,7 @@ function abrirDetallePago(p) {
 }
 
 // ============================================
-// MODAL EDITAR PRODUCTO
+// MODAL EDITAR PRODUCTO (con checkbox IVA)
 // ============================================
 function abrirModalEditarProducto(p) {
     productoEditando = p;
@@ -1934,7 +1926,8 @@ function abrirModalEditarProducto(p) {
     document.getElementById('editStock').value = p.stock || 0;
     document.getElementById('editPrecioCompra').value = p.precioCompraUSD || 0;
     document.getElementById('editMargen').value = p.margen || 30;
-    document.getElementById('editIva').value = p.exento ? 'E' : (p.iva || 16);
+    // ✅ v8.1 - Checkbox IVA (marcado si tiene IVA)
+    document.getElementById('editTieneIva').checked = !p.exento && p.iva > 0;
     document.getElementById('editUnidadesCaja').value = p.unidadesCaja || 0;
     document.getElementById('editPrecioCaja').value = p.precioCajaUSD || 0;
     document.getElementById('editNotas').value = p.notas || '';
@@ -1956,7 +1949,7 @@ function recalcularPrecioVenta() {
     const margenInput = document.getElementById('editMargen');
     const unidadesCajaInput = document.getElementById('editUnidadesCaja');
     const precioVentaInput = document.getElementById('editPrecioVenta');
-    const ivaInput = document.getElementById('editIva');
+    const tieneIvaCheckbox = document.getElementById('editTieneIva');
     const info = document.getElementById('infoCalculo');
 
     if (!precioCompraInput || !margenInput || !unidadesCajaInput || !precioVentaInput) return;
@@ -1964,9 +1957,8 @@ function recalcularPrecioVenta() {
     const precioCompra = parseFloat(precioCompraInput.value) || 0;
     const margen = parseFloat(margenInput.value) || 0;
     const unidadesCaja = parseFloat(unidadesCajaInput.value) || 0;
-    const ivaRaw = ivaInput ? ivaInput.value.toUpperCase().trim() : '16';
-    const exento = ivaRaw === 'E';
-    const ivaPct = exento ? 0 : (parseFloat(ivaRaw) || 0);
+    const tieneIva = tieneIvaCheckbox ? tieneIvaCheckbox.checked : false;
+    const ivaPct = tieneIva ? TASA_IVA : 0;
 
     // 1. Precio por unidad (después de dividir por unidades de caja)
     let precioPorUnidad = precioCompra;
@@ -1977,15 +1969,15 @@ function recalcularPrecioVenta() {
         esPorCaja = true;
     }
 
-    // 2. ✅ Aplicar IVA al costo
+    // 2. ✅ Aplicar IVA al costo (solo si tiene IVA)
     const costoConIva = precioPorUnidad * (1 + ivaPct / 100);
 
-    // 3. ✅ Precio de venta final (IVA incluido + margen)
+    // 3. ✅ Precio de venta final
     const precioVenta = costoConIva * (1 + margen / 100);
 
     precioVentaInput.value = precioVenta.toFixed(2);
 
-    const ivaTexto = exento ? '🚫 Exento' : `IVA ${ivaPct}%`;
+    const ivaTexto = tieneIva ? `✅ IVA ${ivaPct}%` : '🚫 Sin IVA (exento)';
 
     if (esPorCaja) {
         info.innerHTML = `
@@ -1993,7 +1985,7 @@ function recalcularPrecioVenta() {
             💵 Precio caja: $${precioCompra.toFixed(2)}<br>
             💵 Precio por unidad: $${precioPorUnidad.toFixed(4)}<br>
             ${ivaTexto}: $${(precioPorUnidad * ivaPct / 100).toFixed(4)}<br>
-            💵 <strong>Costo con IVA: $${costoConIva.toFixed(4)}</strong><br>
+            💵 <strong>Costo final: $${costoConIva.toFixed(4)}</strong><br>
             📊 Margen: ${margen}%<br>
             💰 <strong>Venta final: $${precioVenta.toFixed(2)}</strong>
         `;
@@ -2003,7 +1995,7 @@ function recalcularPrecioVenta() {
             📦 <strong>Venta por UNIDAD</strong><br>
             💵 Precio compra: $${precioCompra.toFixed(2)}<br>
             ${ivaTexto}: $${(precioCompra * ivaPct / 100).toFixed(4)}<br>
-            💵 <strong>Costo con IVA: $${costoConIva.toFixed(4)}</strong><br>
+            💵 <strong>Costo final: $${costoConIva.toFixed(4)}</strong><br>
             📊 Margen: ${margen}%<br>
             💰 <strong>Venta final: $${precioVenta.toFixed(2)}</strong>
         `;
@@ -2024,9 +2016,10 @@ async function guardarEditarProducto() {
     const stock = parseFloat(document.getElementById('editStock').value) || 0;
     const precioCompra = parseFloat(document.getElementById('editPrecioCompra').value) || 0;
     const margen = parseFloat(document.getElementById('editMargen').value) || 30;
-    const ivaInput = document.getElementById('editIva').value.toUpperCase().trim();
-    const exento = ivaInput === 'E';
-    const iva = exento ? 0 : (parseFloat(ivaInput) || 16);
+    // ✅ v8.1 - Checkbox IVA
+    const tieneIva = document.getElementById('editTieneIva').checked;
+    const exento = !tieneIva;
+    const iva = tieneIva ? TASA_IVA : 0;
     const unidadesCaja = parseFloat(document.getElementById('editUnidadesCaja').value) || 0;
     const precioCaja = parseFloat(document.getElementById('editPrecioCaja').value) || 0;
     const notas = document.getElementById('editNotas').value.trim();
@@ -2037,10 +2030,10 @@ async function guardarEditarProducto() {
         precioCompraPorUnidad = precioCompra / unidadesCaja;
     }
 
-    // 2. ✅ Costo CON IVA
+    // 2. ✅ Costo CON IVA (si aplica)
     const costoConIva = precioCompraPorUnidad * (1 + iva / 100);
 
-    // 3. ✅ Precio de venta final (IVA incluido)
+    // 3. ✅ Precio de venta final
     const precioVenta = costoConIva * (1 + margen / 100);
 
     try {
@@ -2049,7 +2042,6 @@ async function guardarEditarProducto() {
             nombre_normalizado: normalizarNombre(nombre),
             unidad: unidad,
             stock: stock,
-            // ✅ Guardar el costo CON IVA incluido
             precio_compra_usd: parseFloat(costoConIva.toFixed(4)),
             margen: margen,
             precio_venta_usd: parseFloat(precioVenta.toFixed(4)),
@@ -2063,7 +2055,7 @@ async function guardarEditarProducto() {
 
         if (error) throw error;
 
-        mostrarToast('✅ Producto actualizado (costo con IVA)', 'success');
+        mostrarToast(`✅ Producto actualizado (${tieneIva ? 'con IVA' : 'exento'})`, 'success');
         cerrarModalEditarProducto();
         cargarDatos();
     } catch (error) {
@@ -2262,7 +2254,7 @@ async function eliminarPago(pago) {
 }
 
 // ============================================
-// BORRAR TODOS LOS PAGOS (doble confirmación)
+// BORRAR TODOS LOS PAGOS
 // ============================================
 async function borrarTodosLosPagos() {
     const total = datos.pagos.length;
@@ -2447,14 +2439,12 @@ Muchas facturas venezolanas tienen un CATÁLOGO IMPRESO con TODOS los productos 
 PERO solo unos pocos tienen datos rellenados (cantidad, precio, total escritos a mano o impresos en las columnas de la derecha).
 Debes extraer ÚNICAMENTE los productos que tengan CANTIDAD mayor a cero Y PRECIO escrito.
 IGNORA las filas del catálogo que estén vacías (sin cantidad, sin precio).
-Si una fila del catálogo tiene código, descripción pero NO tiene cantidad ni precio, NO la incluyas.
 
 ⚠️ SOBRE EL MONTO Y LA TASA:
 La factura puede tener una sección "MONTO EXPRESADO EN USD SEGÚN TASA DE CAMBIO" con:
-- TASA Bs/USD (ejemplo: 848,55)
-- TOTAL MONTO USD (ejemplo: 98,04)
+- TASA Bs/USD
+- TOTAL MONTO USD
 Si está disponible, USA ESOS VALORES para el monto total en USD.
-Si no, convierte el total en Bs a USD usando la tasa que aparezca en la factura.
 
 Responde EXACTAMENTE en este formato JSON (sin texto adicional, sin markdown):
 
@@ -2470,8 +2460,7 @@ Responde EXACTAMENTE en este formato JSON (sin texto adicional, sin markdown):
       "cantidad": 1,
       "unidad": "UND",
       "precio_unitario": 10.22,
-      "iva": "E",
-      "exento": true
+      "tiene_iva": false
     }
   ],
   "confianza": "alta|media|baja"
@@ -2482,10 +2471,11 @@ Reglas ESPECÍFICAS:
 - "monto_es_bs": true si el monto_total está en Bs, false si está en USD.
 - "tasa_bcv": si la factura menciona la tasa, inclúyela. Si no, null.
 - "productos": SOLO los productos con cantidad > 0 Y precio.
-  - "precio_unitario": precio por unidad EN USD. Si está en Bs, conviértelo usando la tasa de la factura.
-  - ⚠️ IMPORTANTE: "precio_unitario" debe ser el precio BASE SIN IVA (como aparece en la columna de precio unitario de la factura).
-  - En "iva" pon "E" si es exento, o el porcentaje (ej: 16) si es gravado.
-  - En "exento" pon true si es exento, false si es gravado.
+  - "precio_unitario": precio BASE por unidad EN USD (SIN IVA). Es el precio que aparece en la columna de precio unitario de la factura.
+  - ⚠️ IMPORTANTE: "precio_unitario" debe ser el precio BASE SIN IVA.
+  - "tiene_iva": true si el producto lleva IVA (16%), false si es exento.
+    - En facturas venezolanas, los productos exentos suelen estar marcados con "E" o "EXENTO" en la columna de IVA.
+    - Si no ves marca de exento, asume true.
 
 Si NO puedes leer algún campo, usa null.`;
 
@@ -2587,6 +2577,7 @@ function configurarFotoFactura() {
                 check.checked = false;
             }
 
+            // ✅ v8.1 - Usar "tiene_iva" del OCR
             productosDetectados = (datos.productos || []).map(p => {
                 const unidad = (p.unidad || 'UND').toUpperCase();
                 const precioUnitario = parseFloat(p.precio_unitario) || 0;
@@ -2608,8 +2599,7 @@ function configurarFotoFactura() {
                     precio_unitario: precioUnitario,
                     unidades_caja: unidadesCaja,
                     precio_caja: precioCaja,
-                    iva: p.iva === 'E' ? 'E' : (parseFloat(p.iva) || 16),
-                    exento: p.exento || p.iva === 'E' || false,
+                    tiene_iva: p.tiene_iva !== false, // por defecto true
                     margen: 30
                 };
             });
@@ -2620,7 +2610,7 @@ function configurarFotoFactura() {
                 listaPrev.innerHTML = productosDetectados.map(p => 
                     `<div style="padding:4px 0; border-bottom:1px solid #e0e0e0; display:flex; justify-content:space-between;">
                         <span>${escapeHtml(p.nombre)}</span>
-                        <span style="color:#666;">${p.cantidad} × $${p.precio_unitario.toFixed(2)} ${p.exento ? '(Exento)' : `(IVA ${p.iva}%)`}</span>
+                        <span style="color:#666;">${p.cantidad} × $${p.precio_unitario.toFixed(2)} ${p.tiene_iva ? '(IVA 16%)' : '(Exento)'}</span>
                     </div>`
                 ).join('');
                 previewProd.classList.remove('hidden');
@@ -2739,10 +2729,10 @@ async function extraerPagoConDeepSeek(base64Image) {
     const prompt = `Analiza esta imagen de un PAGO realizado desde un banco venezolano.
 
 Puede ser:
-1. **PAGO MÓVIL** (desde una app bancaria): suele tener "Pago Móvil" o "PagoMóvil" en el título, y muestra: banco, cédula del receptor, teléfono del receptor, monto en Bs, referencia.
-2. **TRANSFERENCIA** bancaria: suele mostrar: banco receptor, nombre del receptor, cédula o RIF del receptor, monto en Bs, referencia, fecha.
+1. **PAGO MÓVIL** (desde una app bancaria): suele tener "Pago Móvil" o "PagoMóvil" en el título.
+2. **TRANSFERENCIA** bancaria: suele mostrar banco receptor, nombre, cédula, monto, referencia, fecha.
 
-Extrae TODOS los datos visibles. Responde EXACTAMENTE en este formato JSON (sin texto adicional, sin markdown):
+Responde EXACTAMENTE en este formato JSON (sin texto adicional, sin markdown):
 
 {
   "tipo_pago": "pago_movil" | "transferencia",
@@ -2758,14 +2748,10 @@ Extrae TODOS los datos visibles. Responde EXACTAMENTE en este formato JSON (sin 
 }
 
 REGLAS:
-- "tipo_pago": "pago_movil" si dice "Pago Móvil", "PagoMóvil", o muestra teléfono del receptor. "transferencia" en caso contrario.
-- "monto_bs": SOLO el número, sin comas de miles, sin símbolos Bs. Ejemplo: 1500.50
-- "referencia": el número de referencia u operación. Es un número largo de 8-15 dígitos.
+- "tipo_pago": "pago_movil" si dice "Pago Móvil", "PagoMóvil", o muestra teléfono del receptor.
+- "monto_bs": SOLO el número, sin comas de miles, sin símbolos Bs.
+- "referencia": el número de referencia u operación.
 - "fecha": en formato DD/MM/YYYY.
-- "banco_receptor": nombre del banco destino.
-- "nombre_receptor": nombre completo de quien recibe el pago.
-- "cedula_receptor": cédula o RIF con formato (V-12345678 o J-123456789).
-- "telefono_receptor": número de teléfono (solo Pago Móvil). Formato 04XXXXXXXXX.
 - "confianza": alta si lees todo claro, media si algo está borroso, baja si es ilegible.
 - "error": si la imagen NO es un pago, escribe el motivo aquí.
 
@@ -3027,7 +3013,7 @@ async function eliminarPagoDesdeModal() {
 }
 
 // ============================================
-// MODAL PRODUCTOS (OCR factura)
+// MODAL PRODUCTOS (OCR factura) - con checkbox IVA
 // ============================================
 function abrirModalProductos() {
     if (productosDetectados.length === 0) return;
@@ -3042,7 +3028,7 @@ function abrirModalProductos() {
                     <th style="width: 9%;">Unid.</th>
                     <th style="width: 12%;">P.Base</th>
                     <th style="width: 10%;">Unid/Caja</th>
-                    <th style="width: 9%;">IVA</th>
+                    <th style="width: 9%;">¿IVA?</th>
                     <th style="width: 13%;">P.Venta</th>
                     <th style="width: 5%;"></th>
                 </tr>
@@ -3058,8 +3044,8 @@ function abrirModalProductos() {
 }
 
 function filaProductoEditable(p, index) {
-    // ✅ Calcular precio de venta CON IVA
-    const ivaPct = p.exento || p.iva === 'E' ? 0 : (parseFloat(p.iva) || 0);
+    // ✅ v8.1 - Calcular precio de venta con checkbox de IVA
+    const ivaPct = p.tiene_iva ? TASA_IVA : 0;
     const precioConIva = p.precio_unitario * (1 + ivaPct / 100);
     const precioVenta = precioConIva * (1 + (p.margen || 30) / 100);
     
@@ -3070,7 +3056,9 @@ function filaProductoEditable(p, index) {
             <td><input type="text" class="input-corto" data-field="unidad" value="${p.unidad}"></td>
             <td><input type="number" class="input-corto" data-field="precio_unitario" value="${p.precio_unitario}" step="0.01" min="0"></td>
             <td><input type="number" class="input-corto" data-field="unidades_caja" value="${p.unidades_caja || 0}" step="1" min="0" placeholder="0"></td>
-            <td><input type="text" class="input-corto" data-field="iva" value="${p.iva}" style="text-align:center;"></td>
+            <td style="text-align:center;">
+                <input type="checkbox" data-field="tiene_iva" ${p.tiene_iva ? 'checked' : ''} style="transform: scale(1.5); cursor: pointer;">
+            </td>
             <td><input type="number" class="input-corto precio-venta" data-field="precio_venta" value="${precioVenta.toFixed(2)}" step="0.01" min="0" readonly></td>
             <td style="text-align:center;"><button class="btn-eliminar-prod" data-eliminar="${index}">✕</button></td>
         </tr>
@@ -3087,44 +3075,60 @@ function adjuntarEventosProductos() {
         tr.querySelectorAll('input').forEach(input => {
             input.addEventListener('input', (e) => {
                 const field = e.target.dataset.field;
-                let valor = e.target.value;
+                let valor;
 
-                if (field === 'cantidad' || field === 'precio_unitario' || field === 'unidades_caja') {
-                    valor = parseFloat(valor) || 0;
-                } else if (field === 'iva') {
-                    if (valor.toUpperCase() === 'E') {
-                        productosDetectados[index].exento = true;
-                        productosDetectados[index].iva = 'E';
-                    } else {
-                        productosDetectados[index].exento = false;
-                        productosDetectados[index].iva = parseFloat(valor) || 16;
+                if (field === 'tiene_iva') {
+                    // ✅ v8.1 - Checkbox
+                    valor = e.target.checked;
+                } else {
+                    valor = e.target.value;
+                    if (field === 'cantidad' || field === 'precio_unitario' || field === 'unidades_caja') {
+                        valor = parseFloat(valor) || 0;
                     }
                 }
 
                 productosDetectados[index][field] = valor;
 
-                // ✅ Recalcular precio de venta cuando cambia precio, unidades_caja o IVA
-                if (field === 'precio_unitario' || field === 'unidades_caja' || field === 'iva') {
+                // ✅ v8.1 - Recalcular cuando cambia cualquier campo relevante
+                if (field === 'precio_unitario' || field === 'unidades_caja' || field === 'tiene_iva') {
                     const precioBase = productosDetectados[index].precio_unitario || 0;
                     const unidadesCaja = productosDetectados[index].unidades_caja || 0;
                     const margen = productosDetectados[index].margen || 30;
-                    const exento = productosDetectados[index].exento || false;
-                    const ivaPct = exento ? 0 : (parseFloat(productosDetectados[index].iva) || 16);
+                    const tieneIva = productosDetectados[index].tiene_iva;
+                    const ivaPct = tieneIva ? TASA_IVA : 0;
 
-                    // 1. Precio por unidad (después de dividir por unidades de caja)
                     let precioPorUnidad = precioBase;
                     if (unidadesCaja > 1) {
                         precioPorUnidad = precioBase / unidadesCaja;
                     }
 
-                    // 2. Aplicar IVA al costo
                     const costoConIva = precioPorUnidad * (1 + ivaPct / 100);
-
-                    // 3. Precio de venta (con IVA incluido + margen)
                     const pv = costoConIva * (1 + margen / 100);
                     tr.querySelector('[data-field="precio_venta"]').value = pv.toFixed(2);
                 }
             });
+
+            // Para el checkbox usamos 'change' (más apropiado)
+            if (input.dataset.field === 'tiene_iva') {
+                input.addEventListener('change', (e) => {
+                    const index2 = parseInt(tr.dataset.index);
+                    productosDetectados[index2].tiene_iva = e.target.checked;
+                    
+                    const precioBase = productosDetectados[index2].precio_unitario || 0;
+                    const unidadesCaja = productosDetectados[index2].unidades_caja || 0;
+                    const margen = productosDetectados[index2].margen || 30;
+                    const ivaPct = e.target.checked ? TASA_IVA : 0;
+
+                    let precioPorUnidad = precioBase;
+                    if (unidadesCaja > 1) {
+                        precioPorUnidad = precioBase / unidadesCaja;
+                    }
+
+                    const costoConIva = precioPorUnidad * (1 + ivaPct / 100);
+                    const pv = costoConIva * (1 + margen / 100);
+                    tr.querySelector('[data-field="precio_venta"]').value = pv.toFixed(2);
+                });
+            }
         });
     });
 
@@ -3175,11 +3179,11 @@ async function confirmarProductos() {
             precioUnitarioReal = prod.precio_unitario / prod.unidades_caja;
         }
 
-        // 2. ✅ Aplicar IVA al costo (si no es exento)
-        const ivaPct = prod.exento ? 0 : (parseFloat(prod.iva) || 0);
+        // 2. ✅ v8.1 - Aplicar IVA si tiene_iva
+        const ivaPct = prod.tiene_iva ? TASA_IVA : 0;
         const costoConIva = precioUnitarioReal * (1 + ivaPct / 100);
 
-        // 3. ✅ Precio de venta final (costo con IVA + margen)
+        // 3. ✅ Precio de venta final
         const precioVenta = costoConIva * (1 + (prod.margen || 30) / 100);
 
         try {
@@ -3197,12 +3201,11 @@ async function confirmarProductos() {
 
                 const { error: errUpdate } = await supabaseClient.from('productos').update({
                     stock: nuevoStock,
-                    // ✅ Guardar costo CON IVA
                     precio_compra_usd: parseFloat(costoConIva.toFixed(4)),
                     precio_venta_usd: parseFloat(precioVenta.toFixed(4)),
                     margen: prod.margen || 30,
                     iva: ivaPct,
-                    exento: prod.exento || false,
+                    exento: !prod.tiene_iva,
                     unidades_caja: prod.unidades_caja || 0,
                     precio_caja_usd: prod.precio_caja || 0,
                     ultimo_proveedor: proveedor,
@@ -3220,12 +3223,11 @@ async function confirmarProductos() {
                     nombre_normalizado: nombreNorm,
                     stock: prod.cantidad,
                     unidad: prod.unidad || 'UND',
-                    // ✅ Guardar costo CON IVA
                     precio_compra_usd: parseFloat(costoConIva.toFixed(4)),
                     precio_venta_usd: parseFloat(precioVenta.toFixed(4)),
                     margen: prod.margen || 30,
                     iva: ivaPct,
-                    exento: prod.exento || false,
+                    exento: !prod.tiene_iva,
                     unidades_caja: prod.unidades_caja || 0,
                     precio_caja_usd: prod.precio_caja || 0,
                     ultimo_proveedor: proveedor,
@@ -3247,8 +3249,7 @@ async function confirmarProductos() {
         let precioReal = p.precio_unitario;
         if (p.unidades_caja > 1) precioReal = p.precio_unitario / p.unidades_caja;
         
-        // ✅ Calcular costo con IVA y venta final
-        const ivaPct = p.exento ? 0 : (parseFloat(p.iva) || 0);
+        const ivaPct = p.tiene_iva ? TASA_IVA : 0;
         const costoConIva = precioReal * (1 + ivaPct / 100);
         const precioVentaFinal = costoConIva * (1 + (p.margen || 30) / 100);
         
@@ -3257,8 +3258,7 @@ async function confirmarProductos() {
             cantidad: p.cantidad,
             unidad: p.unidad,
             precio_unitario: parseFloat(costoConIva.toFixed(4)),
-            iva: p.iva,
-            exento: p.exento,
+            tiene_iva: p.tiene_iva,
             margen: p.margen,
             precio_venta: parseFloat(precioVentaFinal.toFixed(4))
         };
@@ -3275,7 +3275,7 @@ async function confirmarProductos() {
 }
 
 // ============================================
-// IMPORTAR PDFs DE BANESCO (integración)
+// IMPORTAR PDFs DE BANESCO
 // ============================================
 function configurarDropZonePdf() {
     const dropZone = document.getElementById('dropZonePdf');
