@@ -1,8 +1,14 @@
 // ============================================
-// GESTORE PWA - v7
+// GESTORE PWA - v8.0
 // Changelog:
-// v6.14 - Agregada 5ta tarjeta "PUNTO $" en Ventas Diarias
-// v6.13 - Pestaña Ventas Diarias (diaria/semanal/mensual)
+// v8.0 - Portadas todas las funciones de la extensión:
+//        - Badges Ventas (Mes/Sem/Sem.Pas/Últ.Día/Prom.Día)
+//        - Nuevo Pago Manual
+//        - Importar PDFs Banesco
+//        - Margen masivo clickeable
+//        - Borrar todos los pagos
+// v6.14 - 5ta tarjeta PUNTO $ en Ventas Diarias
+// v6.13 - Pestaña Ventas Diarias
 // ============================================
 
 const SUPABASE_URL = "https://kpsurjxypipxtjizlyon.supabase.co";
@@ -12,6 +18,10 @@ let supabaseClient;
 try {
     supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     console.log("✅ Cliente Supabase creado");
+    // Exponer para importar-pdf.js
+    window.supabaseClient = supabaseClient;
+    window.SUPABASE_URL = SUPABASE_URL;
+    window.SUPABASE_KEY = SUPABASE_KEY;
 } catch (e) {
     console.error("❌ Error al crear cliente Supabase:", e);
 }
@@ -40,7 +50,7 @@ let ventaEditando = null;
 // INICIALIZACIÓN
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("🚀 Gestore PWA v6.14 iniciado");
+    console.log("🚀 Gestore PWA v8.0 iniciado");
     configurarEventos();
     cargarTasa();
     cargarDatos();
@@ -188,6 +198,7 @@ function configurarEventos() {
     document.getElementById('formMontoBs').addEventListener('input', convertirBsAUSD);
     document.getElementById('formMontoUSD').addEventListener('input', actualizarEquivalente);
 
+    // ========== PAGOS ==========
     document.getElementById('btnSubirCapturaPago').addEventListener('click', () => {
         document.getElementById('inputFotoPago').click();
     });
@@ -203,6 +214,23 @@ function configurarEventos() {
     document.getElementById('btnGuardarEditarPago').addEventListener('click', guardarEditarPago);
     document.getElementById('btnEliminarPagoDesdeModal').addEventListener('click', eliminarPagoDesdeModal);
     document.getElementById('editPagoMontoBs').addEventListener('input', actualizarEquivalenteEditPago);
+
+    // NUEVO PAGO MANUAL
+    document.getElementById('btnNuevoPagoManual').addEventListener('click', abrirModalNuevoPago);
+    document.getElementById('btnCerrarNuevoPago').addEventListener('click', cerrarModalNuevoPago);
+    document.getElementById('btnCancelarNuevoPago').addEventListener('click', cerrarModalNuevoPago);
+    document.getElementById('btnGuardarNuevoPago').addEventListener('click', guardarNuevoPago);
+    document.getElementById('nuevoPagoMontoBs').addEventListener('input', actualizarEquivalenteNuevoPago);
+
+    // IMPORTAR PDFs BANESCO
+    document.getElementById('btnImportarPdfPago').addEventListener('click', abrirModalImportarPdf);
+    document.getElementById('btnCerrarImportarPdf').addEventListener('click', cerrarModalImportarPdf);
+    document.getElementById('btnCancelarImportarPdf').addEventListener('click', cerrarModalImportarPdf);
+    document.getElementById('btnImportarPdfGuardar').addEventListener('click', guardarPagosImportadosPdf);
+    configurarDropZonePdf();
+
+    // BORRAR TODOS LOS PAGOS
+    document.getElementById('btnBorrarTodosPagos').addEventListener('click', borrarTodosLosPagos);
 
     // ========== VENTAS DIARIAS ==========
     document.getElementById('btnNuevaVenta').addEventListener('click', () => abrirModalVenta(null));
@@ -222,6 +250,12 @@ function configurarEventos() {
     document.getElementById('btnCancelarPegar').addEventListener('click', cerrarModalPegarVentas);
     document.getElementById('btnProcesarPegar').addEventListener('click', procesarPegadoVentas);
     document.getElementById('textoPegarVentas').addEventListener('input', previewPegadoVentas);
+
+    // MARGEN MASIVO
+    document.getElementById('cardMargenPromedio').addEventListener('click', abrirModalMargenMasivo);
+    document.getElementById('btnCerrarMargenMasivo').addEventListener('click', cerrarModalMargenMasivo);
+    document.getElementById('btnCancelarMargenMasivo').addEventListener('click', cerrarModalMargenMasivo);
+    document.getElementById('btnAplicarMargenMasivo').addEventListener('click', aplicarMargenMasivo);
 
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
@@ -973,9 +1007,6 @@ function renderizarVentas() {
         `📊 <b>${filtradas.length}</b> registros · Ef: <b>${formatearUSD(sumEfectivo)}</b> · Ze: <b>${formatearUSD(sumZelle)}</b> · Pu: <b>${formatearUSD(sumPuntoUsd)}</b> · <b style="color:#28a745;">TOTAL: ${formatearUSD(sumTotal)}</b>`;
 }
 
-// ============================================
-// VISTA DIARIA
-// ============================================
 function renderizarVentasDiaria(lista, filtradas) {
     const mult = filtros.ventas.direccion === 'asc' ? 1 : -1;
     filtradas.sort((a, b) => {
@@ -1020,9 +1051,6 @@ function renderizarVentasDiaria(lista, filtradas) {
     });
 }
 
-// ============================================
-// VISTA AGRUPADA (SEMANAL / MENSUAL)
-// ============================================
 function renderizarVentasAgrupada(lista, filtradas, tipo) {
     const grupos = new Map();
 
@@ -1159,47 +1187,87 @@ function renderizarVentasAgrupada(lista, filtradas, tipo) {
 }
 
 // ============================================
-// ESTADÍSTICAS VENTAS
+// ESTADÍSTICAS VENTAS - BADGES v8.0
 // ============================================
 function actualizarEstadisticasVentas() {
     const hoy = new Date();
-    const hoyStr = dateToFechaStr(hoy);
+    hoy.setHours(0, 0, 0, 0);
+    
+    // ====== BADGE 1: MES ACTUAL ======
     const mesActual = hoy.getMonth();
     const anioActual = hoy.getFullYear();
-
-    let hoyTotal = 0, mesTotal = 0, efectivoTotal = 0, zelleTotal = 0, puntoTotal = 0;
-    let hoyDet = '—';
+    let mesTotal = 0;
     let mesCount = 0;
-
     datos.ventas_diarias.forEach(v => {
-        const ef = parseFloat(v.efectivo_usd) || 0;
-        const ze = parseFloat(v.zelle_usd) || 0;
-        const pu = parseFloat(v.punto_usd) || 0;
-        const tot = parseFloat(v.total_usd) || (ef + ze + pu);
-
-        efectivoTotal += ef;
-        zelleTotal += ze;
-        puntoTotal += pu;
-
-        if (v.fecha === hoyStr) {
-            hoyTotal = tot;
-            hoyDet = `Ef: ${formatearUSD(ef)} · Ze: ${formatearUSD(ze)} · Pu: ${formatearUSD(pu)}`;
-        }
-
         const date = fechaStrToDate(v.fecha);
         if (date && date.getMonth() === mesActual && date.getFullYear() === anioActual) {
-            mesTotal += tot;
+            mesTotal += parseFloat(v.total_usd) || (parseFloat(v.efectivo_usd)||0) + (parseFloat(v.zelle_usd)||0) + (parseFloat(v.punto_usd)||0);
             mesCount++;
         }
     });
-
-    document.getElementById('statVentasHoy').textContent = formatearUSD(hoyTotal);
-    document.getElementById('statVentasHoyDetalle').textContent = hoyDet;
-    document.getElementById('statVentasMes').textContent = formatearUSD(mesTotal);
-    document.getElementById('statVentasMesDetalle').textContent = `${mesCount} día${mesCount !== 1 ? 's' : ''}`;
-    document.getElementById('statEfectivoTotal').textContent = formatearUSD(efectivoTotal);
-    document.getElementById('statZelleTotal').textContent = formatearUSD(zelleTotal);
-    document.getElementById('statPuntoTotal').textContent = formatearUSD(puntoTotal);
+    document.getElementById('badgeMes').textContent = formatearUSD(mesTotal);
+    document.getElementById('badgeMesSub').textContent = `${mesCount} día${mesCount !== 1 ? 's' : ''}`;
+    
+    // ====== BADGE 2: SEMANA ACTUAL (Lunes a Domingo) ======
+    const lunesActual = getLunesDeSemana(hoy);
+    const domingoActual = getDomingoDeSemana(hoy);
+    let semTotal = 0;
+    let semCount = 0;
+    datos.ventas_diarias.forEach(v => {
+        const date = fechaStrToDate(v.fecha);
+        if (date && date >= lunesActual && date <= domingoActual) {
+            semTotal += parseFloat(v.total_usd) || (parseFloat(v.efectivo_usd)||0) + (parseFloat(v.zelle_usd)||0) + (parseFloat(v.punto_usd)||0);
+            semCount++;
+        }
+    });
+    document.getElementById('badgeSem').textContent = formatearUSD(semTotal);
+    document.getElementById('badgeSemSub').textContent = `${semCount} día${semCount !== 1 ? 's' : ''}`;
+    
+    // ====== BADGE 3: SEMANA PASADA ======
+    const lunesAnterior = new Date(lunesActual);
+    lunesAnterior.setDate(lunesAnterior.getDate() - 7);
+    const domingoAnterior = new Date(domingoActual);
+    domingoAnterior.setDate(domingoAnterior.getDate() - 7);
+    let semPasTotal = 0;
+    let semPasCount = 0;
+    datos.ventas_diarias.forEach(v => {
+        const date = fechaStrToDate(v.fecha);
+        if (date && date >= lunesAnterior && date <= domingoAnterior) {
+            semPasTotal += parseFloat(v.total_usd) || (parseFloat(v.efectivo_usd)||0) + (parseFloat(v.zelle_usd)||0) + (parseFloat(v.punto_usd)||0);
+            semPasCount++;
+        }
+    });
+    document.getElementById('badgeSemPas').textContent = formatearUSD(semPasTotal);
+    document.getElementById('badgeSemPasSub').textContent = `${semPasCount} día${semPasCount !== 1 ? 's' : ''}`;
+    
+    // ====== BADGE 4: ÚLTIMO DÍA CON VENTA ======
+    const ventasOrdenadas = [...datos.ventas_diarias]
+        .filter(v => v.fecha)
+        .sort((a, b) => {
+            const fa = a.fecha.split('/').reverse().join('');
+            const fb = b.fecha.split('/').reverse().join('');
+            return fb.localeCompare(fa);
+        });
+    
+    if (ventasOrdenadas.length > 0) {
+        const ultima = ventasOrdenadas[0];
+        const totUlt = parseFloat(ultima.total_usd) || (parseFloat(ultima.efectivo_usd)||0) + (parseFloat(ultima.zelle_usd)||0) + (parseFloat(ultima.punto_usd)||0);
+        document.getElementById('badgeUltDia').textContent = formatearUSD(totUlt);
+        document.getElementById('badgeUltDiaSub').textContent = ultima.fecha;
+    } else {
+        document.getElementById('badgeUltDia').textContent = formatearUSD(0);
+        document.getElementById('badgeUltDiaSub').textContent = '—';
+    }
+    
+    // ====== BADGE 5: PROMEDIO POR DÍA (del mes actual) ======
+    if (mesCount > 0) {
+        const promedio = mesTotal / mesCount;
+        document.getElementById('badgePromDia').textContent = formatearUSD(promedio);
+        document.getElementById('badgePromDiaSub').textContent = 'este mes';
+    } else {
+        document.getElementById('badgePromDia').textContent = formatearUSD(0);
+        document.getElementById('badgePromDiaSub').textContent = '—';
+    }
 }
 
 // ============================================
@@ -1272,7 +1340,6 @@ async function guardarVentaDiaria() {
     const nota = document.getElementById('ventaNota').value.trim();
 
     const total = ef + ze + pu;
-
     const fechaISO = fechaInput;
 
     const payload = {
@@ -1589,7 +1656,7 @@ function exportarVentasExcel() {
 }
 
 // ============================================
-// ESTADÍSTICAS (Facturas y Pagos)
+// ESTADÍSTICAS (Facturas, Pagos, Inventario)
 // ============================================
 function actualizarEstadisticas() {
     const hoy = new Date();
@@ -1640,14 +1707,19 @@ function actualizarEstadisticas() {
 function actualizarEstadisticasInventario() {
     let totalProductos = datos.productos.length;
     let valorTotal = 0;
+    let sumaMargenes = 0;
 
     datos.productos.forEach(p => {
         valorTotal += (p.stock * p.precioCompraUSD);
+        sumaMargenes += (p.margen || 0);
     });
+
+    const margenPromedio = totalProductos > 0 ? (sumaMargenes / totalProductos) : 0;
 
     document.getElementById('statTotalProductos').textContent = totalProductos;
     document.getElementById('statValorInventario').textContent = '$' + valorTotal.toFixed(2);
     document.getElementById('statValorInventarioBs').textContent = formatearMontoBs(valorTotal * (tasaActual || 0)) + ' Bs';
+    document.getElementById('statMargenPromedio').textContent = margenPromedio.toFixed(1) + '%';
 }
 
 function actualizarBadge() {
@@ -1659,6 +1731,83 @@ function actualizarBadge() {
     } else {
         badge.classList.add('hidden');
     }
+}
+
+// ============================================
+// MARGEN MASIVO
+// ============================================
+function abrirModalMargenMasivo() {
+    if (datos.productos.length === 0) {
+        mostrarToast('No hay productos en el inventario', 'error');
+        return;
+    }
+    
+    let suma = 0;
+    datos.productos.forEach(p => suma += (p.margen || 0));
+    const promedio = (suma / datos.productos.length).toFixed(1);
+    
+    document.getElementById('inputMargenMasivo').value = promedio;
+    document.getElementById('modalMargenMasivo').classList.remove('hidden');
+}
+
+function cerrarModalMargenMasivo() {
+    document.getElementById('modalMargenMasivo').classList.add('hidden');
+}
+
+async function aplicarMargenMasivo() {
+    const nuevoMargen = parseFloat(document.getElementById('inputMargenMasivo').value);
+    
+    if (isNaN(nuevoMargen) || nuevoMargen < 0 || nuevoMargen > 500) {
+        mostrarToast('Margen inválido (0-500)', 'error');
+        return;
+    }
+
+    if (!confirm(`⚠️ Aplicar margen ${nuevoMargen}% a TODOS los productos (${datos.productos.length})?\n\nEsta acción recalculará los precios de venta.`)) {
+        return;
+    }
+
+    const btn = document.getElementById('btnAplicarMargenMasivo');
+    btn.disabled = true;
+    btn.textContent = '⏳ Aplicando...';
+
+    let actualizados = 0;
+    let errores = 0;
+
+    for (const p of datos.productos) {
+        try {
+            let precioCompraPorUnidad = p.precioCompraUSD;
+            if (p.unidadesCaja > 1 && p.precioCajaUSD > 0) {
+                precioCompraPorUnidad = p.precioCajaUSD / p.unidadesCaja;
+            }
+            const precioVenta = precioCompraPorUnidad * (1 + nuevoMargen / 100);
+
+            const { error } = await supabaseClient
+                .from('productos')
+                .update({
+                    margen: nuevoMargen,
+                    precio_venta_usd: parseFloat(precioVenta.toFixed(4)),
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', p.id);
+
+            if (error) { errores++; } else { actualizados++; }
+        } catch (e) {
+            console.error('Error:', p.nombre, e);
+            errores++;
+        }
+    }
+
+    btn.disabled = false;
+    btn.textContent = '✅ Aplicar a Todos';
+
+    if (errores > 0) {
+        mostrarToast(`⚠️ ${actualizados} actualizados, ${errores} errores`, 'error');
+    } else {
+        mostrarToast(`✅ Margen ${nuevoMargen}% aplicado a ${actualizados} productos`, 'success');
+    }
+
+    cerrarModalMargenMasivo();
+    cargarDatos();
 }
 
 // ============================================
@@ -2086,6 +2235,143 @@ async function eliminarPago(pago) {
         document.getElementById('modalDetalle').classList.add('hidden');
         cargarDatos();
     } catch (error) {
+        mostrarToast('Error: ' + error.message, 'error');
+    }
+}
+
+// ============================================
+// BORRAR TODOS LOS PAGOS (doble confirmación)
+// ============================================
+async function borrarTodosLosPagos() {
+    const total = datos.pagos.length;
+    if (total === 0) {
+        mostrarToast('No hay pagos para borrar', 'info');
+        return;
+    }
+
+    const confirmacion1 = confirm(`⚠️ ¿Estás SEGURO de borrar TODOS los ${total} pagos?\n\nEsta acción NO se puede deshacer.`);
+    if (!confirmacion1) return;
+
+    const texto = prompt(`Para confirmar, escribe la palabra BORRAR (en mayúsculas):`);
+    if (texto !== 'BORRAR') {
+        mostrarToast('Cancelado', 'info');
+        return;
+    }
+
+    mostrarToast('⏳ Borrando todos los pagos...', 'info');
+
+    try {
+        const { error } = await supabaseClient
+            .from('pagos')
+            .delete()
+            .neq('id', 0);
+
+        if (error) throw error;
+
+        mostrarToast(`✅ ${total} pagos eliminados`, 'success');
+        cargarDatos();
+    } catch (error) {
+        console.error('Error al borrar pagos:', error);
+        mostrarToast('Error: ' + error.message, 'error');
+    }
+}
+
+// ============================================
+// NUEVO PAGO MANUAL
+// ============================================
+function abrirModalNuevoPago() {
+    document.getElementById('nuevoPagoBeneficiario').value = '';
+    document.getElementById('nuevoPagoTipo').value = 'transferencia';
+    document.getElementById('nuevoPagoMontoBs').value = '';
+    document.getElementById('nuevoPagoReferencia').value = '';
+    document.getElementById('nuevoPagoFecha').valueAsDate = new Date();
+    document.getElementById('nuevoPagoBanco').value = '';
+    document.getElementById('nuevoPagoNombreReceptor').value = '';
+    document.getElementById('nuevoPagoCedulaReceptor').value = '';
+    document.getElementById('nuevoPagoTelefonoReceptor').value = '';
+    document.getElementById('nuevoPagoConcepto').value = '';
+    document.getElementById('nuevoPagoNotas').value = '';
+    document.getElementById('nuevoPagoEquivalente').innerHTML = '💵 Equivalente USD: --';
+    document.getElementById('modalNuevoPago').classList.remove('hidden');
+}
+
+function cerrarModalNuevoPago() {
+    document.getElementById('modalNuevoPago').classList.add('hidden');
+}
+
+function actualizarEquivalenteNuevoPago() {
+    const montoBs = parseFloat(document.getElementById('nuevoPagoMontoBs').value) || 0;
+    const equival = document.getElementById('nuevoPagoEquivalente');
+    
+    if (montoBs > 0 && tasaActual) {
+        const usd = montoBs / tasaActual;
+        equival.innerHTML = `💵 Equivalente: <strong>$${usd.toFixed(2)}</strong> (Tasa: ${tasaActual.toFixed(2)} Bs/USD)`;
+    } else if (montoBs > 0 && !tasaActual) {
+        equival.innerHTML = `⚠️ Monto en Bs ingresado pero no hay tasa BCV`;
+    } else {
+        equival.innerHTML = `💵 Equivalente USD: --`;
+    }
+}
+
+async function guardarNuevoPago() {
+    const beneficiario = document.getElementById('nuevoPagoBeneficiario').value.trim();
+    if (!beneficiario) {
+        mostrarToast('El beneficiario es obligatorio', 'error');
+        return;
+    }
+
+    const tipoPago = document.getElementById('nuevoPagoTipo').value;
+    const montoBs = parseFloat(document.getElementById('nuevoPagoMontoBs').value) || 0;
+    if (montoBs <= 0) {
+        mostrarToast('El monto debe ser mayor a 0', 'error');
+        return;
+    }
+
+    const referencia = document.getElementById('nuevoPagoReferencia').value.trim();
+    const fecha = document.getElementById('nuevoPagoFecha').value;
+    if (!fecha) {
+        mostrarToast('La fecha es obligatoria', 'error');
+        return;
+    }
+
+    const banco = document.getElementById('nuevoPagoBanco').value.trim();
+    const nombreReceptor = document.getElementById('nuevoPagoNombreReceptor').value.trim();
+    const cedulaReceptor = document.getElementById('nuevoPagoCedulaReceptor').value.trim();
+    const telefonoReceptor = document.getElementById('nuevoPagoTelefonoReceptor').value.trim();
+    const concepto = document.getElementById('nuevoPagoConcepto').value.trim();
+    const notas = document.getElementById('nuevoPagoNotas').value.trim();
+
+    const montoUSD = tasaActual ? (montoBs / tasaActual).toFixed(2) : null;
+    const fechaFormato = fecha.split('-').reverse().join('/');
+
+    const pagoDB = {
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        numero_recibo: referencia || 'N/A',
+        fecha: fechaFormato,
+        beneficiario: beneficiario,
+        monto: montoBs,
+        monto_usd: montoUSD ? parseFloat(montoUSD) : null,
+        tasa_bcv: tasaActual,
+        concepto: concepto || (tipoPago === 'pago_movil' ? 'Pago Móvil' : 'Transferencia'),
+        resultado: 'Operación Exitosa',
+        notas: notas,
+        tipo_pago: tipoPago,
+        banco_receptor: banco || null,
+        cedula_receptor: cedulaReceptor || null,
+        telefono_receptor: telefonoReceptor || null,
+        nombre_receptor: nombreReceptor || null,
+        created_at: new Date().toISOString()
+    };
+
+    try {
+        const { error } = await supabaseClient.from('pagos').insert([pagoDB]);
+        if (error) throw error;
+
+        mostrarToast('✅ Pago guardado correctamente', 'success');
+        cerrarModalNuevoPago();
+        cargarDatos();
+    } catch (error) {
+        console.error('Error al guardar pago:', error);
         mostrarToast('Error: ' + error.message, 'error');
     }
 }
@@ -2545,7 +2831,7 @@ async function guardarPagoDesdeCaptura() {
     const beneficiario = nombreReceptor || (tipoPago === 'pago_movil' ? `Pago Móvil a ${telefonoReceptor || cedulaReceptor || banco}` : `Transferencia a ${banco}`);
 
     const pagoDB = {
-        id: Date.now(),
+        id: Date.now() + Math.floor(Math.random() * 1000),
         numero_recibo: referencia || 'N/A',
         fecha: fechaFormato,
         beneficiario: beneficiario,
@@ -2584,6 +2870,7 @@ function abrirModalEditarPago(p) {
     console.log("📝 Editando pago:", p.beneficiario);
 
     document.getElementById('editPagoBeneficiario').value = p.beneficiario || '';
+    document.getElementById('editPagoTipo').value = p.tipoPago || 'transferencia';
     document.getElementById('editPagoMontoBs').value = parsearMontoBs(p.monto) || 0;
     document.getElementById('editPagoReferencia').value = p.numeroRecibo || '';
     
@@ -2636,6 +2923,7 @@ async function guardarEditarPago() {
         return;
     }
 
+    const tipoPago = document.getElementById('editPagoTipo').value;
     const montoBs = parseFloat(document.getElementById('editPagoMontoBs').value) || 0;
     if (montoBs <= 0) {
         mostrarToast('El monto debe ser mayor a 0', 'error');
@@ -2663,6 +2951,7 @@ async function guardarEditarPago() {
         monto_usd: montoUSD ? parseFloat(montoUSD) : null,
         tasa_bcv: tasaOriginal,
         concepto: concepto || pagoEditando.concepto,
+        tipo_pago: tipoPago,
         notas: notas,
         banco_receptor: banco || null,
         cedula_receptor: cedulaReceptor || null,
@@ -2713,7 +3002,7 @@ async function eliminarPagoDesdeModal() {
 }
 
 // ============================================
-// MODAL PRODUCTOS
+// MODAL PRODUCTOS (OCR factura)
 // ============================================
 function abrirModalProductos() {
     if (productosDetectados.length === 0) return;
@@ -2934,6 +3223,175 @@ async function confirmarProductos() {
 }
 
 // ============================================
+// IMPORTAR PDFs DE BANESCO (integración con importar-pdf.js)
+// ============================================
+function configurarDropZonePdf() {
+    const dropZone = document.getElementById('dropZonePdf');
+    const inputPdf = document.getElementById('inputPdfsBanesco');
+
+    if (!dropZone || !inputPdf) return;
+
+    dropZone.addEventListener('click', () => inputPdf.click());
+
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.style.background = 'rgba(255, 107, 0, 0.12)';
+        dropZone.style.borderColor = '#FF8534';
+    });
+
+    dropZone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dropZone.style.background = 'rgba(255, 107, 0, 0.04)';
+        dropZone.style.borderColor = '#FF6B00';
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.style.background = 'rgba(255, 107, 0, 0.04)';
+        dropZone.style.borderColor = '#FF6B00';
+        
+        const files = Array.from(e.dataTransfer.files).filter(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
+        if (files.length > 0) {
+            procesarArchivosPdfPwa(files);
+        }
+    });
+
+    inputPdf.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length > 0) {
+            procesarArchivosPdfPwa(files);
+        }
+        e.target.value = '';
+    });
+}
+
+function abrirModalImportarPdf() {
+    document.getElementById('resultadosPdf').innerHTML = '';
+    document.getElementById('progresoPdf').style.display = 'none';
+    document.getElementById('btnImportarPdfGuardar').disabled = true;
+    if (window.pagosParseadosPwa) window.pagosParseadosPwa = [];
+    document.getElementById('modalImportarPdf').classList.remove('hidden');
+}
+
+function cerrarModalImportarPdf() {
+    document.getElementById('modalImportarPdf').classList.add('hidden');
+}
+
+async function procesarArchivosPdfPwa(files) {
+    const progreso = document.getElementById('progresoPdf');
+    const progresoTexto = document.getElementById('progresoPdfTexto');
+    const progresoBarra = document.getElementById('progresoPdfBarra');
+    const resultadosDiv = document.getElementById('resultadosPdf');
+
+    progreso.style.display = 'block';
+    resultadosDiv.innerHTML = '';
+
+    if (typeof procesarTodosLosPDFsPwa !== 'function') {
+        mostrarToast('Error: importar-pdf.js no cargado', 'error');
+        progreso.style.display = 'none';
+        return;
+    }
+
+    try {
+        const pagos = await procesarTodosLosPDFsPwa(files, (info) => {
+            progresoTexto.textContent = `Procesando ${info.actual}/${info.total}: ${info.archivo}`;
+            progresoBarra.style.width = `${(info.actual / info.total) * 100}%`;
+        });
+
+        window.pagosParseadosPwa = pagos;
+
+        const validos = pagos.filter(p => !p.error && p.confianza !== 'baja').length;
+        const conError = pagos.filter(p => p.error).length;
+
+        let html = `<div style="background: rgba(255, 107, 0, 0.08); border-left: 4px solid #FF6B00; padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+            <strong>📊 Resultado:</strong> ${pagos.length} PDFs procesados<br>
+            ✅ ${validos} válidos · ❌ ${conError} con error
+        </div>`;
+
+        html += `<div style="max-height: 300px; overflow-y: auto;">`;
+
+        pagos.forEach((p, i) => {
+            const color = p.error ? '#dc3545' : (p.esDuplicado ? '#ffc107' : '#28a745');
+            const icono = p.error ? '❌' : (p.esDuplicado ? '⚠️' : '✅');
+            
+            html += `<div style="padding: 10px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; font-size: 12px; background: var(--surface);">
+                <div style="font-weight: 700; color: ${color}; margin-bottom: 4px;">${icono} ${escapeHtml(p.archivo)}</div>`;
+
+            if (p.error) {
+                html += `<div style="color: #dc3545;">${escapeHtml(p.error)}</div>`;
+            } else if (p.esDuplicado) {
+                html += `<div style="color: #ffc107;">⚠️ Ya existe un pago similar</div>`;
+                html += `<div>📅 ${p.fecha} · 💵 ${formatearMontoBs(p.montoBs)} Bs · 👤 ${escapeHtml(p.beneficiario || 'N/A')}</div>`;
+            } else {
+                html += `<div>📅 ${p.fecha} · 💵 ${formatearMontoBs(p.montoBs)} Bs${p.montoUSD ? ` ($${p.montoUSD.toFixed(2)})` : ''}</div>`;
+                html += `<div>👤 ${escapeHtml(p.beneficiario || 'N/A')}</div>`;
+                if (p.tasaBCV) html += `<div>💱 Tasa: ${p.tasaBCV.toFixed(2)} Bs/USD (${p.fuenteTasa || 'histórico'})</div>`;
+            }
+
+            html += `</div>`;
+        });
+
+        html += `</div>`;
+        resultadosDiv.innerHTML = html;
+
+        progreso.style.display = 'none';
+
+        if (validos > 0) {
+            document.getElementById('btnImportarPdfGuardar').disabled = false;
+            mostrarToast(`✅ ${validos} pagos listos para guardar`, 'success');
+        } else {
+            mostrarToast('No hay pagos válidos para guardar', 'error');
+        }
+
+    } catch (error) {
+        console.error('Error procesando PDFs:', error);
+        progreso.style.display = 'none';
+        mostrarToast('Error: ' + error.message, 'error');
+    }
+}
+
+async function guardarPagosImportadosPdf() {
+    const pagos = window.pagosParseadosPwa || [];
+    const validos = pagos.filter(p => !p.error && !p.esDuplicado && p.confianza !== 'baja');
+
+    if (validos.length === 0) {
+        mostrarToast('No hay pagos válidos para guardar', 'error');
+        return;
+    }
+
+    if (!confirm(`📥 Guardar ${validos.length} pagos importados desde PDF?\n\n¿Continuar?`)) return;
+
+    const btn = document.getElementById('btnImportarPdfGuardar');
+    btn.disabled = true;
+    btn.textContent = '⏳ Guardando...';
+
+    if (typeof guardarPagosImportadosPwa !== 'function') {
+        mostrarToast('Error: función no disponible', 'error');
+        btn.disabled = false;
+        btn.textContent = '💾 Guardar Pagos';
+        return;
+    }
+
+    try {
+        const resultado = await guardarPagosImportadosPwa(validos);
+
+        if (resultado.success) {
+            mostrarToast(`✅ ${resultado.insertados || validos.length} pagos guardados`, 'success');
+            cerrarModalImportarPdf();
+            cargarDatos();
+        } else {
+            mostrarToast('Error: ' + (resultado.error || 'Desconocido'), 'error');
+        }
+    } catch (error) {
+        console.error('Error guardando pagos:', error);
+        mostrarToast('Error: ' + error.message, 'error');
+    }
+
+    btn.disabled = false;
+    btn.textContent = '💾 Guardar Pagos';
+}
+
+// ============================================
 // TOAST
 // ============================================
 function mostrarToast(mensaje, tipo = 'info') {
@@ -2946,3 +3404,8 @@ function mostrarToast(mensaje, tipo = 'info') {
         toast.classList.add('hidden');
     }, 3000);
 }
+
+// Exponer funciones para importar-pdf.js
+window.formatearMontoBs = formatearMontoBs;
+window.mostrarToast = mostrarToast;
+window.escapeHtml = escapeHtml;
