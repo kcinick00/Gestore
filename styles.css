@@ -1760,3 +1760,14 @@ main {
     border-left-color: var(--success);
     color: #047857;
 }
+/* v8.4 - Mejora visual para toggles de moneda en Editar Producto */
+#checkUSDEditCompra,
+#checkUSDEditCaja {
+    accent-color: var(--primary);
+    border-radius: 4px;
+}
+
+#checkUSDEditCompra:checked + label,
+#checkUSDEditCaja:checked + label {
+    color: var(--primary);
+}
