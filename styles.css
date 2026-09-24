@@ -1,6 +1,5 @@
 /* ============================================
-   GESTORE PWA v9.0 - Artisan Deli Premium
-   Estilo: Food Tech High-End / Artisan Charcuterie
+   GESTORE PWA v10.0 - PayPal Professional Style
    ============================================ */
 
 * { 
@@ -11,89 +10,75 @@
 }
 
 /* ============================================
-   SISTEMA DE DISEÑO - PALETA GOURMET
+   SISTEMA DE DISEÑO - PayPal Brand
    ============================================ */
 :root {
-    /* Fondos cálidos tipo "papel kraft" y crema */
-    --bg: #FAF6F0;
-    --bg-soft: #F5EFE6;
-    --bg-subtle: #EDE6DA;
+    /* Fondos */
+    --bg: #FFFFFF;
+    --bg-soft: #F7F8FA;
+    --bg-subtle: #EEEEEE;
     
     /* Superficies */
     --surface: #FFFFFF;
-    --surface-hover: #FFFDF9;
+    --surface-hover: #F5F7FA;
     --surface-elevated: #FFFFFF;
     
-    /* Bordes suaves tipo "artesanal" */
-    --border: #E8DFD1;
-    --border-subtle: #F0E9DE;
-    --border-strong: #D4C7B2;
+    /* Bordes */
+    --border: #DADDDD;
+    --border-subtle: #E8EAED;
+    --border-strong: #C4C8CC;
     
-    /* Texto - tonos cálidos oscuros */
-    --text: #2B2118;
-    --text-secondary: #6B5D4F;
-    --text-tertiary: #9B8B78;
-    --text-quaternary: #B8A896;
+    /* Texto - según PayPal */
+    --text: #010B0D;
+    --text-secondary: #6C7378;
+    --text-tertiary: #9DA3A6;
+    --text-quaternary: #B8BEC2;
     --text-inverse: #FFFFFF;
     
-    /* Acento principal: Terracotta / Tomate artesanal */
-    --primary: #C8442C;
-    --primary-hover: #D95438;
-    --primary-dark: #A33522;
-    --primary-light: rgba(200, 68, 44, 0.08);
-    --primary-glow: rgba(200, 68, 44, 0.25);
+    /* Azules PayPal */
+    --paypal-blue: #0070BA;
+    --paypal-blue-hover: #005EA6;
+    --paypal-blue-dark: #003087;
+    --paypal-blue-light: #E6F0F8;
+    --paypal-blue-glow: rgba(0, 112, 186, 0.2);
     
-    /* Secundario: Mostaza / Curry */
-    --accent-gold: #E8A33D;
-    --accent-gold-light: rgba(232, 163, 61, 0.12);
+    --paypal-sky: #009CDE;
+    --paypal-sky-light: #E5F5FC;
     
-    /* Semánticos gourmet */
-    --success: #5B8C3E;
-    --success-dark: #4A7532;
-    --success-light: rgba(91, 140, 62, 0.1);
+    --paypal-deep: #003087;
+    --paypal-deep-light: #E6EAF5;
     
-    --danger: #C8442C;
-    --danger-dark: #A33522;
-    --danger-light: rgba(200, 68, 44, 0.1);
+    /* Semánticos */
+    --success: #0070BA;
+    --success-dark: #005EA6;
+    --success-light: #E6F0F8;
+    
+    --danger: #D9360B;
+    --danger-dark: #B82D09;
+    --danger-light: #FDEEE9;
     
     --warning: #E8A33D;
     --warning-dark: #C8862A;
-    --warning-light: rgba(232, 163, 61, 0.12);
+    --warning-light: #FDF5E8;
     
-    --info: #4A7C8C;
-    --info-light: rgba(74, 124, 140, 0.1);
+    --info: #0070BA;
+    --info-light: #E6F0F8;
     
-    --olive: #7A8B3E;
-    --olive-light: rgba(122, 139, 62, 0.12);
+    /* Sombras - sutiles estilo PayPal */
+    --shadow-xs: 0 1px 2px rgba(1, 11, 13, 0.06);
+    --shadow-sm: 0 1px 3px rgba(1, 11, 13, 0.08), 0 1px 2px rgba(1, 11, 13, 0.04);
+    --shadow-md: 0 4px 12px rgba(1, 11, 13, 0.08), 0 1px 3px rgba(1, 11, 13, 0.04);
+    --shadow-lg: 0 8px 24px rgba(1, 11, 13, 0.1), 0 2px 6px rgba(1, 11, 13, 0.04);
+    --shadow-xl: 0 16px 40px rgba(1, 11, 13, 0.12), 0 4px 12px rgba(1, 11, 13, 0.06);
+    --shadow-primary: 0 4px 12px rgba(0, 112, 186, 0.25);
+    --shadow-danger: 0 4px 12px rgba(217, 54, 11, 0.25);
     
-    --wine: #8B3A4A;
-    --wine-light: rgba(139, 58, 74, 0.1);
-    
-    --cream: #F5EFE6;
-    --cream-dark: #E8DFD1;
-    
-    /* Colores semánticos de estatus */
-    --estatus-pendiente: #E8A33D;
-    --estatus-vencida: #C8442C;
-    --estatus-pagada: #5B8C3E;
-    
-    /* Sombras cálidas y suaves */
-    --shadow-xs: 0 1px 2px rgba(43, 33, 24, 0.04);
-    --shadow-sm: 0 2px 6px rgba(43, 33, 24, 0.06), 0 1px 2px rgba(43, 33, 24, 0.04);
-    --shadow-md: 0 6px 16px rgba(43, 33, 24, 0.08), 0 2px 4px rgba(43, 33, 24, 0.04);
-    --shadow-lg: 0 12px 28px rgba(43, 33, 24, 0.1), 0 4px 8px rgba(43, 33, 24, 0.04);
-    --shadow-xl: 0 20px 48px rgba(43, 33, 24, 0.12), 0 8px 16px rgba(43, 33, 24, 0.06);
-    --shadow-primary: 0 6px 20px rgba(200, 68, 44, 0.25);
-    --shadow-danger: 0 6px 20px rgba(200, 68, 44, 0.25);
-    --shadow-gold: 0 6px 20px rgba(232, 163, 61, 0.25);
-    
-    /* Radios - suaves y orgánicos */
-    --r-xs: 8px;
-    --r-sm: 12px;
-    --r-md: 16px;
-    --r-lg: 20px;
-    --r-xl: 28px;
-    --r-2xl: 36px;
+    /* Radios - PayPal usa esquinas redondeadas moderadas */
+    --r-xs: 4px;
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 16px;
+    --r-xl: 24px;
     --r-full: 9999px;
     
     /* Espaciado */
@@ -105,17 +90,17 @@
     --sp-6: 24px;
     --sp-8: 32px;
     
-    /* Tipografía - Serif elegante + Sans moderna */
-    --font-display: 'Fraunces', 'Playfair Display', Georgia, serif;
-    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --font-mono: 'JetBrains Mono', 'SF Mono', Monaco, monospace;
+    /* Tipografía - PayPal Pro / Futura style */
+    --font-display: 'Helvetica Neue', 'Arial', sans-serif;
+    --font-body: 'Helvetica Neue', 'Arial', sans-serif;
+    --font-mono: 'SF Mono', 'Monaco', 'Courier New', monospace;
     
-    /* Transiciones suaves y orgánicas */
-    --ease: cubic-bezier(0.32, 0.72, 0, 1);
-    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-    --t-fast: 180ms var(--ease-out);
-    --t: 280ms var(--ease-out);
-    --t-bounce: 500ms var(--ease);
+    /* Transiciones - rápidas y precisas */
+    --ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-out: cubic-bezier(0, 0, 0.2, 1);
+    --t-fast: 150ms var(--ease);
+    --t: 200ms var(--ease);
+    --t-bounce: 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* ============================================
@@ -129,20 +114,15 @@ html {
 body {
     font-family: var(--font-body);
     background: var(--bg);
-    /* Textura sutil de papel */
-    background-image: 
-        radial-gradient(circle at 20% 30%, rgba(232, 163, 61, 0.03) 0%, transparent 50%),
-        radial-gradient(circle at 80% 70%, rgba(200, 68, 44, 0.03) 0%, transparent 50%);
-    background-attachment: fixed;
     color: var(--text);
     font-size: 16px;
-    line-height: 1.55;
+    line-height: 1.5;
     min-height: 100vh;
     padding-bottom: 100px;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01';
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    letter-spacing: -0.011em;
+    letter-spacing: -0.01em;
     transition: background var(--t), color var(--t);
 }
 
@@ -154,7 +134,6 @@ body {
     font-variant-numeric: tabular-nums;
 }
 
-/* Montos en mono */
 .card-monto, .card-monto-bs, .stat-value, .stat-venta-value,
 .detalle-valor.destacado, .equivalente-bs strong,
 input[type="number"], #ventaTotal, #editPrecioVenta {
@@ -163,7 +142,7 @@ input[type="number"], #ventaTotal, #editPrecioVenta {
 }
 
 /* ============================================
-   HEADER - Estilo "Menú de Restaurante"
+   HEADER - PayPal Clean
    ============================================ */
 .topbar {
     position: sticky;
@@ -171,29 +150,23 @@ input[type="number"], #ventaTotal, #editPrecioVenta {
     z-index: 100;
     padding: 16px 20px;
     padding-top: max(16px, env(safe-area-inset-top));
-    background: rgba(250, 246, 240, 0.92);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     color: var(--text);
     border-bottom: 1px solid var(--border);
     overflow: hidden;
 }
 
-/* Línea decorativa superior estilo "cortina" */
+/* Banda superior - azul PayPal */
 .topbar::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
-    background: repeating-linear-gradient(
-        90deg,
-        var(--primary) 0px,
-        var(--primary) 12px,
-        var(--accent-gold) 12px,
-        var(--accent-gold) 24px
-    );
+    height: 3px;
+    background: var(--paypal-blue);
 }
 
 .topbar-content {
@@ -210,54 +183,46 @@ input[type="number"], #ventaTotal, #editPrecioVenta {
 .logo { 
     display: flex; 
     align-items: center; 
-    gap: 12px;
+    gap: 10px;
     flex: 1;
     min-width: 0;
 }
 
 .logo-icon { 
-    font-size: 28px;
+    font-size: 26px;
     line-height: 1;
-    filter: drop-shadow(0 2px 6px rgba(200, 68, 44, 0.2));
-    animation: floatIcon 3s ease-in-out infinite;
-}
-
-@keyframes floatIcon {
-    0%, 100% { transform: translateY(0) rotate(-3deg); }
-    50% { transform: translateY(-3px) rotate(3deg); }
 }
 
 .logo-text { 
     font-family: var(--font-display);
-    font-size: 24px; 
+    font-size: 22px; 
     font-weight: 700;
     letter-spacing: -0.02em;
     color: var(--text);
     text-transform: none;
     line-height: 1;
-    font-style: italic;
 }
 
 .version-badge {
     font-family: var(--font-mono);
     font-size: 10px;
     font-weight: 700;
-    color: var(--primary);
-    background: var(--primary-light);
-    padding: 4px 10px;
+    color: var(--paypal-blue);
+    background: var(--paypal-blue-light);
+    padding: 3px 8px;
     border-radius: var(--r-full);
-    letter-spacing: 0.05em;
+    letter-spacing: 0.02em;
     margin-left: 6px;
-    border: 1px solid rgba(200, 68, 44, 0.2);
+    border: 1px solid rgba(0, 112, 186, 0.2);
 }
 
 .btn-icon {
-    background: var(--surface);
-    border: 1.5px solid var(--border);
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
     color: var(--text-secondary);
     font-size: 16px;
-    width: 42px;
-    height: 42px;
+    width: 40px;
+    height: 40px;
     border-radius: var(--r-full);
     cursor: pointer;
     display: flex;
@@ -265,19 +230,16 @@ input[type="number"], #ventaTotal, #editPrecioVenta {
     justify-content: center;
     transition: all var(--t);
     flex-shrink: 0;
-    box-shadow: var(--shadow-xs);
 }
 
 .btn-icon:hover {
-    background: var(--primary-light);
-    border-color: var(--primary);
-    color: var(--primary);
-    transform: rotate(90deg);
-    box-shadow: var(--shadow-sm);
+    background: var(--paypal-blue-light);
+    border-color: var(--paypal-blue);
+    color: var(--paypal-blue);
 }
 
 .btn-icon:active { 
-    transform: scale(0.9) rotate(90deg);
+    transform: scale(0.95);
 }
 
 .tasa-info { 
@@ -288,18 +250,13 @@ input[type="number"], #ventaTotal, #editPrecioVenta {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-top: 12px;
+    margin-top: 10px;
     max-width: 1200px;
     margin-left: auto;
     margin-right: auto;
     letter-spacing: -0.005em;
     position: relative;
     z-index: 1;
-    padding: 6px 12px;
-    background: var(--accent-gold-light);
-    border-radius: var(--r-full);
-    width: fit-content;
-    border: 1px solid rgba(232, 163, 61, 0.25);
 }
 
 .tasa-info::before {
@@ -308,37 +265,37 @@ input[type="number"], #ventaTotal, #editPrecioVenta {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: var(--accent-gold);
-    box-shadow: 0 0 0 3px rgba(232, 163, 61, 0.2);
+    background: var(--paypal-blue);
+    box-shadow: 0 0 0 3px var(--paypal-blue-light);
     animation: pulse 2s ease infinite;
 }
 
 @keyframes pulse {
     0%, 100% { 
         transform: scale(1);
-        box-shadow: 0 0 0 3px rgba(232, 163, 61, 0.2);
+        box-shadow: 0 0 0 3px var(--paypal-blue-light);
     }
     50% { 
         transform: scale(0.85);
-        box-shadow: 0 0 0 6px rgba(232, 163, 61, 0.06);
+        box-shadow: 0 0 0 6px rgba(0, 112, 186, 0.06);
     }
 }
 
 /* ============================================
-   TABS - Estilo "Menú de categorías"
+   TABS - PayPal Pill Navigation
    ============================================ */
 .tabs {
     position: sticky;
     top: 0;
     z-index: 99;
     display: flex;
-    background: rgba(250, 246, 240, 0.95);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border);
     overflow-x: auto;
     scrollbar-width: none;
-    padding: 14px 16px;
+    padding: 12px 16px;
     gap: 8px;
     max-width: 100%;
 }
@@ -348,10 +305,10 @@ input[type="number"], #ventaTotal, #editPrecioVenta {
 .tab {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 11px 18px;
-    background: var(--surface);
-    border: 1.5px solid var(--border);
+    gap: 6px;
+    padding: 10px 18px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
     color: var(--text-secondary);
     font-family: var(--font-body);
     font-size: 14px;
@@ -364,62 +321,53 @@ input[type="number"], #ventaTotal, #editPrecioVenta {
     border-radius: var(--r-full);
     flex-shrink: 0;
     position: relative;
-    box-shadow: var(--shadow-xs);
 }
 
 .tab-icon { 
-    font-size: 17px;
+    font-size: 16px;
     line-height: 1;
     transition: transform var(--t-bounce);
 }
 
 .tab.active {
-    background: var(--text);
+    background: var(--paypal-blue);
     color: var(--text-inverse);
-    border-color: var(--text);
-    box-shadow: 0 4px 12px rgba(43, 33, 24, 0.2);
+    border-color: var(--paypal-blue);
+    box-shadow: var(--shadow-primary);
 }
 
 .tab.active .tab-icon {
-    transform: scale(1.15) rotate(-5deg);
+    transform: scale(1.1);
 }
 
 .tab:hover:not(.active) {
-    background: var(--surface-hover);
-    border-color: var(--border-strong);
-    color: var(--text);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
+    background: var(--paypal-blue-light);
+    border-color: var(--paypal-blue);
+    color: var(--paypal-blue);
 }
 
 .tab:active {
-    transform: scale(0.96);
+    transform: scale(0.97);
 }
 
 .badge {
-    background: var(--primary);
+    background: var(--danger);
     color: white;
     border-radius: var(--r-full);
-    padding: 3px 8px;
+    padding: 2px 7px;
     font-family: var(--font-mono);
     font-size: 10px;
     font-weight: 800;
-    min-width: 20px;
+    min-width: 18px;
     text-align: center;
     line-height: 1.4;
     margin-left: 4px;
-    box-shadow: 0 2px 6px rgba(200, 68, 44, 0.4);
-    animation: badgePulse 2s ease infinite;
-}
-
-@keyframes badgePulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.08); }
+    box-shadow: 0 2px 6px rgba(217, 54, 11, 0.4);
 }
 
 .tab.active .badge {
-    background: var(--accent-gold);
-    color: var(--text);
+    background: var(--text-inverse);
+    color: var(--paypal-blue);
     box-shadow: none;
 }
 
@@ -433,34 +381,34 @@ main {
 }
 
 .seccion { 
-    animation: fadeIn 500ms var(--ease-out);
+    animation: fadeIn 300ms var(--ease-out);
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(12px); }
+    from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
 /* ============================================
-   STATS CARDS - Estilo "Tarjetas de Menú"
+   STATS CARDS - PayPal Card Style
    ============================================ */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 14px;
-    margin-bottom: 28px;
+    gap: 12px;
+    margin-bottom: 24px;
 }
 
 .stat-card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: var(--r-lg);
-    padding: 20px 18px;
+    border-radius: var(--r-md);
+    padding: 18px 16px;
     position: relative;
     overflow: hidden;
     transition: all var(--t);
     color: var(--text);
-    min-height: 120px;
+    min-height: 110px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -468,81 +416,60 @@ main {
 }
 
 .stat-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
     border-color: var(--border-strong);
 }
 
 .stat-card:active {
-    transform: translateY(-2px) scale(0.99);
+    transform: translateY(-1px) scale(0.99);
 }
 
-/* Barra lateral gruesa de color */
+/* Barra lateral azul */
 .stat-card::before {
     content: '';
     position: absolute;
     left: 0;
     top: 0;
     bottom: 0;
-    width: 5px;
-    border-radius: var(--r-lg) 0 0 var(--r-lg);
+    width: 4px;
+    border-radius: var(--r-md) 0 0 var(--r-md);
 }
 
-/* Esquina decorativa sutil */
-.stat-card::after {
-    content: '';
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    opacity: 0.08;
-}
-
-.stat-amarillo::before { background: var(--accent-gold); }
-.stat-amarillo::after { background: var(--accent-gold); }
-.stat-rojo::before { background: var(--primary); }
-.stat-rojo::after { background: var(--primary); }
-.stat-verde::before { background: var(--success); }
-.stat-verde::after { background: var(--success); }
-.stat-azul::before { background: var(--info); }
-.stat-azul::after { background: var(--info); }
+.stat-amarillo::before { background: var(--warning); }
+.stat-rojo::before { background: var(--danger); }
+.stat-verde::before { background: var(--paypal-blue); }
+.stat-azul::before { background: var(--paypal-sky); }
 .stat-gris::before { background: var(--text-tertiary); }
-.stat-gris::after { background: var(--text-tertiary); }
-.stat-naranja::before { background: var(--wine); }
-.stat-naranja::after { background: var(--wine); }
+.stat-naranja::before { background: var(--paypal-deep); }
 
 .stat-label {
-    font-family: var(--font-body);
     font-size: 11px;
     font-weight: 700;
     color: var(--text-secondary);
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 10px;
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
     position: relative;
     z-index: 1;
 }
 
 .stat-value {
-    font-family: var(--font-display);
-    font-size: 34px;
-    font-weight: 700;
+    font-size: 30px;
+    font-weight: 800;
     letter-spacing: -0.03em;
     color: var(--text);
     line-height: 1;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     position: relative;
     z-index: 1;
-    font-style: italic;
 }
 
-.stat-card.stat-amarillo .stat-value { color: var(--accent-gold); }
-.stat-card.stat-rojo .stat-value { color: var(--primary); }
-.stat-card.stat-verde .stat-value { color: var(--success); }
-.stat-card.stat-azul .stat-value { color: var(--info); }
-.stat-card.stat-naranja .stat-value { color: var(--wine); }
+.stat-card.stat-amarillo .stat-value { color: var(--warning-dark); }
+.stat-card.stat-rojo .stat-value { color: var(--danger); }
+.stat-card.stat-verde .stat-value { color: var(--paypal-blue); }
+.stat-card.stat-azul .stat-value { color: var(--paypal-sky); }
+.stat-card.stat-naranja .stat-value { color: var(--paypal-deep); }
 
 .stat-sub {
     font-family: var(--font-mono);
@@ -565,30 +492,30 @@ main {
 }
 
 /* ============================================
-   STATS VENTAS - 5 tarjetas estilo "pizarrón"
+   STATS VENTAS - 5 tarjetas compactas
    ============================================ */
 .stats-ventas-5 {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 10px;
-    margin-bottom: 28px;
+    margin-bottom: 24px;
 }
 
 .stat-venta-card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: var(--r-md);
-    padding: 16px 8px;
+    border-radius: var(--r-sm);
+    padding: 14px 6px;
     text-align: center;
     position: relative;
     overflow: hidden;
     transition: all var(--t);
     color: var(--text);
-    min-height: 100px;
+    min-height: 90px;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-xs);
 }
 
 .stat-venta-card::before {
@@ -601,44 +528,43 @@ main {
 }
 
 .stat-venta-card:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
     border-color: var(--border-strong);
 }
 
 .stat-venta-card:active {
-    transform: scale(0.97);
+    transform: scale(0.98);
 }
 
-/* Colores por tipo */
-.stat-venta-hoy::before { background: var(--success); }
-.stat-venta-mes::before { background: var(--info); }
-.stat-venta-efectivo::before { background: var(--accent-gold); }
-.stat-venta-zelle::before { background: var(--wine); }
-.stat-venta-punto::before { background: var(--info); }
-.stat-venta-sem::before { background: var(--success); }
-.stat-venta-sem-pas::before { background: var(--wine); }
-.stat-venta-ult-dia::before { background: var(--info); }
-.stat-venta-prom-dia::before { background: var(--accent-gold); }
+/* Colores por tipo - todos los azules */
+.stat-venta-hoy::before { background: var(--paypal-blue); }
+.stat-venta-mes::before { background: var(--paypal-deep); }
+.stat-venta-efectivo::before { background: var(--paypal-sky); }
+.stat-venta-zelle::before { background: var(--paypal-deep); }
+.stat-venta-punto::before { background: var(--paypal-blue); }
+.stat-venta-sem::before { background: var(--paypal-blue); }
+.stat-venta-sem-pas::before { background: var(--paypal-deep); }
+.stat-venta-ult-dia::before { background: var(--paypal-sky); }
+.stat-venta-prom-dia::before { background: var(--paypal-blue); }
 
-.stat-venta-hoy .stat-venta-value { color: var(--success); }
-.stat-venta-mes .stat-venta-value { color: var(--info); }
-.stat-venta-efectivo .stat-venta-value { color: var(--accent-gold); }
-.stat-venta-zelle .stat-venta-value { color: var(--wine); }
-.stat-venta-punto .stat-venta-value { color: var(--info); }
-.stat-venta-sem .stat-venta-value { color: var(--success); }
-.stat-venta-sem-pas .stat-venta-value { color: var(--wine); }
-.stat-venta-ult-dia .stat-venta-value { color: var(--info); }
-.stat-venta-prom-dia .stat-venta-value { color: var(--accent-gold); }
+.stat-venta-hoy .stat-venta-value { color: var(--paypal-blue); }
+.stat-venta-mes .stat-venta-value { color: var(--paypal-deep); }
+.stat-venta-efectivo .stat-venta-value { color: var(--paypal-sky); }
+.stat-venta-zelle .stat-venta-value { color: var(--paypal-deep); }
+.stat-venta-punto .stat-venta-value { color: var(--paypal-blue); }
+.stat-venta-sem .stat-venta-value { color: var(--paypal-blue); }
+.stat-venta-sem-pas .stat-venta-value { color: var(--paypal-deep); }
+.stat-venta-ult-dia .stat-venta-value { color: var(--paypal-sky); }
+.stat-venta-prom-dia .stat-venta-value { color: var(--paypal-blue); }
 
 .stat-venta-label {
-    font-family: var(--font-body);
     font-size: 10px;
     font-weight: 700;
     color: var(--text-secondary);
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin-bottom: 8px;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -647,17 +573,15 @@ main {
 }
 
 .stat-venta-value {
-    font-family: var(--font-display);
-    font-size: 17px;
-    font-weight: 700;
+    font-size: 15px;
+    font-weight: 800;
     letter-spacing: -0.02em;
     color: var(--text);
     line-height: 1.1;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
     word-break: break-word;
     position: relative;
     z-index: 1;
-    font-style: italic;
 }
 
 .stat-venta-sub {
@@ -676,66 +600,63 @@ main {
    FILTROS
    ============================================ */
 .filtros { 
-    margin-bottom: 24px;
+    margin-bottom: 20px;
 }
 
 .input-buscar {
     width: 100%;
-    padding: 16px 20px 16px 52px;
-    border: 2px solid var(--border);
+    padding: 14px 18px 14px 48px;
+    border: 1.5px solid var(--border);
     border-radius: var(--r-md);
     font-family: var(--font-body);
     font-size: 15px;
-    background: var(--surface) url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%23C8442C' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='9' r='7'/%3E%3Cpath d='m18 18-5-5'/%3E%3C/svg%3E") no-repeat 18px center;
+    background: var(--surface) url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%230070BA' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='8' r='6'/%3E%3Cpath d='m16 16-4-4'/%3E%3C/svg%3E") no-repeat 16px center;
     color: var(--text);
-    margin-bottom: 14px;
+    margin-bottom: 12px;
     transition: all var(--t);
     letter-spacing: -0.01em;
     font-weight: 500;
-    box-shadow: var(--shadow-xs);
 }
 
 .input-buscar::placeholder { 
     color: var(--text-quaternary);
-    font-weight: 500;
+    font-weight: 400;
 }
 
 .input-buscar:focus { 
     outline: none; 
-    border-color: var(--primary);
-    box-shadow: 0 0 0 4px var(--primary-light), var(--shadow-sm);
-    background-color: var(--surface);
+    border-color: var(--paypal-blue);
+    box-shadow: 0 0 0 3px var(--paypal-blue-light);
 }
 
 .select-filtro {
     width: 100%;
-    padding: 15px 44px 15px 18px;
-    border: 2px solid var(--border);
+    padding: 13px 40px 13px 16px;
+    border: 1.5px solid var(--border);
     border-radius: var(--r-md);
     font-family: var(--font-body);
     font-size: 14px;
-    background: var(--surface) url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23C8442C' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E") no-repeat right 18px center;
+    background: var(--surface) url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%230070BA' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 3 3 3-3'/%3E%3C/svg%3E") no-repeat right 16px center;
     color: var(--text);
-    margin-bottom: 14px;
+    margin-bottom: 12px;
     font-weight: 600;
     appearance: none;
     -webkit-appearance: none;
     cursor: pointer;
     transition: all var(--t);
-    box-shadow: var(--shadow-xs);
 }
 
 .select-filtro:focus { 
     outline: none; 
-    border-color: var(--primary);
-    box-shadow: 0 0 0 4px var(--primary-light), var(--shadow-sm);
+    border-color: var(--paypal-blue);
+    box-shadow: 0 0 0 3px var(--paypal-blue-light);
 }
 
 .filtros-chips {
     display: flex;
     gap: 8px;
     overflow-x: auto;
-    padding-bottom: 6px;
+    padding-bottom: 4px;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     margin: 0 -16px;
@@ -746,8 +667,8 @@ main {
 .filtros-chips::-webkit-scrollbar { display: none; }
 
 .chip {
-    padding: 10px 18px;
-    background: var(--surface);
+    padding: 9px 16px;
+    background: var(--bg-soft);
     border: 1.5px solid var(--border);
     border-radius: var(--r-full);
     font-family: var(--font-body);
@@ -760,64 +681,61 @@ main {
     transition: all var(--t);
     color: var(--text-secondary);
     flex-shrink: 0;
-    box-shadow: var(--shadow-xs);
 }
 
 .chip:hover {
-    border-color: var(--primary);
-    color: var(--primary);
-    background: var(--primary-light);
-    transform: translateY(-1px);
+    border-color: var(--paypal-blue);
+    color: var(--paypal-blue);
+    background: var(--paypal-blue-light);
 }
 
 .chip.active {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
+    background: var(--paypal-blue);
+    color: var(--text-inverse);
+    border-color: var(--paypal-blue);
     box-shadow: var(--shadow-primary);
-    transform: translateY(-1px);
 }
 
 .chip:active {
-    transform: scale(0.96);
+    transform: scale(0.97);
 }
 
 /* ============================================
-   LISTA DE CARDS - Estilo "Ticket de compra"
+   LISTA DE CARDS
    ============================================ */
 .lista { 
     display: flex; 
     flex-direction: column; 
-    gap: 14px; 
+    gap: 12px; 
 }
 
 .card-item {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: var(--r-lg);
-    padding: 18px;
+    border-radius: var(--r-md);
+    padding: 16px;
     cursor: pointer;
     transition: all var(--t);
     position: relative;
-    animation: cardIn 500ms var(--ease-out) backwards;
+    animation: cardIn 300ms var(--ease-out) backwards;
     overflow: hidden;
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-xs);
 }
 
 @keyframes cardIn {
-    from { opacity: 0; transform: translateY(12px) scale(0.97); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .card-item:hover {
-    box-shadow: var(--shadow-lg);
-    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
     border-color: var(--border-strong);
     background: var(--surface-hover);
 }
 
 .card-item:active { 
-    transform: translateY(-1px) scale(0.99);
+    transform: translateY(0) scale(0.99);
 }
 
 /* Barra de color lateral */
@@ -827,50 +745,35 @@ main {
     left: 0;
     top: 0;
     bottom: 0;
-    width: 5px;
-    background: var(--primary);
+    width: 4px;
+    background: var(--paypal-blue);
     transition: width var(--t);
 }
 
 .card-item:hover::before {
-    width: 6px;
-}
-
-/* Borde punteado decorativo estilo "ticket" */
-.card-item::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 40px;
-    height: 100%;
-    background-image: radial-gradient(circle, var(--bg) 2px, transparent 2px);
-    background-size: 8px 8px;
-    opacity: 0.3;
-    pointer-events: none;
+    width: 5px;
 }
 
 .card-item.estatus-Pendiente::before { 
-    background: linear-gradient(180deg, var(--accent-gold), var(--warning-dark));
+    background: var(--warning);
 }
 .card-item.estatus-Vencida::before { 
-    background: linear-gradient(180deg, var(--primary), var(--primary-dark));
+    background: var(--danger);
 }
 .card-item.estatus-Pagada::before { 
-    background: linear-gradient(180deg, var(--success), var(--success-dark));
+    background: var(--paypal-blue);
 }
 
 .card-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     gap: 12px;
 }
 
 .card-titulo {
-    font-family: var(--font-display);
-    font-size: 22px;
+    font-size: 18px;
     font-weight: 700;
     color: var(--text);
     flex: 1;
@@ -878,16 +781,14 @@ main {
     letter-spacing: -0.02em;
     line-height: 1.2;
     text-transform: none;
-    font-style: italic;
 }
 
 .card-estatus {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    font-family: var(--font-body);
+    gap: 4px;
     font-size: 11px;
-    padding: 6px 12px;
+    padding: 5px 10px;
     border-radius: var(--r-full);
     font-weight: 700;
     white-space: nowrap;
@@ -899,35 +800,35 @@ main {
 .estatus-tag-Pendiente { 
     background: var(--warning-light); 
     color: var(--warning-dark); 
-    border-color: rgba(232, 163, 61, 0.35);
+    border-color: rgba(232, 163, 61, 0.3);
 }
 
 .estatus-tag-Vencida { 
     background: var(--danger-light); 
     color: var(--danger); 
-    border-color: rgba(200, 68, 44, 0.35);
+    border-color: rgba(217, 54, 11, 0.3);
 }
 
 .estatus-tag-Pagada { 
-    background: var(--success-light); 
-    color: var(--success-dark); 
-    border-color: rgba(91, 140, 62, 0.35);
+    background: var(--paypal-blue-light); 
+    color: var(--paypal-blue); 
+    border-color: rgba(0, 112, 186, 0.3);
 }
 
 .card-info {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 10px;
+    margin-top: 8px;
     gap: 12px;
     flex-wrap: wrap;
 }
 
 .card-monto {
     font-weight: 700;
-    color: var(--primary);
-    font-size: 22px;
-    letter-spacing: -0.03em;
+    color: var(--paypal-blue);
+    font-size: 20px;
+    letter-spacing: -0.02em;
 }
 
 .card-monto-bs {
@@ -939,15 +840,14 @@ main {
 
 .card-notas {
     background: var(--bg-soft);
-    border-left: 3px solid var(--accent-gold);
+    border-left: 3px solid var(--paypal-sky);
     border-radius: var(--r-xs);
-    padding: 12px 14px;
+    padding: 10px 12px;
     font-size: 13px;
     color: var(--text-secondary);
-    margin-top: 14px;
-    line-height: 1.55;
+    margin-top: 12px;
+    line-height: 1.5;
     word-break: break-word;
-    font-style: italic;
 }
 
 .card-fecha {
@@ -962,104 +862,78 @@ main {
    ============================================ */
 .vacio {
     text-align: center;
-    padding: 90px 24px;
+    padding: 80px 24px;
     color: var(--text-tertiary);
-    border: 2px dashed var(--border-strong);
-    border-radius: var(--r-xl);
-    background: var(--surface);
-    position: relative;
+    border: 2px dashed var(--border);
+    border-radius: var(--r-lg);
+    background: var(--bg-soft);
 }
 
 .vacio-icon {
-    font-size: 64px;
-    margin-bottom: 20px;
+    font-size: 56px;
+    margin-bottom: 16px;
     display: block;
-    opacity: 0.6;
-    animation: floatIcon 3s ease-in-out infinite;
+    opacity: 0.4;
 }
 
 .vacio::after {
     content: 'Toca el botón + para empezar';
     display: block;
-    font-size: 14px;
-    margin-top: 12px;
+    font-size: 13px;
+    margin-top: 10px;
     color: var(--text-quaternary);
-    font-weight: 600;
-    font-style: italic;
-    font-family: var(--font-display);
+    font-weight: 500;
 }
 
 /* ============================================
-   FAB - Botón flotante estilo "Sello de calidad"
+   FAB - Botón flotante azul PayPal
    ============================================ */
 .fab {
     position: fixed;
-    bottom: 28px;
-    right: 28px;
-    width: 66px;
-    height: 66px;
+    bottom: 24px;
+    right: 24px;
+    width: 62px;
+    height: 62px;
     border-radius: var(--r-full);
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    background: var(--paypal-blue);
     color: white;
     border: none;
-    font-size: 34px;
+    font-size: 32px;
     font-weight: 300;
     cursor: pointer;
-    box-shadow: 
-        var(--shadow-primary),
-        0 0 0 4px rgba(200, 68, 44, 0.12),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    box-shadow: var(--shadow-primary), 0 0 0 4px var(--paypal-blue-light);
     z-index: 200;
     display: flex;
     align-items: center;
     justify-content: center;
     padding-bottom: 4px;
     transition: all var(--t);
-    animation: fabBounce 2.5s ease infinite;
-}
-
-@keyframes fabBounce {
-    0%, 100% { 
-        box-shadow: 
-            var(--shadow-primary),
-            0 0 0 4px rgba(200, 68, 44, 0.12),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    }
-    50% { 
-        box-shadow: 
-            var(--shadow-primary),
-            0 0 0 10px rgba(200, 68, 44, 0.04),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    }
 }
 
 .fab:hover {
-    transform: translateY(-4px) scale(1.05) rotate(90deg);
-    box-shadow: 
-        0 16px 36px rgba(200, 68, 44, 0.4),
-        0 0 0 6px rgba(200, 68, 44, 0.15),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary) 100%);
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 24px rgba(0, 112, 186, 0.4), 0 0 0 6px var(--paypal-blue-light);
+    background: var(--paypal-blue-hover);
 }
 
 .fab:active { 
-    transform: scale(0.92) rotate(90deg);
+    transform: scale(0.94);
 }
 
 /* ============================================
-   MODALES - Estilo "Menú desplegable"
+   MODALES - PayPal Clean
    ============================================ */
 .modal-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(43, 33, 24, 0.6);
-    backdrop-filter: blur(12px) saturate(120%);
-    -webkit-backdrop-filter: blur(12px) saturate(120%);
+    background: rgba(1, 11, 13, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     z-index: 500;
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    animation: overlayIn 280ms var(--ease-out);
+    animation: overlayIn 200ms var(--ease-out);
 }
 
 @keyframes overlayIn {
@@ -1073,10 +947,10 @@ main {
     width: 100%;
     max-width: 640px;
     max-height: 92vh;
-    border-radius: var(--r-2xl) var(--r-2xl) 0 0;
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
     display: flex;
     flex-direction: column;
-    animation: slideUp 450ms var(--ease-out);
+    animation: slideUp 300ms var(--ease-out);
     overflow: hidden;
     box-shadow: var(--shadow-xl);
     border: 1px solid var(--border);
@@ -1084,12 +958,12 @@ main {
 }
 
 @keyframes slideUp {
-    from { transform: translateY(100%); opacity: 0.5; }
-    to { transform: translateY(0); opacity: 1; }
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
 }
 
 .modal-header {
-    padding: 22px 22px 18px;
+    padding: 20px 20px 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1106,34 +980,26 @@ main {
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
-    background: repeating-linear-gradient(
-        90deg,
-        var(--primary) 0px,
-        var(--primary) 12px,
-        var(--accent-gold) 12px,
-        var(--accent-gold) 24px
-    );
+    height: 3px;
+    background: var(--paypal-blue);
 }
 
 .modal-header h3 { 
-    font-family: var(--font-display);
-    font-size: 24px; 
+    font-size: 20px; 
     font-weight: 700;
     letter-spacing: -0.02em;
     text-transform: none;
-    margin-top: 8px;
+    margin-top: 6px;
     color: var(--text);
-    font-style: italic;
 }
 
 .btn-cerrar {
     background: var(--bg-soft);
-    border: 1.5px solid var(--border);
+    border: 1px solid var(--border);
     color: var(--text-secondary);
     font-size: 16px;
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
     border-radius: var(--r-full);
     cursor: pointer;
     display: flex;
@@ -1146,16 +1012,15 @@ main {
     background: var(--danger-light);
     border-color: var(--danger);
     color: var(--danger);
-    transform: rotate(90deg);
 }
 
 .btn-cerrar:active {
-    transform: scale(0.9) rotate(90deg);
+    transform: scale(0.92);
 }
 
 .modal-body {
-    padding: 22px;
-    padding-bottom: 28px;
+    padding: 20px;
+    padding-bottom: 24px;
     overflow-y: auto;
     overflow-x: hidden;
     flex: 1 1 auto;
@@ -1166,14 +1031,13 @@ main {
 
 .modal-body label {
     display: block;
-    margin-top: 18px;
-    margin-bottom: 8px;
-    font-family: var(--font-body);
-    font-weight: 700;
-    font-size: 12px;
+    margin-top: 16px;
+    margin-bottom: 6px;
+    font-weight: 600;
+    font-size: 13px;
     color: var(--text-secondary);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    letter-spacing: -0.005em;
+    text-transform: none;
 }
 
 .modal-body label:first-child { margin-top: 0; }
@@ -1182,12 +1046,12 @@ main {
 .modal-body select,
 .modal-body textarea {
     width: 100%;
-    padding: 14px 18px;
-    border: 2px solid var(--border);
-    border-radius: var(--r-md);
+    padding: 12px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--r-sm);
     font-family: var(--font-body);
     font-size: 15px;
-    background: var(--bg-soft);
+    background: var(--surface);
     color: var(--text);
     transition: all var(--t);
     letter-spacing: -0.01em;
@@ -1198,54 +1062,52 @@ main {
 .modal-body select:focus,
 .modal-body textarea:focus {
     outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 4px var(--primary-light);
-    background: var(--surface);
+    border-color: var(--paypal-blue);
+    box-shadow: 0 0 0 3px var(--paypal-blue-light);
 }
 
 .modal-body textarea { 
-    min-height: 100px; 
+    min-height: 90px; 
     resize: vertical; 
-    line-height: 1.55;
+    line-height: 1.5;
 }
 
 .input-prefix { position: relative; }
 
 .input-prefix span {
     position: absolute;
-    left: 18px;
+    left: 16px;
     top: 50%;
     transform: translateY(-50%);
     font-family: var(--font-mono);
-    font-weight: 800;
-    color: var(--primary);
-    font-size: 17px;
+    font-weight: 700;
+    color: var(--paypal-blue);
+    font-size: 16px;
     pointer-events: none;
 }
 
 .input-prefix input { 
-    padding-left: 40px;
+    padding-left: 36px;
     font-variant-numeric: tabular-nums;
-    font-weight: 700;
+    font-weight: 600;
 }
 
 .checkbox-inline {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-top: 10px;
+    gap: 10px;
+    margin-top: 8px;
 }
 
 .checkbox-inline input[type="checkbox"] {
     width: auto;
     margin: 0;
-    accent-color: var(--primary);
-    transform: scale(1.3);
+    accent-color: var(--paypal-blue);
+    transform: scale(1.2);
 }
 
 .checkbox-inline label {
     margin: 0;
-    font-family: var(--font-body);
     font-weight: 600;
     font-size: 13px;
     color: var(--text-secondary);
@@ -1254,24 +1116,24 @@ main {
 }
 
 .equivalente-bs {
-    background: var(--info-light);
-    border-left: 4px solid var(--info);
-    padding: 16px 18px;
-    border-radius: var(--r-md);
-    margin-top: 14px;
+    background: var(--paypal-sky-light);
+    border-left: 4px solid var(--paypal-sky);
+    padding: 12px 16px;
+    border-radius: var(--r-sm);
+    margin-top: 12px;
     font-family: var(--font-mono);
     font-size: 14px;
     font-weight: 700;
-    color: var(--info);
+    color: var(--paypal-deep);
     letter-spacing: -0.01em;
 }
 
 .modal-footer {
-    padding: 18px 22px;
-    padding-bottom: max(18px, env(safe-area-inset-bottom));
+    padding: 16px 20px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
     border-top: 1px solid var(--border);
     display: flex;
-    gap: 12px;
+    gap: 10px;
     background: var(--bg-soft);
     flex-shrink: 0;
     position: relative;
@@ -1279,13 +1141,13 @@ main {
 }
 
 /* ============================================
-   BOTONES - Estilo "Etiquetas artesanales"
+   BOTONES - PayPal Style
    ============================================ */
 .btn {
     flex: 1;
-    padding: 15px 22px;
+    padding: 14px 20px;
     border: 2px solid transparent;
-    border-radius: var(--r-md);
+    border-radius: var(--r-full);
     font-family: var(--font-body);
     font-size: 15px;
     font-weight: 700;
@@ -1300,7 +1162,7 @@ main {
 }
 
 .btn:hover {
-    transform: translateY(-2px);
+    transform: translateY(-1px);
 }
 
 .btn:active { 
@@ -1308,18 +1170,18 @@ main {
 }
 
 .btn-primary { 
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    background: var(--paypal-blue);
     color: white;
     box-shadow: var(--shadow-primary);
 }
 
 .btn-primary:hover {
-    background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary) 100%);
-    box-shadow: 0 12px 32px rgba(200, 68, 44, 0.35);
+    background: var(--paypal-blue-hover);
+    box-shadow: 0 6px 20px rgba(0, 112, 186, 0.35);
 }
 
 .btn-cancelar { 
-    background: var(--surface);
+    background: var(--bg-soft);
     color: var(--text-secondary);
     border-color: var(--border);
 }
@@ -1331,14 +1193,14 @@ main {
 }
 
 .btn-danger { 
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    background: var(--danger);
     color: white;
     box-shadow: var(--shadow-danger);
 }
 
 .btn-danger:hover {
-    background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary) 100%);
-    box-shadow: 0 12px 32px rgba(200, 68, 44, 0.35);
+    background: var(--danger-dark);
+    box-shadow: 0 6px 20px rgba(217, 54, 11, 0.35);
 }
 
 .btn-secondary { 
@@ -1353,14 +1215,14 @@ main {
 .detalle-grid { 
     display: flex;
     flex-direction: column;
-    gap: 18px; 
+    gap: 16px; 
 }
 
 .detalle-row {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding-bottom: 16px;
+    gap: 5px;
+    padding-bottom: 14px;
     border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -1369,12 +1231,11 @@ main {
 }
 
 .detalle-label {
-    font-family: var(--font-body);
-    font-size: 11px;
+    font-size: 12px;
     text-transform: uppercase;
     color: var(--text-tertiary);
-    font-weight: 700;
-    letter-spacing: 0.08em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
 }
 
 .detalle-valor {
@@ -1386,25 +1247,22 @@ main {
 }
 
 .detalle-valor.destacado {
-    color: var(--primary);
+    color: var(--paypal-blue);
     font-weight: 800;
-    font-size: 28px;
+    font-size: 24px;
     letter-spacing: -0.03em;
-    font-family: var(--font-display);
-    font-style: italic;
 }
 
 .detalle-notas {
     background: var(--bg-soft);
-    border-left: 3px solid var(--accent-gold);
+    border-left: 3px solid var(--paypal-sky);
     border-radius: var(--r-xs);
-    padding: 14px 16px;
-    margin-top: 10px;
+    padding: 12px 14px;
+    margin-top: 8px;
     font-size: 14px;
     color: var(--text-secondary);
-    line-height: 1.55;
+    line-height: 1.5;
     white-space: pre-wrap;
-    font-style: italic;
 }
 
 /* ============================================
@@ -1419,17 +1277,16 @@ main {
 
 .tabla-productos-edit th {
     background: var(--bg-soft);
-    color: var(--primary);
-    padding: 12px 8px;
+    color: var(--paypal-blue);
+    padding: 10px 8px;
     text-align: left;
-    font-family: var(--font-body);
     font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.04em;
     position: sticky;
     top: 0;
     z-index: 1;
-    font-weight: 800;
+    font-weight: 700;
     border-bottom: 2px solid var(--border);
 }
 
@@ -1449,23 +1306,22 @@ main {
 
 .tabla-productos-edit input {
     width: 100%;
-    padding: 8px 10px;
-    border: 2px solid var(--border);
+    padding: 7px 10px;
+    border: 1.5px solid var(--border);
     border-radius: var(--r-xs);
     font-size: 12px;
     font-family: var(--font-body);
-    background: var(--bg-soft);
+    background: var(--surface);
     color: var(--text);
     transition: all var(--t);
     letter-spacing: -0.005em;
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .tabla-productos-edit input:focus {
     outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px var(--primary-light);
-    background: var(--surface);
+    border-color: var(--paypal-blue);
+    box-shadow: 0 0 0 2px var(--paypal-blue-light);
 }
 
 .tabla-productos-edit .input-corto {
@@ -1473,81 +1329,80 @@ main {
 }
 
 .tabla-productos-edit .celda-nombre input {
-    font-weight: 700;
+    font-weight: 600;
 }
 
 .tabla-productos-edit .precio-venta {
-    background: var(--primary-light);
-    font-weight: 800;
-    color: var(--primary);
-    border-color: rgba(200, 68, 44, 0.35);
+    background: var(--paypal-blue-light);
+    font-weight: 700;
+    color: var(--paypal-blue);
+    border-color: rgba(0, 112, 186, 0.3);
 }
 
 .tabla-productos-edit .btn-eliminar-prod {
     background: var(--danger-light);
     color: var(--danger);
-    border: 1.5px solid rgba(200, 68, 44, 0.3);
-    padding: 6px 10px;
+    border: 1px solid rgba(217, 54, 11, 0.3);
+    padding: 5px 9px;
     border-radius: var(--r-xs);
     cursor: pointer;
     font-size: 11px;
-    font-weight: 800;
+    font-weight: 700;
     transition: all var(--t);
 }
 
 .tabla-productos-edit .btn-eliminar-prod:hover {
     background: var(--danger);
     color: white;
-    transform: scale(1.05);
 }
 
 /* ============================================
-   TOAST - Estilo "Notificación gourmet"
+   TOAST
    ============================================ */
 .toast {
     position: fixed;
-    bottom: 110px;
+    bottom: 100px;
     left: 50%;
     transform: translateX(-50%);
     background: var(--surface);
     color: var(--text);
-    padding: 16px 28px;
+    padding: 14px 24px;
     border-radius: var(--r-lg);
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 600;
     z-index: 1000;
-    animation: toastIn 450ms var(--ease);
+    animation: toastIn 300ms var(--ease);
     box-shadow: var(--shadow-xl);
     max-width: calc(100% - 32px);
     text-align: center;
     letter-spacing: -0.01em;
-    border: 1.5px solid var(--border);
+    border: 1px solid var(--border);
 }
 
 .toast.success { 
-    background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
+    background: var(--paypal-blue);
     color: white;
-    border-color: var(--success);
-    box-shadow: 0 8px 24px rgba(91, 140, 62, 0.35);
+    border-color: var(--paypal-blue);
+    box-shadow: var(--shadow-primary);
 }
 
 .toast.error { 
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    background: var(--danger);
     color: white;
-    border-color: var(--primary);
+    border-color: var(--danger);
     box-shadow: var(--shadow-danger);
 }
 
 .toast.info { 
-    background: linear-gradient(135deg, var(--info) 0%, #3A6272 100%);
+    background: var(--paypal-deep);
     color: white;
-    border-color: var(--info);
-    box-shadow: 0 8px 24px rgba(74, 124, 140, 0.35);
+    border-color: var(--paypal-deep);
+    box-shadow: 0 6px 20px rgba(0, 48, 135, 0.3);
 }
 
 @keyframes toastIn {
-    from { opacity: 0; transform: translate(-50%, 24px) scale(0.9); }
-    to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    from { opacity: 0; transform: translate(-50%, 16px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
 }
 
 /* ============================================
@@ -1555,15 +1410,15 @@ main {
    ============================================ */
 @media (min-width: 768px) {
     main { 
-        padding: 32px 24px;
+        padding: 24px;
     }
     
     .fab { 
-        right: calc(50% - 600px + 28px); 
+        right: calc(50% - 600px + 24px); 
     }
     
     .modal { 
-        border-radius: var(--r-2xl); 
+        border-radius: var(--r-xl); 
         margin-bottom: 24px; 
         max-height: 88vh;
         border-bottom: 1px solid var(--border);
@@ -1579,7 +1434,7 @@ main {
     }
     
     .tabs {
-        padding: 14px 24px;
+        padding: 12px 24px;
         max-width: 1200px;
         margin: 0 auto;
     }
@@ -1588,11 +1443,11 @@ main {
 @media (min-width: 1024px) {
     .stats-ventas-5 {
         grid-template-columns: repeat(5, 1fr);
-        gap: 14px;
+        gap: 12px;
     }
     
     .stat-venta-value {
-        font-size: 20px;
+        font-size: 18px;
     }
     
     .stat-venta-label {
@@ -1602,14 +1457,14 @@ main {
 
 @media (max-width: 400px) {
     .stats-ventas-5 {
-        gap: 6px;
+        gap: 5px;
     }
     .stat-venta-card {
-        padding: 12px 4px;
-        min-height: 85px;
+        padding: 10px 4px;
+        min-height: 80px;
     }
     .stat-venta-value {
-        font-size: 13px;
+        font-size: 12px;
     }
     .stat-venta-label {
         font-size: 9px;
@@ -1631,14 +1486,14 @@ main {
 }
 
 *:focus-visible {
-    outline: 3px solid var(--primary);
+    outline: 3px solid var(--paypal-blue);
     outline-offset: 2px;
     border-radius: var(--r-xs);
 }
 
 ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -1648,134 +1503,133 @@ main {
 ::-webkit-scrollbar-thumb {
     background: var(--border-strong);
     border-radius: var(--r-full);
-    border: 2px solid var(--bg);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--primary);
+    background: var(--paypal-blue);
 }
 
 /* ============================================
-   BOTONES DE ACCIÓN (reutilizables)
+   BOTONES DE ACCIÓN
    ============================================ */
 .btn-accion-verde {
     flex: 1;
-    padding: 14px;
+    padding: 13px;
     font-family: var(--font-body);
     font-size: 14px;
     letter-spacing: -0.01em;
     text-transform: none;
-    background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
+    background: var(--paypal-blue);
     color: white;
     border: none;
-    border-radius: var(--r-md);
+    border-radius: var(--r-full);
     cursor: pointer;
     font-weight: 700;
-    box-shadow: 0 6px 20px rgba(91, 140, 62, 0.3);
+    box-shadow: var(--shadow-primary);
     transition: all var(--t);
 }
 
-.btn-accion-verde:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(91, 140, 62, 0.4); }
-.btn-accion-verde:active { transform: scale(0.97); }
+.btn-accion-verde:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0, 112, 186, 0.35); }
+.btn-accion-verde:active { transform: scale(0.98); }
 
 .btn-accion-azul {
     flex: 1;
-    padding: 14px;
+    padding: 13px;
     font-family: var(--font-body);
     font-size: 14px;
     letter-spacing: -0.01em;
     text-transform: none;
-    background: linear-gradient(135deg, var(--info) 0%, #3A6272 100%);
+    background: var(--paypal-sky);
     color: white;
     border: none;
-    border-radius: var(--r-md);
+    border-radius: var(--r-full);
     cursor: pointer;
     font-weight: 700;
-    box-shadow: 0 6px 20px rgba(74, 124, 140, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 156, 222, 0.25);
     transition: all var(--t);
 }
 
-.btn-accion-azul:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(74, 124, 140, 0.4); }
-.btn-accion-azul:active { transform: scale(0.97); }
+.btn-accion-azul:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0, 156, 222, 0.35); }
+.btn-accion-azul:active { transform: scale(0.98); }
 
 .btn-accion-naranja {
     flex: 1;
-    padding: 14px;
+    padding: 13px;
     font-family: var(--font-body);
     font-size: 14px;
     letter-spacing: -0.01em;
     text-transform: none;
-    background: linear-gradient(135deg, var(--accent-gold) 0%, var(--warning-dark) 100%);
+    background: var(--warning);
     color: var(--text);
     border: none;
-    border-radius: var(--r-md);
+    border-radius: var(--r-full);
     cursor: pointer;
     font-weight: 700;
-    box-shadow: var(--shadow-gold);
+    box-shadow: 0 4px 12px rgba(232, 163, 61, 0.25);
     transition: all var(--t);
 }
 
-.btn-accion-naranja:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(232, 163, 61, 0.4); }
-.btn-accion-naranja:active { transform: scale(0.97); }
+.btn-accion-naranja:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(232, 163, 61, 0.35); }
+.btn-accion-naranja:active { transform: scale(0.98); }
 
 .btn-accion-cyan {
     flex: 1;
-    padding: 14px;
+    padding: 13px;
     font-family: var(--font-body);
     font-size: 14px;
     letter-spacing: -0.01em;
     text-transform: none;
-    background: linear-gradient(135deg, var(--info) 0%, #3A6272 100%);
+    background: var(--paypal-sky);
     color: white;
     border: none;
-    border-radius: var(--r-md);
+    border-radius: var(--r-full);
     cursor: pointer;
     font-weight: 700;
-    box-shadow: 0 6px 20px rgba(74, 124, 140, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 156, 222, 0.25);
     transition: all var(--t);
 }
 
-.btn-accion-cyan:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(74, 124, 140, 0.4); }
-.btn-accion-cyan:active { transform: scale(0.97); }
+.btn-accion-cyan:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0, 156, 222, 0.35); }
+.btn-accion-cyan:active { transform: scale(0.98); }
 
 .btn-accion-gris {
     flex: 1;
-    padding: 14px;
+    padding: 13px;
     font-family: var(--font-body);
     font-size: 14px;
     letter-spacing: -0.01em;
     text-transform: none;
-    background: var(--surface-hover);
+    background: var(--bg-soft);
     color: var(--text-secondary);
     border: 1.5px solid var(--border);
-    border-radius: var(--r-md);
+    border-radius: var(--r-full);
     cursor: pointer;
     font-weight: 700;
     transition: all var(--t);
 }
 
-.btn-accion-gris:hover { transform: translateY(-2px); border-color: var(--border-strong); color: var(--text); }
-.btn-accion-gris:active { transform: scale(0.97); }
+.btn-accion-gris:hover { transform: translateY(-1px); border-color: var(--border-strong); color: var(--text); }
+.btn-accion-gris:active { transform: scale(0.98); }
 
 .btn-accion-excel {
     flex: 1;
-    padding: 14px;
+    padding: 13px;
     font-family: var(--font-body);
     font-size: 14px;
     letter-spacing: -0.01em;
     text-transform: none;
-    background: linear-gradient(135deg, #217346 0%, #1A5C38 100%);
+    background: #217346;
     color: white;
     border: none;
-    border-radius: var(--r-md);
+    border-radius: var(--r-full);
     cursor: pointer;
     font-weight: 700;
-    box-shadow: 0 6px 20px rgba(33, 115, 70, 0.3);
+    box-shadow: 0 4px 12px rgba(33, 115, 70, 0.25);
     transition: all var(--t);
 }
 
-.btn-accion-excel:hover { transform: translateY(-2px); }
-.btn-accion-excel:active { transform: scale(0.97); }
+.btn-accion-excel:hover { transform: translateY(-1px); }
+.btn-accion-excel:active { transform: scale(0.98); }
 
 /* ============================================
    CHECKBOX IVA
@@ -1784,22 +1638,22 @@ main {
     width: 20px;
     height: 20px;
     cursor: pointer;
-    accent-color: var(--primary);
+    accent-color: var(--paypal-blue);
     margin: 0 auto;
     display: block;
 }
 
 .tabla-productos-edit input[type="checkbox"]:hover {
-    transform: scale(1.15);
+    transform: scale(1.1);
 }
 
 #editTieneIva {
-    accent-color: var(--primary);
+    accent-color: var(--paypal-blue);
     border-radius: 4px;
 }
 
 #editTieneIva:checked + label {
-    color: var(--primary);
+    color: var(--paypal-blue);
 }
 
 /* ============================================
@@ -1808,20 +1662,20 @@ main {
 .checkbox-inline.toggle-moneda {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    background: var(--primary-light);
-    border-radius: var(--r-md);
-    border: 1.5px solid rgba(200, 68, 44, 0.3);
-    margin-bottom: 12px;
-    margin-top: 6px;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--paypal-blue-light);
+    border-radius: var(--r-sm);
+    border: 1.5px solid rgba(0, 112, 186, 0.3);
+    margin-bottom: 10px;
+    margin-top: 4px;
 }
 
 .checkbox-inline.toggle-moneda input[type="checkbox"] {
     width: 16px;
     height: 16px;
     cursor: pointer;
-    accent-color: var(--primary);
+    accent-color: var(--paypal-blue);
     transform: scale(1);
     margin: 0;
     flex-shrink: 0;
@@ -1829,9 +1683,8 @@ main {
 
 .checkbox-inline.toggle-moneda label {
     margin: 0;
-    font-family: var(--font-body);
     font-weight: 700;
-    color: var(--primary);
+    color: var(--paypal-blue);
     font-size: 13px;
     text-transform: none;
     letter-spacing: -0.005em;
@@ -1845,37 +1698,35 @@ main {
     font-size: 11px;
 }
 
-/* Prefijos del toggle */
 .input-prefix span.prefijo-bs {
-    color: var(--info) !important;
+    color: var(--paypal-sky) !important;
     font-size: 14px !important;
     font-weight: 800 !important;
 }
 
 .input-prefix span.prefijo-usd {
-    color: var(--primary) !important;
+    color: var(--paypal-blue) !important;
     font-weight: 800 !important;
 }
 
-/* Estilos de equivalencia */
 .equivalente-bs.equivalente-bs-mode {
-    background: var(--info-light);
-    border-left-color: var(--info);
-    color: var(--info);
+    background: var(--paypal-sky-light);
+    border-left-color: var(--paypal-sky);
+    color: var(--paypal-deep);
 }
 
 .equivalente-bs.equivalente-usd-mode {
-    background: var(--primary-light);
-    border-left-color: var(--primary);
-    color: var(--primary);
+    background: var(--paypal-blue-light);
+    border-left-color: var(--paypal-blue);
+    color: var(--paypal-blue);
 }
 
 /* ============================================
    DROP ZONE PDF
    ============================================ */
 #dropZonePdf:hover {
-    background: rgba(200, 68, 44, 0.06) !important;
-    border-color: var(--primary) !important;
+    background: rgba(0, 112, 186, 0.06) !important;
+    border-color: var(--paypal-blue) !important;
 }
 
 #dropZonePdf:active {
@@ -1885,7 +1736,6 @@ main {
 /* ============================================
    AJUSTES ESPECÍFICOS
    ============================================ */
-
 .modal-header[style*="linear-gradient"] {
     background: var(--surface) !important;
     color: var(--text) !important;
@@ -1896,7 +1746,7 @@ main {
 }
 
 input[readonly], input:disabled {
-    background: var(--bg-subtle) !important;
+    background: var(--bg-soft) !important;
     color: var(--text-tertiary) !important;
     cursor: not-allowed;
 }
@@ -1904,18 +1754,18 @@ input[readonly], input:disabled {
 @media (max-width: 500px) {
     .stats-ventas-5 {
         grid-template-columns: repeat(5, 1fr);
-        gap: 5px;
+        gap: 4px;
     }
     .stat-venta-card {
-        padding: 10px 3px;
-        min-height: 75px;
+        padding: 8px 2px;
+        min-height: 70px;
     }
     .stat-venta-value {
-        font-size: 12px;
+        font-size: 11px;
     }
     .stat-venta-label {
         font-size: 8px;
-        letter-spacing: 0.04em;
+        letter-spacing: 0.02em;
     }
     .stat-venta-sub {
         font-size: 7px;
