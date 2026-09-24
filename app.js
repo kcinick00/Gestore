@@ -180,7 +180,12 @@ function configurarEventos() {
     document.getElementById('editPrecioCaja').addEventListener('input', () => {
         const precioCaja = parseFloat(document.getElementById('editPrecioCaja').value) || 0;
         if (precioCaja > 0) {
+            // v8.4 - Copiar el valor y sincronizar el toggle de compra con el de caja
+            const checkCaja = document.getElementById('checkUSDEditCaja');
+            const checkCompra = document.getElementById('checkUSDEditCompra');
+            checkCompra.checked = checkCaja.checked;
             document.getElementById('editPrecioCompra').value = precioCaja;
+            if (checkCompra._refresh) checkCompra._refresh();
             recalcularPrecioVenta();
         }
     });
@@ -257,6 +262,10 @@ function configurarEventos() {
     configurarToggleMoneda('checkUSDNuevoPago', 'nuevoPagoMonto', 'prefijoNuevoPago', 'nuevoPagoEquivalente', 'nuevoPagoMontoBs', 'nuevoPagoMontoUSD');
     configurarToggleMoneda('checkUSDEeditPago', 'editPagoMonto', 'prefijoEditPago', 'editPagoEquivalente', 'editPagoMontoBs', 'editPagoMontoUSD');
     configurarToggleMoneda('checkUSDConfirmarPago', 'pagoMonto', 'prefijoConfirmarPago', 'pagoEquivalenteUSD', 'pagoMontoBs', 'pagoMontoUSD');
+
+    // ========== v8.4 - TOGGLES USD/Bs EN EDITAR PRODUCTO ==========
+    configurarToggleMoneda('checkUSDEditCompra', 'editPrecioCompra', 'prefijoEditCompra', 'editCompraEquivalente', 'editPrecioCompraBs', 'editPrecioCompraUSD', recalcularPrecioVenta);
+    configurarToggleMoneda('checkUSDEditCaja', 'editPrecioCaja', 'prefijoEditCaja', 'editCajaEquivalente', 'editPrecioCajaBs', 'editPrecioCajaUSD');
 
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
@@ -1981,15 +1990,26 @@ function abrirModalEditarProducto(p) {
     
     const tieneIva = !p.exento && p.iva > 0;
     const precioBase = tieneIva ? (p.precioCompraUSD / (1 + TASA_IVA / 100)) : p.precioCompraUSD;
+
+    // v8.4 - Cargar precio de compra en USD (por defecto marcado)
+    const checkCompra = document.getElementById('checkUSDEditCompra');
+    checkCompra.checked = true;
     document.getElementById('editPrecioCompra').value = precioBase.toFixed(4);
     
     document.getElementById('editMargen').value = p.margen || 30;
     document.getElementById('editTieneIva').checked = tieneIva;
     document.getElementById('editUnidadesCaja').value = p.unidadesCaja || 0;
+
+    // v8.4 - Cargar precio de caja en USD (por defecto marcado)
+    const checkCaja = document.getElementById('checkUSDEditCaja');
+    checkCaja.checked = true;
     document.getElementById('editPrecioCaja').value = p.precioCajaUSD || 0;
+
     document.getElementById('editNotas').value = p.notas || '';
 
     setTimeout(() => {
+        if (checkCompra._refresh) checkCompra._refresh();
+        if (checkCaja._refresh) checkCaja._refresh();
         recalcularPrecioVenta();
     }, 50);
 
@@ -2011,17 +2031,23 @@ function recalcularPrecioVenta() {
 
     if (!precioCompraInput || !margenInput || !unidadesCajaInput || !precioVentaInput) return;
 
-    const precioBase = parseFloat(precioCompraInput.value) || 0;
+    // v8.4 - Convertir el valor ingresado a USD según el toggle
+    const esUSDCompra = document.getElementById('checkUSDEditCompra').checked;
+    const valorIngresado = parseFloat(precioCompraInput.value) || 0;
+    const precioBaseUSD = esUSDCompra 
+        ? valorIngresado 
+        : (tasaActual > 0 ? valorIngresado / tasaActual : 0);
+
     const margen = parseFloat(margenInput.value) || 0;
     const unidadesCaja = parseFloat(unidadesCajaInput.value) || 0;
     const tieneIva = tieneIvaCheckbox ? tieneIvaCheckbox.checked : false;
     const ivaPct = tieneIva ? TASA_IVA : 0;
 
-    let precioPorUnidad = precioBase;
+    let precioPorUnidad = precioBaseUSD;
     let esPorCaja = false;
 
     if (unidadesCaja > 1) {
-        precioPorUnidad = precioBase / unidadesCaja;
+        precioPorUnidad = precioBaseUSD / unidadesCaja;
         esPorCaja = true;
     }
 
@@ -2032,12 +2058,13 @@ function recalcularPrecioVenta() {
     precioVentaInput.value = precioVenta.toFixed(2);
 
     const ivaTexto = tieneIva ? `✅ IVA ${ivaPct}%` : '🚫 Sin IVA (exento)';
+    const monedaTexto = esUSDCompra ? '$' : 'Bs.';
 
     if (esPorCaja) {
         info.innerHTML = `
             📦 <strong>Compra por CAJA</strong> de ${unidadesCaja} unidades<br>
-            💵 Precio caja (base): $${precioBase.toFixed(4)}<br>
-            💵 Precio por unidad (base): $${precioPorUnidad.toFixed(4)}<br>
+            💵 Precio caja (${monedaTexto}): ${esUSDCompra ? '$' : ''}${valorIngresado.toFixed(4)}${!esUSDCompra ? ' Bs' : ''}<br>
+            💵 Precio por unidad (base USD): $${precioPorUnidad.toFixed(4)}<br>
             ${ivaTexto}: $${ivaMonto.toFixed(4)}<br>
             💵 <strong>Costo final: $${costoConIva.toFixed(4)}</strong><br>
             📊 Margen: ${margen}%<br>
@@ -2047,7 +2074,8 @@ function recalcularPrecioVenta() {
     } else {
         info.innerHTML = `
             📦 <strong>Venta por UNIDAD</strong><br>
-            💵 Precio base: $${precioBase.toFixed(4)}<br>
+            💵 Precio base (${monedaTexto}): ${esUSDCompra ? '$' : ''}${valorIngresado.toFixed(4)}${!esUSDCompra ? ' Bs' : ''}<br>
+            💵 Precio base (USD): $${precioBaseUSD.toFixed(4)}<br>
             ${ivaTexto}: $${ivaMonto.toFixed(4)}<br>
             💵 <strong>Costo final: $${costoConIva.toFixed(4)}</strong><br>
             📊 Margen: ${margen}%<br>
@@ -2068,18 +2096,30 @@ async function guardarEditarProducto() {
 
     const unidad = document.getElementById('editUnidad').value.trim() || 'UND';
     const stock = parseFloat(document.getElementById('editStock').value) || 0;
-    const precioBase = parseFloat(document.getElementById('editPrecioCompra').value) || 0;
+
+    // v8.4 - Obtener el valor REAL en USD (sin importar la moneda en que se ingresó)
+    const esUSDCompra = document.getElementById('checkUSDEditCompra').checked;
+    const valorIngresadoCompra = parseFloat(document.getElementById('editPrecioCompra').value) || 0;
+    const precioBaseUSD = esUSDCompra 
+        ? valorIngresadoCompra 
+        : (tasaActual > 0 ? valorIngresadoCompra / tasaActual : 0);
+
+    const esUSDCaja = document.getElementById('checkUSDEditCaja').checked;
+    const valorIngresadoCaja = parseFloat(document.getElementById('editPrecioCaja').value) || 0;
+    const precioCajaUSD = esUSDCaja 
+        ? valorIngresadoCaja 
+        : (tasaActual > 0 ? valorIngresadoCaja / tasaActual : 0);
+
     const margen = parseFloat(document.getElementById('editMargen').value) || 30;
     const tieneIva = document.getElementById('editTieneIva').checked;
     const exento = !tieneIva;
     const iva = tieneIva ? TASA_IVA : 0;
     const unidadesCaja = parseFloat(document.getElementById('editUnidadesCaja').value) || 0;
-    const precioCaja = parseFloat(document.getElementById('editPrecioCaja').value) || 0;
     const notas = document.getElementById('editNotas').value.trim();
 
-    let precioBasePorUnidad = precioBase;
+    let precioBasePorUnidad = precioBaseUSD;
     if (unidadesCaja > 1) {
-        precioBasePorUnidad = precioBase / unidadesCaja;
+        precioBasePorUnidad = precioBaseUSD / unidadesCaja;
     }
 
     const costoConIva = precioBasePorUnidad * (1 + iva / 100);
@@ -2097,7 +2137,7 @@ async function guardarEditarProducto() {
             iva: iva,
             exento: exento,
             unidades_caja: unidadesCaja,
-            precio_caja_usd: precioCaja,
+            precio_caja_usd: parseFloat(precioCajaUSD.toFixed(4)),
             notas: notas,
             updated_at: new Date().toISOString()
         }).eq('id', productoEditando.id);
