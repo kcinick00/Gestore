@@ -1,5 +1,5 @@
 /* ============================================
-   GESTORE PWA v10.0 - PayPal Professional Style
+   GESTORE PWA v11.0 - Multi-Theme System
    ============================================ */
 
 * { 
@@ -10,61 +10,49 @@
 }
 
 /* ============================================
-   SISTEMA DE DISEÑO - PayPal Brand
+   VARIABLES SEMÁNTICAS BASE (fallback PayPal)
    ============================================ */
 :root {
-    /* Fondos */
     --bg: #FFFFFF;
     --bg-soft: #F7F8FA;
     --bg-subtle: #EEEEEE;
-    
-    /* Superficies */
     --surface: #FFFFFF;
     --surface-hover: #F5F7FA;
     --surface-elevated: #FFFFFF;
-    
-    /* Bordes */
     --border: #DADDDD;
     --border-subtle: #E8EAED;
     --border-strong: #C4C8CC;
-    
-    /* Texto - según PayPal */
     --text: #010B0D;
     --text-secondary: #6C7378;
     --text-tertiary: #9DA3A6;
     --text-quaternary: #B8BEC2;
     --text-inverse: #FFFFFF;
-    
-    /* Azules PayPal */
-    --paypal-blue: #0070BA;
-    --paypal-blue-hover: #005EA6;
-    --paypal-blue-dark: #003087;
-    --paypal-blue-light: #E6F0F8;
-    --paypal-blue-glow: rgba(0, 112, 186, 0.2);
-    
-    --paypal-sky: #009CDE;
-    --paypal-sky-light: #E5F5FC;
-    
-    --paypal-deep: #003087;
-    --paypal-deep-light: #E6EAF5;
-    
-    /* Semánticos */
+    --primary: #0070BA;
+    --primary-hover: #005EA6;
+    --primary-dark: #003087;
+    --primary-light: #E6F0F8;
+    --primary-glow: rgba(0, 112, 186, 0.25);
+    --primary-contrast: #FFFFFF;
+    --accent: #009CDE;
+    --accent-dark: #003087;
+    --accent-light: #E5F5FC;
+    --accent-contrast: #FFFFFF;
     --success: #0070BA;
     --success-dark: #005EA6;
     --success-light: #E6F0F8;
-    
+    --success-contrast: #FFFFFF;
     --danger: #D9360B;
     --danger-dark: #B82D09;
     --danger-light: #FDEEE9;
-    
+    --danger-contrast: #FFFFFF;
     --warning: #E8A33D;
     --warning-dark: #C8862A;
     --warning-light: #FDF5E8;
-    
+    --warning-contrast: #FFFFFF;
     --info: #0070BA;
+    --info-dark: #003087;
     --info-light: #E6F0F8;
-    
-    /* Sombras - sutiles estilo PayPal */
+    --info-contrast: #FFFFFF;
     --shadow-xs: 0 1px 2px rgba(1, 11, 13, 0.06);
     --shadow-sm: 0 1px 3px rgba(1, 11, 13, 0.08), 0 1px 2px rgba(1, 11, 13, 0.04);
     --shadow-md: 0 4px 12px rgba(1, 11, 13, 0.08), 0 1px 3px rgba(1, 11, 13, 0.04);
@@ -72,16 +60,14 @@
     --shadow-xl: 0 16px 40px rgba(1, 11, 13, 0.12), 0 4px 12px rgba(1, 11, 13, 0.06);
     --shadow-primary: 0 4px 12px rgba(0, 112, 186, 0.25);
     --shadow-danger: 0 4px 12px rgba(217, 54, 11, 0.25);
-    
-    /* Radios - PayPal usa esquinas redondeadas moderadas */
+    --shadow-accent: 0 4px 12px rgba(0, 156, 222, 0.25);
     --r-xs: 4px;
     --r-sm: 8px;
     --r-md: 12px;
     --r-lg: 16px;
     --r-xl: 24px;
+    --r-2xl: 32px;
     --r-full: 9999px;
-    
-    /* Espaciado */
     --sp-1: 4px;
     --sp-2: 8px;
     --sp-3: 12px;
@@ -89,18 +75,322 @@
     --sp-5: 20px;
     --sp-6: 24px;
     --sp-8: 32px;
-    
-    /* Tipografía - PayPal Pro / Futura style */
     --font-display: 'Helvetica Neue', 'Arial', sans-serif;
     --font-body: 'Helvetica Neue', 'Arial', sans-serif;
     --font-mono: 'SF Mono', 'Monaco', 'Courier New', monospace;
-    
-    /* Transiciones - rápidas y precisas */
     --ease: cubic-bezier(0.4, 0, 0.2, 1);
     --ease-out: cubic-bezier(0, 0, 0.2, 1);
     --t-fast: 150ms var(--ease);
     --t: 200ms var(--ease);
+    --t-theme: 400ms ease;
     --t-bounce: 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ============================================
+   TEMA 1: PAYPAL (corporativo limpio)
+   ============================================ */
+[data-tema="paypal"] {
+    --bg: #FFFFFF;
+    --bg-soft: #F7F8FA;
+    --bg-subtle: #EEEEEE;
+    --surface: #FFFFFF;
+    --surface-hover: #F5F7FA;
+    --border: #DADDDD;
+    --border-subtle: #E8EAED;
+    --border-strong: #C4C8CC;
+    --text: #010B0D;
+    --text-secondary: #6C7378;
+    --text-tertiary: #9DA3A6;
+    --text-quaternary: #B8BEC2;
+    --primary: #0070BA;
+    --primary-hover: #005EA6;
+    --primary-dark: #003087;
+    --primary-light: #E6F0F8;
+    --primary-glow: rgba(0, 112, 186, 0.25);
+    --primary-contrast: #FFFFFF;
+    --accent: #009CDE;
+    --accent-dark: #003087;
+    --accent-light: #E5F5FC;
+    --accent-contrast: #FFFFFF;
+    --success: #0070BA;
+    --success-dark: #005EA6;
+    --success-light: #E6F0F8;
+    --success-contrast: #FFFFFF;
+    --danger: #D9360B;
+    --danger-dark: #B82D09;
+    --danger-light: #FDEEE9;
+    --danger-contrast: #FFFFFF;
+    --warning: #E8A33D;
+    --warning-dark: #C8862A;
+    --warning-light: #FDF5E8;
+    --warning-contrast: #FFFFFF;
+    --info: #0070BA;
+    --info-dark: #003087;
+    --info-light: #E6F0F8;
+    --info-contrast: #FFFFFF;
+    --shadow-primary: 0 4px 12px rgba(0, 112, 186, 0.25);
+    --shadow-danger: 0 4px 12px rgba(217, 54, 11, 0.25);
+    --shadow-accent: 0 4px 12px rgba(0, 156, 222, 0.25);
+    --font-display: 'Helvetica Neue', 'Arial', sans-serif;
+    --font-body: 'Helvetica Neue', 'Arial', sans-serif;
+}
+
+/* ============================================
+   TEMA 2: ARTISAN (charcutería cálida)
+   ============================================ */
+[data-tema="artisan"] {
+    --bg: #FAF6F0;
+    --bg-soft: #F5EFE6;
+    --bg-subtle: #EDE6DA;
+    --surface: #FFFFFF;
+    --surface-hover: #FFFDF9;
+    --border: #E8DFD1;
+    --border-subtle: #F0E9DE;
+    --border-strong: #D4C7B2;
+    --text: #2B2118;
+    --text-secondary: #6B5D4F;
+    --text-tertiary: #9B8B78;
+    --text-quaternary: #B8A896;
+    --primary: #C8442C;
+    --primary-hover: #D95438;
+    --primary-dark: #A33522;
+    --primary-light: rgba(200, 68, 44, 0.08);
+    --primary-glow: rgba(200, 68, 44, 0.25);
+    --primary-contrast: #FFFFFF;
+    --accent: #E8A33D;
+    --accent-dark: #C8862A;
+    --accent-light: rgba(232, 163, 61, 0.12);
+    --accent-contrast: #2B2118;
+    --success: #5B8C3E;
+    --success-dark: #4A7532;
+    --success-light: rgba(91, 140, 62, 0.1);
+    --success-contrast: #FFFFFF;
+    --danger: #C8442C;
+    --danger-dark: #A33522;
+    --danger-light: rgba(200, 68, 44, 0.1);
+    --danger-contrast: #FFFFFF;
+    --warning: #E8A33D;
+    --warning-dark: #C8862A;
+    --warning-light: rgba(232, 163, 61, 0.12);
+    --warning-contrast: #2B2118;
+    --info: #4A7C8C;
+    --info-dark: #3A6272;
+    --info-light: rgba(74, 124, 140, 0.1);
+    --info-contrast: #FFFFFF;
+    --shadow-xs: 0 1px 2px rgba(43, 33, 24, 0.04);
+    --shadow-sm: 0 2px 6px rgba(43, 33, 24, 0.06), 0 1px 2px rgba(43, 33, 24, 0.04);
+    --shadow-md: 0 6px 16px rgba(43, 33, 24, 0.08), 0 2px 4px rgba(43, 33, 24, 0.04);
+    --shadow-lg: 0 12px 28px rgba(43, 33, 24, 0.1), 0 4px 8px rgba(43, 33, 24, 0.04);
+    --shadow-xl: 0 20px 48px rgba(43, 33, 24, 0.12), 0 8px 16px rgba(43, 33, 24, 0.06);
+    --shadow-primary: 0 6px 20px rgba(200, 68, 44, 0.25);
+    --shadow-danger: 0 6px 20px rgba(200, 68, 44, 0.25);
+    --shadow-accent: 0 6px 20px rgba(232, 163, 61, 0.25);
+    --r-xs: 6px;
+    --r-sm: 10px;
+    --r-md: 16px;
+    --r-lg: 20px;
+    --r-xl: 28px;
+    --r-2xl: 36px;
+    --font-display: 'Fraunces', 'Playfair Display', Georgia, serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ============================================
+   TEMA 3: DARK (oscuro con acento lima)
+   ============================================ */
+[data-tema="dark"] {
+    --bg: #0F0F0F;
+    --bg-soft: #1A1A1A;
+    --bg-subtle: #151515;
+    --surface: #1A1A1A;
+    --surface-hover: #222222;
+    --border: #2A2A2A;
+    --border-subtle: #222222;
+    --border-strong: #3A3A3A;
+    --text: #FFFFFF;
+    --text-secondary: #A0A0A0;
+    --text-tertiary: #6B6B6B;
+    --text-quaternary: #4A4A4A;
+    --text-inverse: #0F0F0F;
+    --primary: #B4FF39;
+    --primary-hover: #C5FF5C;
+    --primary-dark: #8FD62E;
+    --primary-light: rgba(180, 255, 57, 0.12);
+    --primary-glow: rgba(180, 255, 57, 0.4);
+    --primary-contrast: #0F0F0F;
+    --accent: #FF6B35;
+    --accent-dark: #E55A26;
+    --accent-light: rgba(255, 107, 53, 0.15);
+    --accent-contrast: #FFFFFF;
+    --success: #B4FF39;
+    --success-dark: #8FD62E;
+    --success-light: rgba(180, 255, 57, 0.12);
+    --success-contrast: #0F0F0F;
+    --danger: #FF3B30;
+    --danger-dark: #E53935;
+    --danger-light: rgba(255, 59, 48, 0.15);
+    --danger-contrast: #FFFFFF;
+    --warning: #FFA000;
+    --warning-dark: #FF8F00;
+    --warning-light: rgba(255, 160, 0, 0.15);
+    --warning-contrast: #0F0F0F;
+    --info: #60A5FA;
+    --info-dark: #3B82F6;
+    --info-light: rgba(96, 165, 250, 0.15);
+    --info-contrast: #FFFFFF;
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.6);
+    --shadow-xl: 0 24px 60px rgba(0, 0, 0, 0.7);
+    --shadow-primary: 0 8px 24px rgba(180, 255, 57, 0.3);
+    --shadow-danger: 0 8px 24px rgba(255, 59, 48, 0.3);
+    --shadow-accent: 0 8px 24px rgba(255, 107, 53, 0.3);
+    --font-display: 'Bebas Neue', 'Inter', sans-serif;
+}
+
+/* ============================================
+   TEMA 4: ALTO CONTRASTE (accesibilidad WCAG AAA)
+   ============================================ */
+[data-tema="contraste"] {
+    --bg: #FFFFFF;
+    --bg-soft: #FFFFFF;
+    --bg-subtle: #F0F0F0;
+    --surface: #FFFFFF;
+    --surface-hover: #F5F5F5;
+    --border: #000000;
+    --border-subtle: #333333;
+    --border-strong: #000000;
+    --text: #000000;
+    --text-secondary: #1A1A1A;
+    --text-tertiary: #333333;
+    --text-quaternary: #4D4D4D;
+    --text-inverse: #FFFFFF;
+    --primary: #0040DD;
+    --primary-hover: #0033B5;
+    --primary-dark: #002288;
+    --primary-light: #E6ECFF;
+    --primary-glow: rgba(0, 64, 221, 0.4);
+    --primary-contrast: #FFFFFF;
+    --accent: #B8000F;
+    --accent-dark: #8A000B;
+    --accent-light: #FFE6E8;
+    --accent-contrast: #FFFFFF;
+    --success: #005C1A;
+    --success-dark: #004012;
+    --success-light: #E6F5EA;
+    --success-contrast: #FFFFFF;
+    --danger: #B8000F;
+    --danger-dark: #8A000B;
+    --danger-light: #FFE6E8;
+    --danger-contrast: #FFFFFF;
+    --warning: #7A5200;
+    --warning-dark: #5C3D00;
+    --warning-light: #FFF4E0;
+    --warning-contrast: #FFFFFF;
+    --info: #004080;
+    --info-dark: #003060;
+    --info-light: #E6EEF5;
+    --info-contrast: #FFFFFF;
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.4);
+    --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.45);
+    --shadow-primary: 0 4px 12px rgba(0, 64, 221, 0.4);
+    --shadow-danger: 0 4px 12px rgba(184, 0, 15, 0.4);
+    --shadow-accent: 0 4px 12px rgba(184, 0, 15, 0.4);
+    --r-xs: 2px;
+    --r-sm: 4px;
+    --r-md: 6px;
+    --r-lg: 8px;
+    --r-xl: 12px;
+    --r-2xl: 16px;
+    --font-display: 'Arial Black', 'Helvetica', sans-serif;
+    --font-body: 'Arial', 'Helvetica', sans-serif;
+}
+
+/* ============================================
+   TEMA AUTO (respeta preferencia del sistema)
+   ============================================ */
+@media (prefers-color-scheme: dark) {
+    [data-tema="auto"] {
+        --bg: #0F0F0F;
+        --bg-soft: #1A1A1A;
+        --bg-subtle: #151515;
+        --surface: #1A1A1A;
+        --surface-hover: #222222;
+        --border: #2A2A2A;
+        --border-subtle: #222222;
+        --border-strong: #3A3A3A;
+        --text: #FFFFFF;
+        --text-secondary: #A0A0A0;
+        --text-tertiary: #6B6B6B;
+        --text-quaternary: #4A4A4A;
+        --text-inverse: #0F0F0F;
+        --primary: #60A5FA;
+        --primary-hover: #7DB8FF;
+        --primary-dark: #3B82F6;
+        --primary-light: rgba(96, 165, 250, 0.15);
+        --primary-glow: rgba(96, 165, 250, 0.3);
+        --primary-contrast: #0F0F0F;
+        --accent: #B4FF39;
+        --accent-dark: #8FD62E;
+        --accent-light: rgba(180, 255, 57, 0.12);
+        --accent-contrast: #0F0F0F;
+        --success: #4ADE80;
+        --success-dark: #22C55E;
+        --success-light: rgba(74, 222, 128, 0.15);
+        --success-contrast: #0F0F0F;
+        --danger: #FF6B6B;
+        --danger-dark: #E53935;
+        --danger-light: rgba(255, 107, 107, 0.15);
+        --danger-contrast: #0F0F0F;
+        --warning: #FBBF24;
+        --warning-dark: #F59E0B;
+        --warning-light: rgba(251, 191, 36, 0.15);
+        --warning-contrast: #0F0F0F;
+        --info: #60A5FA;
+        --info-dark: #3B82F6;
+        --info-light: rgba(96, 165, 250, 0.15);
+        --info-contrast: #0F0F0F;
+        --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+        --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+        --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+        --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.6);
+        --shadow-xl: 0 24px 60px rgba(0, 0, 0, 0.7);
+        --shadow-primary: 0 8px 24px rgba(96, 165, 250, 0.3);
+        --shadow-danger: 0 8px 24px rgba(255, 107, 107, 0.3);
+        --shadow-accent: 0 8px 24px rgba(180, 255, 57, 0.3);
+    }
+}
+
+/* ============================================
+   TRANSICIONES SUAVES ENTRE TEMAS
+   ============================================ */
+body,
+.topbar,
+.tabs,
+.stat-card,
+.stat-venta-card,
+.card-item,
+.modal,
+.modal-header,
+.modal-body,
+.modal-footer,
+input,
+select,
+textarea,
+button,
+.chip,
+.tab,
+.vacio,
+.toast {
+    transition: 
+        background-color var(--t-theme),
+        border-color var(--t-theme),
+        color var(--t-theme),
+        box-shadow var(--t-theme);
 }
 
 /* ============================================
@@ -123,12 +413,10 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     letter-spacing: -0.01em;
-    transition: background var(--t), color var(--t);
 }
 
 .hidden { display: none !important; }
 
-/* Números tabulares */
 .stat-value, .stat-venta-value, .card-monto, .card-monto-bs, 
 .monto, .monto-bs, .detalle-valor, .card-fecha {
     font-variant-numeric: tabular-nums;
@@ -142,7 +430,7 @@ input[type="number"], #ventaTotal, #editPrecioVenta {
 }
 
 /* ============================================
-   HEADER - PayPal Clean
+   HEADER
    ============================================ */
 .topbar {
     position: sticky;
@@ -150,7 +438,7 @@ input[type="number"], #ventaTotal, #editPrecioVenta {
     z-index: 100;
     padding: 16px 20px;
     padding-top: max(16px, env(safe-area-inset-top));
-    background: rgba(255, 255, 255, 0.98);
+    background: color-mix(in srgb, var(--bg) 92%, transparent);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     color: var(--text);
@@ -158,7 +446,6 @@ input[type="number"], #ventaTotal, #editPrecioVenta {
     overflow: hidden;
 }
 
-/* Banda superior - azul PayPal */
 .topbar::before {
     content: '';
     position: absolute;
@@ -166,7 +453,7 @@ input[type="number"], #ventaTotal, #editPrecioVenta {
     left: 0;
     right: 0;
     height: 3px;
-    background: var(--paypal-blue);
+    background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
 }
 
 .topbar-content {
@@ -175,7 +462,7 @@ input[type="number"], #ventaTotal, #editPrecioVenta {
     align-items: center;
     max-width: 1200px;
     margin: 0 auto;
-    gap: 12px;
+    gap: 10px;
     position: relative;
     z-index: 1;
 }
@@ -199,7 +486,6 @@ input[type="number"], #ventaTotal, #editPrecioVenta {
     font-weight: 700;
     letter-spacing: -0.02em;
     color: var(--text);
-    text-transform: none;
     line-height: 1;
 }
 
@@ -207,13 +493,13 @@ input[type="number"], #ventaTotal, #editPrecioVenta {
     font-family: var(--font-mono);
     font-size: 10px;
     font-weight: 700;
-    color: var(--paypal-blue);
-    background: var(--paypal-blue-light);
+    color: var(--primary);
+    background: var(--primary-light);
     padding: 3px 8px;
     border-radius: var(--r-full);
     letter-spacing: 0.02em;
     margin-left: 6px;
-    border: 1px solid rgba(0, 112, 186, 0.2);
+    border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent);
 }
 
 .btn-icon {
@@ -233,14 +519,17 @@ input[type="number"], #ventaTotal, #editPrecioVenta {
 }
 
 .btn-icon:hover {
-    background: var(--paypal-blue-light);
-    border-color: var(--paypal-blue);
-    color: var(--paypal-blue);
+    background: var(--primary-light);
+    border-color: var(--primary);
+    color: var(--primary);
 }
 
 .btn-icon:active { 
     transform: scale(0.95);
 }
+
+#btnTema:hover { transform: scale(1.08); }
+#btnTema:active { transform: scale(0.92); }
 
 .tasa-info { 
     font-family: var(--font-mono);
@@ -265,31 +554,31 @@ input[type="number"], #ventaTotal, #editPrecioVenta {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: var(--paypal-blue);
-    box-shadow: 0 0 0 3px var(--paypal-blue-light);
+    background: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
     animation: pulse 2s ease infinite;
 }
 
 @keyframes pulse {
     0%, 100% { 
         transform: scale(1);
-        box-shadow: 0 0 0 3px var(--paypal-blue-light);
+        box-shadow: 0 0 0 3px var(--primary-light);
     }
     50% { 
         transform: scale(0.85);
-        box-shadow: 0 0 0 6px rgba(0, 112, 186, 0.06);
+        box-shadow: 0 0 0 6px color-mix(in srgb, var(--primary) 6%, transparent);
     }
 }
 
 /* ============================================
-   TABS - PayPal Pill Navigation
+   TABS
    ============================================ */
 .tabs {
     position: sticky;
     top: 0;
     z-index: 99;
     display: flex;
-    background: rgba(255, 255, 255, 0.98);
+    background: color-mix(in srgb, var(--bg) 95%, transparent);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border);
@@ -297,7 +586,6 @@ input[type="number"], #ventaTotal, #editPrecioVenta {
     scrollbar-width: none;
     padding: 12px 16px;
     gap: 8px;
-    max-width: 100%;
 }
 
 .tabs::-webkit-scrollbar { display: none; }
@@ -330,9 +618,9 @@ input[type="number"], #ventaTotal, #editPrecioVenta {
 }
 
 .tab.active {
-    background: var(--paypal-blue);
-    color: var(--text-inverse);
-    border-color: var(--paypal-blue);
+    background: var(--primary);
+    color: var(--primary-contrast);
+    border-color: var(--primary);
     box-shadow: var(--shadow-primary);
 }
 
@@ -341,9 +629,9 @@ input[type="number"], #ventaTotal, #editPrecioVenta {
 }
 
 .tab:hover:not(.active) {
-    background: var(--paypal-blue-light);
-    border-color: var(--paypal-blue);
-    color: var(--paypal-blue);
+    background: var(--primary-light);
+    border-color: var(--primary);
+    color: var(--primary);
 }
 
 .tab:active {
@@ -352,7 +640,7 @@ input[type="number"], #ventaTotal, #editPrecioVenta {
 
 .badge {
     background: var(--danger);
-    color: white;
+    color: var(--danger-contrast);
     border-radius: var(--r-full);
     padding: 2px 7px;
     font-family: var(--font-mono);
@@ -362,12 +650,12 @@ input[type="number"], #ventaTotal, #editPrecioVenta {
     text-align: center;
     line-height: 1.4;
     margin-left: 4px;
-    box-shadow: 0 2px 6px rgba(217, 54, 11, 0.4);
+    box-shadow: 0 2px 6px color-mix(in srgb, var(--danger) 40%, transparent);
 }
 
 .tab.active .badge {
-    background: var(--text-inverse);
-    color: var(--paypal-blue);
+    background: var(--primary-contrast);
+    color: var(--primary);
     box-shadow: none;
 }
 
@@ -390,7 +678,7 @@ main {
 }
 
 /* ============================================
-   STATS CARDS - PayPal Card Style
+   STATS CARDS
    ============================================ */
 .stats-grid {
     display: grid;
@@ -425,7 +713,6 @@ main {
     transform: translateY(-1px) scale(0.99);
 }
 
-/* Barra lateral azul */
 .stat-card::before {
     content: '';
     position: absolute;
@@ -438,10 +725,10 @@ main {
 
 .stat-amarillo::before { background: var(--warning); }
 .stat-rojo::before { background: var(--danger); }
-.stat-verde::before { background: var(--paypal-blue); }
-.stat-azul::before { background: var(--paypal-sky); }
+.stat-verde::before { background: var(--success); }
+.stat-azul::before { background: var(--info); }
 .stat-gris::before { background: var(--text-tertiary); }
-.stat-naranja::before { background: var(--paypal-deep); }
+.stat-naranja::before { background: var(--accent); }
 
 .stat-label {
     font-size: 11px;
@@ -467,9 +754,9 @@ main {
 
 .stat-card.stat-amarillo .stat-value { color: var(--warning-dark); }
 .stat-card.stat-rojo .stat-value { color: var(--danger); }
-.stat-card.stat-verde .stat-value { color: var(--paypal-blue); }
-.stat-card.stat-azul .stat-value { color: var(--paypal-sky); }
-.stat-card.stat-naranja .stat-value { color: var(--paypal-deep); }
+.stat-card.stat-verde .stat-value { color: var(--success); }
+.stat-card.stat-azul .stat-value { color: var(--info); }
+.stat-card.stat-naranja .stat-value { color: var(--accent-dark); }
 
 .stat-sub {
     font-family: var(--font-mono);
@@ -492,7 +779,7 @@ main {
 }
 
 /* ============================================
-   STATS VENTAS - 5 tarjetas compactas
+   STATS VENTAS - 5 tarjetas
    ============================================ */
 .stats-ventas-5 {
     display: grid;
@@ -537,26 +824,25 @@ main {
     transform: scale(0.98);
 }
 
-/* Colores por tipo - todos los azules */
-.stat-venta-hoy::before { background: var(--paypal-blue); }
-.stat-venta-mes::before { background: var(--paypal-deep); }
-.stat-venta-efectivo::before { background: var(--paypal-sky); }
-.stat-venta-zelle::before { background: var(--paypal-deep); }
-.stat-venta-punto::before { background: var(--paypal-blue); }
-.stat-venta-sem::before { background: var(--paypal-blue); }
-.stat-venta-sem-pas::before { background: var(--paypal-deep); }
-.stat-venta-ult-dia::before { background: var(--paypal-sky); }
-.stat-venta-prom-dia::before { background: var(--paypal-blue); }
+.stat-venta-hoy::before { background: var(--success); }
+.stat-venta-mes::before { background: var(--info); }
+.stat-venta-efectivo::before { background: var(--warning); }
+.stat-venta-zelle::before { background: var(--primary); }
+.stat-venta-punto::before { background: var(--accent); }
+.stat-venta-sem::before { background: var(--success); }
+.stat-venta-sem-pas::before { background: var(--primary-dark); }
+.stat-venta-ult-dia::before { background: var(--info); }
+.stat-venta-prom-dia::before { background: var(--warning); }
 
-.stat-venta-hoy .stat-venta-value { color: var(--paypal-blue); }
-.stat-venta-mes .stat-venta-value { color: var(--paypal-deep); }
-.stat-venta-efectivo .stat-venta-value { color: var(--paypal-sky); }
-.stat-venta-zelle .stat-venta-value { color: var(--paypal-deep); }
-.stat-venta-punto .stat-venta-value { color: var(--paypal-blue); }
-.stat-venta-sem .stat-venta-value { color: var(--paypal-blue); }
-.stat-venta-sem-pas .stat-venta-value { color: var(--paypal-deep); }
-.stat-venta-ult-dia .stat-venta-value { color: var(--paypal-sky); }
-.stat-venta-prom-dia .stat-venta-value { color: var(--paypal-blue); }
+.stat-venta-hoy .stat-venta-value { color: var(--success); }
+.stat-venta-mes .stat-venta-value { color: var(--info); }
+.stat-venta-efectivo .stat-venta-value { color: var(--warning-dark); }
+.stat-venta-zelle .stat-venta-value { color: var(--primary); }
+.stat-venta-punto .stat-venta-value { color: var(--accent-dark); }
+.stat-venta-sem .stat-venta-value { color: var(--success); }
+.stat-venta-sem-pas .stat-venta-value { color: var(--primary-dark); }
+.stat-venta-ult-dia .stat-venta-value { color: var(--info); }
+.stat-venta-prom-dia .stat-venta-value { color: var(--warning-dark); }
 
 .stat-venta-label {
     font-size: 10px;
@@ -610,7 +896,10 @@ main {
     border-radius: var(--r-md);
     font-family: var(--font-body);
     font-size: 15px;
-    background: var(--surface) url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%230070BA' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='8' r='6'/%3E%3Cpath d='m16 16-4-4'/%3E%3C/svg%3E") no-repeat 16px center;
+    background: var(--surface);
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%230070BA' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='8' r='6'/%3E%3Cpath d='m16 16-4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 16px center;
     color: var(--text);
     margin-bottom: 12px;
     transition: all var(--t);
@@ -625,8 +914,8 @@ main {
 
 .input-buscar:focus { 
     outline: none; 
-    border-color: var(--paypal-blue);
-    box-shadow: 0 0 0 3px var(--paypal-blue-light);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
 }
 
 .select-filtro {
@@ -636,7 +925,10 @@ main {
     border-radius: var(--r-md);
     font-family: var(--font-body);
     font-size: 14px;
-    background: var(--surface) url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%230070BA' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 3 3 3-3'/%3E%3C/svg%3E") no-repeat right 16px center;
+    background: var(--surface);
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%230070BA' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 3 3 3-3'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
     color: var(--text);
     margin-bottom: 12px;
     font-weight: 600;
@@ -648,8 +940,8 @@ main {
 
 .select-filtro:focus { 
     outline: none; 
-    border-color: var(--paypal-blue);
-    box-shadow: 0 0 0 3px var(--paypal-blue-light);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
 }
 
 .filtros-chips {
@@ -684,15 +976,15 @@ main {
 }
 
 .chip:hover {
-    border-color: var(--paypal-blue);
-    color: var(--paypal-blue);
-    background: var(--paypal-blue-light);
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-light);
 }
 
 .chip.active {
-    background: var(--paypal-blue);
-    color: var(--text-inverse);
-    border-color: var(--paypal-blue);
+    background: var(--primary);
+    color: var(--primary-contrast);
+    border-color: var(--primary);
     box-shadow: var(--shadow-primary);
 }
 
@@ -738,7 +1030,6 @@ main {
     transform: translateY(0) scale(0.99);
 }
 
-/* Barra de color lateral */
 .card-item::before {
     content: '';
     position: absolute;
@@ -746,7 +1037,7 @@ main {
     top: 0;
     bottom: 0;
     width: 4px;
-    background: var(--paypal-blue);
+    background: var(--primary);
     transition: width var(--t);
 }
 
@@ -761,7 +1052,7 @@ main {
     background: var(--danger);
 }
 .card-item.estatus-Pagada::before { 
-    background: var(--paypal-blue);
+    background: var(--primary);
 }
 
 .card-header {
@@ -800,19 +1091,19 @@ main {
 .estatus-tag-Pendiente { 
     background: var(--warning-light); 
     color: var(--warning-dark); 
-    border-color: rgba(232, 163, 61, 0.3);
+    border-color: color-mix(in srgb, var(--warning) 30%, transparent);
 }
 
 .estatus-tag-Vencida { 
     background: var(--danger-light); 
     color: var(--danger); 
-    border-color: rgba(217, 54, 11, 0.3);
+    border-color: color-mix(in srgb, var(--danger) 30%, transparent);
 }
 
 .estatus-tag-Pagada { 
-    background: var(--paypal-blue-light); 
-    color: var(--paypal-blue); 
-    border-color: rgba(0, 112, 186, 0.3);
+    background: var(--success-light); 
+    color: var(--success-dark); 
+    border-color: color-mix(in srgb, var(--success) 30%, transparent);
 }
 
 .card-info {
@@ -826,7 +1117,7 @@ main {
 
 .card-monto {
     font-weight: 700;
-    color: var(--paypal-blue);
+    color: var(--primary);
     font-size: 20px;
     letter-spacing: -0.02em;
 }
@@ -840,7 +1131,7 @@ main {
 
 .card-notas {
     background: var(--bg-soft);
-    border-left: 3px solid var(--paypal-sky);
+    border-left: 3px solid var(--accent);
     border-radius: var(--r-xs);
     padding: 10px 12px;
     font-size: 13px;
@@ -886,7 +1177,7 @@ main {
 }
 
 /* ============================================
-   FAB - Botón flotante azul PayPal
+   FAB
    ============================================ */
 .fab {
     position: fixed;
@@ -895,13 +1186,13 @@ main {
     width: 62px;
     height: 62px;
     border-radius: var(--r-full);
-    background: var(--paypal-blue);
-    color: white;
+    background: var(--primary);
+    color: var(--primary-contrast);
     border: none;
     font-size: 32px;
     font-weight: 300;
     cursor: pointer;
-    box-shadow: var(--shadow-primary), 0 0 0 4px var(--paypal-blue-light);
+    box-shadow: var(--shadow-primary), 0 0 0 4px var(--primary-light);
     z-index: 200;
     display: flex;
     align-items: center;
@@ -912,8 +1203,8 @@ main {
 
 .fab:hover {
     transform: translateY(-3px) scale(1.05);
-    box-shadow: 0 8px 24px rgba(0, 112, 186, 0.4), 0 0 0 6px var(--paypal-blue-light);
-    background: var(--paypal-blue-hover);
+    box-shadow: 0 8px 24px var(--primary-glow), 0 0 0 6px var(--primary-light);
+    background: var(--primary-hover);
 }
 
 .fab:active { 
@@ -921,7 +1212,7 @@ main {
 }
 
 /* ============================================
-   MODALES - PayPal Clean
+   MODALES
    ============================================ */
 .modal-overlay {
     position: fixed;
@@ -981,7 +1272,7 @@ main {
     left: 0;
     right: 0;
     height: 3px;
-    background: var(--paypal-blue);
+    background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
 }
 
 .modal-header h3 { 
@@ -1062,8 +1353,8 @@ main {
 .modal-body select:focus,
 .modal-body textarea:focus {
     outline: none;
-    border-color: var(--paypal-blue);
-    box-shadow: 0 0 0 3px var(--paypal-blue-light);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
 }
 
 .modal-body textarea { 
@@ -1081,7 +1372,7 @@ main {
     transform: translateY(-50%);
     font-family: var(--font-mono);
     font-weight: 700;
-    color: var(--paypal-blue);
+    color: var(--primary);
     font-size: 16px;
     pointer-events: none;
 }
@@ -1102,7 +1393,7 @@ main {
 .checkbox-inline input[type="checkbox"] {
     width: auto;
     margin: 0;
-    accent-color: var(--paypal-blue);
+    accent-color: var(--primary);
     transform: scale(1.2);
 }
 
@@ -1116,15 +1407,15 @@ main {
 }
 
 .equivalente-bs {
-    background: var(--paypal-sky-light);
-    border-left: 4px solid var(--paypal-sky);
+    background: var(--info-light);
+    border-left: 4px solid var(--info);
     padding: 12px 16px;
     border-radius: var(--r-sm);
     margin-top: 12px;
     font-family: var(--font-mono);
     font-size: 14px;
     font-weight: 700;
-    color: var(--paypal-deep);
+    color: var(--info-dark);
     letter-spacing: -0.01em;
 }
 
@@ -1141,7 +1432,7 @@ main {
 }
 
 /* ============================================
-   BOTONES - PayPal Style
+   BOTONES
    ============================================ */
 .btn {
     flex: 1;
@@ -1170,14 +1461,14 @@ main {
 }
 
 .btn-primary { 
-    background: var(--paypal-blue);
-    color: white;
+    background: var(--primary);
+    color: var(--primary-contrast);
     box-shadow: var(--shadow-primary);
 }
 
 .btn-primary:hover {
-    background: var(--paypal-blue-hover);
-    box-shadow: 0 6px 20px rgba(0, 112, 186, 0.35);
+    background: var(--primary-hover);
+    box-shadow: 0 6px 20px var(--primary-glow);
 }
 
 .btn-cancelar { 
@@ -1194,13 +1485,12 @@ main {
 
 .btn-danger { 
     background: var(--danger);
-    color: white;
+    color: var(--danger-contrast);
     box-shadow: var(--shadow-danger);
 }
 
 .btn-danger:hover {
     background: var(--danger-dark);
-    box-shadow: 0 6px 20px rgba(217, 54, 11, 0.35);
 }
 
 .btn-secondary { 
@@ -1247,7 +1537,7 @@ main {
 }
 
 .detalle-valor.destacado {
-    color: var(--paypal-blue);
+    color: var(--primary);
     font-weight: 800;
     font-size: 24px;
     letter-spacing: -0.03em;
@@ -1255,7 +1545,7 @@ main {
 
 .detalle-notas {
     background: var(--bg-soft);
-    border-left: 3px solid var(--paypal-sky);
+    border-left: 3px solid var(--accent);
     border-radius: var(--r-xs);
     padding: 12px 14px;
     margin-top: 8px;
@@ -1277,7 +1567,7 @@ main {
 
 .tabla-productos-edit th {
     background: var(--bg-soft);
-    color: var(--paypal-blue);
+    color: var(--primary);
     padding: 10px 8px;
     text-align: left;
     font-size: 11px;
@@ -1320,8 +1610,8 @@ main {
 
 .tabla-productos-edit input:focus {
     outline: none;
-    border-color: var(--paypal-blue);
-    box-shadow: 0 0 0 2px var(--paypal-blue-light);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-light);
 }
 
 .tabla-productos-edit .input-corto {
@@ -1333,16 +1623,16 @@ main {
 }
 
 .tabla-productos-edit .precio-venta {
-    background: var(--paypal-blue-light);
+    background: var(--primary-light);
     font-weight: 700;
-    color: var(--paypal-blue);
-    border-color: rgba(0, 112, 186, 0.3);
+    color: var(--primary);
+    border-color: color-mix(in srgb, var(--primary) 30%, transparent);
 }
 
 .tabla-productos-edit .btn-eliminar-prod {
     background: var(--danger-light);
     color: var(--danger);
-    border: 1px solid rgba(217, 54, 11, 0.3);
+    border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
     padding: 5px 9px;
     border-radius: var(--r-xs);
     cursor: pointer;
@@ -1380,29 +1670,299 @@ main {
 }
 
 .toast.success { 
-    background: var(--paypal-blue);
-    color: white;
-    border-color: var(--paypal-blue);
+    background: var(--success);
+    color: var(--success-contrast);
+    border-color: var(--success);
     box-shadow: var(--shadow-primary);
 }
 
 .toast.error { 
     background: var(--danger);
-    color: white;
+    color: var(--danger-contrast);
     border-color: var(--danger);
     box-shadow: var(--shadow-danger);
 }
 
 .toast.info { 
-    background: var(--paypal-deep);
+    background: var(--primary-dark);
     color: white;
-    border-color: var(--paypal-deep);
-    box-shadow: 0 6px 20px rgba(0, 48, 135, 0.3);
+    border-color: var(--primary-dark);
+    box-shadow: 0 6px 20px color-mix(in srgb, var(--primary-dark) 30%, transparent);
 }
 
 @keyframes toastIn {
     from { opacity: 0; transform: translate(-50%, 16px); }
     to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* ============================================
+   BOTONES DE ACCIÓN
+   ============================================ */
+.btn-accion-verde,
+.btn-accion-azul,
+.btn-accion-naranja,
+.btn-accion-cyan,
+.btn-accion-gris,
+.btn-accion-excel {
+    flex: 1;
+    padding: 13px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    letter-spacing: -0.01em;
+    text-transform: none;
+    border: none;
+    border-radius: var(--r-full);
+    cursor: pointer;
+    font-weight: 700;
+    transition: all var(--t);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.btn-accion-verde {
+    background: var(--success);
+    color: var(--success-contrast);
+    box-shadow: var(--shadow-primary);
+}
+.btn-accion-verde:hover { transform: translateY(-1px); }
+
+.btn-accion-azul {
+    background: var(--info);
+    color: var(--info-contrast);
+    box-shadow: var(--shadow-primary);
+}
+.btn-accion-azul:hover { transform: translateY(-1px); }
+
+.btn-accion-naranja {
+    background: var(--warning);
+    color: var(--warning-contrast);
+    box-shadow: var(--shadow-accent);
+}
+.btn-accion-naranja:hover { transform: translateY(-1px); }
+
+.btn-accion-cyan {
+    background: var(--accent);
+    color: var(--accent-contrast);
+    box-shadow: var(--shadow-accent);
+}
+.btn-accion-cyan:hover { transform: translateY(-1px); }
+
+.btn-accion-gris {
+    background: var(--bg-soft);
+    color: var(--text-secondary);
+    border: 1.5px solid var(--border);
+}
+.btn-accion-gris:hover { 
+    transform: translateY(-1px); 
+    border-color: var(--border-strong); 
+    color: var(--text); 
+}
+
+.btn-accion-excel {
+    background: #217346;
+    color: white;
+    box-shadow: 0 4px 12px rgba(33, 115, 70, 0.25);
+}
+.btn-accion-excel:hover { transform: translateY(-1px); }
+
+/* ============================================
+   CHECKBOX IVA
+   ============================================ */
+.tabla-productos-edit input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--primary);
+    margin: 0 auto;
+    display: block;
+}
+
+.tabla-productos-edit input[type="checkbox"]:hover {
+    transform: scale(1.1);
+}
+
+#editTieneIva {
+    accent-color: var(--primary);
+    border-radius: 4px;
+}
+
+#editTieneIva:checked + label {
+    color: var(--primary);
+}
+
+/* ============================================
+   TOGGLE USD/Bs
+   ============================================ */
+.checkbox-inline.toggle-moneda {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--primary-light);
+    border-radius: var(--r-sm);
+    border: 1.5px solid color-mix(in srgb, var(--primary) 30%, transparent);
+    margin-bottom: 10px;
+    margin-top: 4px;
+}
+
+.checkbox-inline.toggle-moneda input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--primary);
+    transform: scale(1);
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.checkbox-inline.toggle-moneda label {
+    margin: 0;
+    font-weight: 700;
+    color: var(--primary);
+    font-size: 13px;
+    text-transform: none;
+    letter-spacing: -0.005em;
+    cursor: pointer;
+    line-height: 1.3;
+}
+
+.checkbox-inline.toggle-moneda label .toggle-hint {
+    font-weight: 500;
+    color: var(--text-secondary);
+    font-size: 11px;
+}
+
+.input-prefix span.prefijo-bs {
+    color: var(--accent) !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+}
+
+.input-prefix span.prefijo-usd {
+    color: var(--primary) !important;
+    font-weight: 800 !important;
+}
+
+.equivalente-bs.equivalente-bs-mode {
+    background: var(--accent-light);
+    border-left-color: var(--accent);
+    color: var(--accent-dark);
+}
+
+.equivalente-bs.equivalente-usd-mode {
+    background: var(--primary-light);
+    border-left-color: var(--primary);
+    color: var(--primary);
+}
+
+/* ============================================
+   DROP ZONE PDF
+   ============================================ */
+#dropZonePdf:hover {
+    background: var(--warning-light) !important;
+    border-color: var(--warning-dark) !important;
+}
+
+#dropZonePdf:active {
+    transform: scale(0.98);
+}
+
+/* ============================================
+   SELECTOR DE TEMAS
+   ============================================ */
+.temas-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.tema-option {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 14px;
+    cursor: pointer;
+    transition: all var(--t);
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tema-option:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.tema-option.activo {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.tema-preview {
+    height: 56px;
+    border-radius: var(--r-sm);
+    display: flex;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+}
+
+.tema-preview span { flex: 1; }
+
+.tema-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.tema-nombre {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.tema-desc {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+}
+
+.tema-check {
+    color: var(--primary);
+    font-weight: 800;
+    opacity: 0;
+    transition: opacity 200ms;
+}
+
+.tema-option.activo .tema-check { opacity: 1; }
+
+/* Previews */
+.preview-paypal span:nth-child(1) { background: #003087; }
+.preview-paypal span:nth-child(2) { background: #0070BA; }
+.preview-paypal span:nth-child(3) { background: #009CDE; }
+.preview-paypal span:nth-child(4) { background: #FFFFFF; }
+
+.preview-artisan span:nth-child(1) { background: #C8442C; }
+.preview-artisan span:nth-child(2) { background: #E8A33D; }
+.preview-artisan span:nth-child(3) { background: #FAF6F0; }
+.preview-artisan span:nth-child(4) { background: #5B8C3E; }
+
+.preview-dark span:nth-child(1) { background: #0F0F0F; }
+.preview-dark span:nth-child(2) { background: #1A1A1A; }
+.preview-dark span:nth-child(3) { background: #B4FF39; }
+.preview-dark span:nth-child(4) { background: #2A2A2A; }
+
+.preview-contraste span:nth-child(1) { background: #000000; }
+.preview-contraste span:nth-child(2) { background: #0040DD; }
+.preview-contraste span:nth-child(3) { background: #FFFFFF; }
+.preview-contraste span:nth-child(4) { background: #B8000F; }
+
+.preview-auto {
+    background: linear-gradient(135deg, #FAF6F0 0%, #FAF6F0 50%, #0F0F0F 50%, #0F0F0F 100%);
 }
 
 /* ============================================
@@ -1438,6 +1998,10 @@ main {
         max-width: 1200px;
         margin: 0 auto;
     }
+
+    .temas-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
 }
 
 @media (min-width: 1024px) {
@@ -1472,6 +2036,10 @@ main {
     .stat-venta-sub {
         font-size: 8px;
     }
+
+    .temas-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* ============================================
@@ -1486,7 +2054,7 @@ main {
 }
 
 *:focus-visible {
-    outline: 3px solid var(--paypal-blue);
+    outline: 3px solid var(--primary);
     outline-offset: 2px;
     border-radius: var(--r-xs);
 }
@@ -1506,231 +2074,7 @@ main {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--paypal-blue);
-}
-
-/* ============================================
-   BOTONES DE ACCIÓN
-   ============================================ */
-.btn-accion-verde {
-    flex: 1;
-    padding: 13px;
-    font-family: var(--font-body);
-    font-size: 14px;
-    letter-spacing: -0.01em;
-    text-transform: none;
-    background: var(--paypal-blue);
-    color: white;
-    border: none;
-    border-radius: var(--r-full);
-    cursor: pointer;
-    font-weight: 700;
-    box-shadow: var(--shadow-primary);
-    transition: all var(--t);
-}
-
-.btn-accion-verde:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0, 112, 186, 0.35); }
-.btn-accion-verde:active { transform: scale(0.98); }
-
-.btn-accion-azul {
-    flex: 1;
-    padding: 13px;
-    font-family: var(--font-body);
-    font-size: 14px;
-    letter-spacing: -0.01em;
-    text-transform: none;
-    background: var(--paypal-sky);
-    color: white;
-    border: none;
-    border-radius: var(--r-full);
-    cursor: pointer;
-    font-weight: 700;
-    box-shadow: 0 4px 12px rgba(0, 156, 222, 0.25);
-    transition: all var(--t);
-}
-
-.btn-accion-azul:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0, 156, 222, 0.35); }
-.btn-accion-azul:active { transform: scale(0.98); }
-
-.btn-accion-naranja {
-    flex: 1;
-    padding: 13px;
-    font-family: var(--font-body);
-    font-size: 14px;
-    letter-spacing: -0.01em;
-    text-transform: none;
-    background: var(--warning);
-    color: var(--text);
-    border: none;
-    border-radius: var(--r-full);
-    cursor: pointer;
-    font-weight: 700;
-    box-shadow: 0 4px 12px rgba(232, 163, 61, 0.25);
-    transition: all var(--t);
-}
-
-.btn-accion-naranja:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(232, 163, 61, 0.35); }
-.btn-accion-naranja:active { transform: scale(0.98); }
-
-.btn-accion-cyan {
-    flex: 1;
-    padding: 13px;
-    font-family: var(--font-body);
-    font-size: 14px;
-    letter-spacing: -0.01em;
-    text-transform: none;
-    background: var(--paypal-sky);
-    color: white;
-    border: none;
-    border-radius: var(--r-full);
-    cursor: pointer;
-    font-weight: 700;
-    box-shadow: 0 4px 12px rgba(0, 156, 222, 0.25);
-    transition: all var(--t);
-}
-
-.btn-accion-cyan:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0, 156, 222, 0.35); }
-.btn-accion-cyan:active { transform: scale(0.98); }
-
-.btn-accion-gris {
-    flex: 1;
-    padding: 13px;
-    font-family: var(--font-body);
-    font-size: 14px;
-    letter-spacing: -0.01em;
-    text-transform: none;
-    background: var(--bg-soft);
-    color: var(--text-secondary);
-    border: 1.5px solid var(--border);
-    border-radius: var(--r-full);
-    cursor: pointer;
-    font-weight: 700;
-    transition: all var(--t);
-}
-
-.btn-accion-gris:hover { transform: translateY(-1px); border-color: var(--border-strong); color: var(--text); }
-.btn-accion-gris:active { transform: scale(0.98); }
-
-.btn-accion-excel {
-    flex: 1;
-    padding: 13px;
-    font-family: var(--font-body);
-    font-size: 14px;
-    letter-spacing: -0.01em;
-    text-transform: none;
-    background: #217346;
-    color: white;
-    border: none;
-    border-radius: var(--r-full);
-    cursor: pointer;
-    font-weight: 700;
-    box-shadow: 0 4px 12px rgba(33, 115, 70, 0.25);
-    transition: all var(--t);
-}
-
-.btn-accion-excel:hover { transform: translateY(-1px); }
-.btn-accion-excel:active { transform: scale(0.98); }
-
-/* ============================================
-   CHECKBOX IVA
-   ============================================ */
-.tabla-productos-edit input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-    accent-color: var(--paypal-blue);
-    margin: 0 auto;
-    display: block;
-}
-
-.tabla-productos-edit input[type="checkbox"]:hover {
-    transform: scale(1.1);
-}
-
-#editTieneIva {
-    accent-color: var(--paypal-blue);
-    border-radius: 4px;
-}
-
-#editTieneIva:checked + label {
-    color: var(--paypal-blue);
-}
-
-/* ============================================
-   TOGGLE USD/Bs
-   ============================================ */
-.checkbox-inline.toggle-moneda {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    background: var(--paypal-blue-light);
-    border-radius: var(--r-sm);
-    border: 1.5px solid rgba(0, 112, 186, 0.3);
-    margin-bottom: 10px;
-    margin-top: 4px;
-}
-
-.checkbox-inline.toggle-moneda input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-    accent-color: var(--paypal-blue);
-    transform: scale(1);
-    margin: 0;
-    flex-shrink: 0;
-}
-
-.checkbox-inline.toggle-moneda label {
-    margin: 0;
-    font-weight: 700;
-    color: var(--paypal-blue);
-    font-size: 13px;
-    text-transform: none;
-    letter-spacing: -0.005em;
-    cursor: pointer;
-    line-height: 1.3;
-}
-
-.checkbox-inline.toggle-moneda label .toggle-hint {
-    font-weight: 500;
-    color: var(--text-secondary);
-    font-size: 11px;
-}
-
-.input-prefix span.prefijo-bs {
-    color: var(--paypal-sky) !important;
-    font-size: 14px !important;
-    font-weight: 800 !important;
-}
-
-.input-prefix span.prefijo-usd {
-    color: var(--paypal-blue) !important;
-    font-weight: 800 !important;
-}
-
-.equivalente-bs.equivalente-bs-mode {
-    background: var(--paypal-sky-light);
-    border-left-color: var(--paypal-sky);
-    color: var(--paypal-deep);
-}
-
-.equivalente-bs.equivalente-usd-mode {
-    background: var(--paypal-blue-light);
-    border-left-color: var(--paypal-blue);
-    color: var(--paypal-blue);
-}
-
-/* ============================================
-   DROP ZONE PDF
-   ============================================ */
-#dropZonePdf:hover {
-    background: rgba(0, 112, 186, 0.06) !important;
-    border-color: var(--paypal-blue) !important;
-}
-
-#dropZonePdf:active {
-    transform: scale(0.98);
+    background: var(--primary);
 }
 
 /* ============================================
