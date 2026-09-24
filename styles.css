@@ -1726,3 +1726,37 @@ main {
 #editTieneIva:checked + label {
     color: #0891b2;
 }
+
+/* ============================================
+   v8.3 - Toggle USD / Bs
+   ============================================ */
+.checkbox-inline input[type="checkbox"].toggle-moneda {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--primary);
+    transform: scale(1.2);
+}
+
+.input-prefix span.prefijo-bs {
+    color: var(--cyan) !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+}
+
+.input-prefix span.prefijo-usd {
+    color: var(--primary) !important;
+    font-weight: 800 !important;
+}
+
+.equivalente-bs.equivalente-bs-mode {
+    background: rgba(0, 185, 241, 0.08);
+    border-left-color: var(--cyan);
+    color: #0891B2;
+}
+
+.equivalente-bs.equivalente-usd-mode {
+    background: rgba(16, 185, 129, 0.08);
+    border-left-color: var(--success);
+    color: #047857;
+}
