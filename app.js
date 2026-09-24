@@ -3532,6 +3532,211 @@ function mostrarToast(mensaje, tipo = 'info') {
     }, 3000);
 }
 
+// ============================================
+// GESTOR DE TEMAS - Multi-theme System v11.0
+// Pegar AL FINAL de app.js
+// ============================================
+
+const TEMAS = [
+    {
+        id: 'auto',
+        nombre: 'Automático',
+        emoji: '🌗',
+        preview: 'preview-auto',
+        color: '#0070BA',
+        descripcion: 'Sigue el sistema'
+    },
+    {
+        id: 'paypal',
+        nombre: 'PayPal',
+        emoji: '💳',
+        preview: 'preview-paypal',
+        color: '#0070BA',
+        descripcion: 'Corporativo limpio'
+    },
+    {
+        id: 'artisan',
+        nombre: 'Artisan',
+        emoji: '🍖',
+        preview: 'preview-artisan',
+        color: '#C8442C',
+        descripcion: 'Charcutería cálida'
+    },
+    {
+        id: 'dark',
+        nombre: 'Dark Lima',
+        emoji: '🌙',
+        preview: 'preview-dark',
+        color: '#0F0F0F',
+        descripcion: 'Modo oscuro'
+    },
+    {
+        id: 'contraste',
+        nombre: 'Alto Contraste',
+        emoji: '♿',
+        preview: 'preview-contraste',
+        color: '#0040DD',
+        descripcion: 'Accesibilidad AAA'
+    }
+];
+
+const TEMA_KEY = 'gestore_tema';
+const TEMA_DEFAULT = 'paypal';
+
+function getTemaGuardado() {
+    try {
+        return localStorage.getItem(TEMA_KEY) || TEMA_DEFAULT;
+    } catch {
+        return TEMA_DEFAULT;
+    }
+}
+
+function guardarTema(temaId) {
+    try {
+        localStorage.setItem(TEMA_KEY, temaId);
+    } catch (e) {
+        console.warn('No se pudo guardar el tema:', e);
+    }
+}
+
+function sistemaEsDark() {
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
+function aplicarTema(temaId) {
+    const temaEfectivo = temaId === 'auto' 
+        ? (sistemaEsDark() ? 'dark' : 'paypal') 
+        : temaId;
+    
+    document.documentElement.setAttribute('data-tema', temaId);
+    
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) {
+        const tema = TEMAS.find(t => t.id === temaEfectivo);
+        meta.setAttribute('content', tema ? tema.color : '#0070BA');
+    }
+    
+    const colorScheme = document.querySelector('meta[name="color-scheme"]');
+    if (colorScheme) {
+        const esDark = temaEfectivo === 'dark';
+        colorScheme.setAttribute('content', esDark ? 'dark light' : 'light dark');
+    }
+}
+
+function setTema(temaId) {
+    guardarTema(temaId);
+    aplicarTema(temaId);
+    
+    document.querySelectorAll('.tema-option').forEach(el => {
+        el.classList.toggle('activo', el.dataset.tema === temaId);
+    });
+    
+    const tema = TEMAS.find(t => t.id === temaId);
+    if (tema && typeof mostrarToast === 'function') {
+        mostrarToast(`Tema: ${tema.emoji} ${tema.nombre}`, 'success');
+    }
+}
+
+function renderTemas() {
+    const grid = document.getElementById('temasGrid');
+    if (!grid) return;
+    
+    const temaActual = document.documentElement.getAttribute('data-tema') || TEMA_DEFAULT;
+    
+    grid.innerHTML = TEMAS.map(tema => `
+        <div class="tema-option ${tema.id === temaActual ? 'activo' : ''}" 
+             data-tema="${tema.id}"
+             role="button"
+             tabindex="0"
+             aria-pressed="${tema.id === temaActual}"
+             onclick="setTema('${tema.id}')"
+             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setTema('${tema.id}');}">
+            <div class="tema-preview ${tema.preview}">
+                <span></span><span></span><span></span><span></span>
+            </div>
+            <div class="tema-info">
+                <div>
+                    <div class="tema-nombre">${tema.emoji} ${tema.nombre}</div>
+                    <div class="tema-desc">${tema.descripcion}</div>
+                </div>
+                <span class="tema-check">✓</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+function abrirModalTema() {
+    renderTemas();
+    const modal = document.getElementById('modalTema');
+    if (modal) {
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function cerrarModalTema() {
+    const modal = document.getElementById('modalTema');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+}
+
+// Inicialización del tema
+document.addEventListener('DOMContentLoaded', () => {
+    aplicarTema(getTemaGuardado());
+    
+    const btn = document.getElementById('btnTema');
+    if (btn) btn.addEventListener('click', abrirModalTema);
+    
+    const modal = document.getElementById('modalTema');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target.id === 'modalTema') cerrarModalTema();
+        });
+    }
+    
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('modalTema');
+            if (modal && !modal.classList.contains('hidden')) {
+                cerrarModalTema();
+            }
+        }
+    });
+});
+
+// Escuchar cambios del sistema (para tema auto)
+if (window.matchMedia) {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = () => {
+        if (getTemaGuardado() === 'auto') {
+            aplicarTema('auto');
+        }
+    };
+    if (mediaQuery.addEventListener) {
+        mediaQuery.addEventListener('change', handler);
+    } else if (mediaQuery.addListener) {
+        mediaQuery.addListener(handler);
+    }
+}
+
+// Sincronizar tema entre pestañas
+window.addEventListener('storage', (e) => {
+    if (e.key === TEMA_KEY && e.newValue) {
+        aplicarTema(e.newValue);
+        document.querySelectorAll('.tema-option').forEach(el => {
+            el.classList.toggle('activo', el.dataset.tema === e.newValue);
+        });
+    }
+});
+
+// Exponer globalmente para el HTML (onclick inline)
+window.setTema = setTema;
+window.abrirModalTema = abrirModalTema;
+window.cerrarModalTema = cerrarModalTema;
+
+
 // Exponer funciones para importar-pdf.js
 window.formatearMontoBs = formatearMontoBs;
 window.mostrarToast = mostrarToast;
