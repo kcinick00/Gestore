@@ -1,9 +1,11 @@
 // ============================================
-// GESTORE PWA - v8.2
+// GESTORE PWA - v8.3
 // Changelog:
+// v8.3 - Toggle USD/Bs en todos los modales de monto
+//        - Checkbox "Monto en USD" (por defecto marcado)
+//        - Al desmarcar, el usuario ingresa Bs y se convierte a USD
+//        - Se guardan AMBOS valores (monto_usd y monto_bs) en Supabase
 // v8.2 - FIX: El input "Precio de Compra" muestra el precio BASE (sin IVA)
-//        - Al abrir un producto con IVA, se divide entre 1.16 para mostrar la base
-//        - Al guardar, se multiplica por 1.16 si tiene IVA
 // v8.1 - Checkbox "¿Tiene IVA?" reemplaza input de texto
 // v8.0 - Portadas todas las funciones de la extensión
 // ============================================
@@ -48,7 +50,7 @@ let ventaEditando = null;
 // INICIALIZACIÓN
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("🚀 Gestore PWA v8.2 iniciado");
+    console.log("🚀 Gestore PWA v8.3 iniciado");
     configurarEventos();
     cargarTasa();
     cargarDatos();
@@ -194,9 +196,6 @@ function configurarEventos() {
         }
     });
 
-    document.getElementById('formMontoBs').addEventListener('input', convertirBsAUSD);
-    document.getElementById('formMontoUSD').addEventListener('input', actualizarEquivalente);
-
     // ========== PAGOS ==========
     document.getElementById('btnSubirCapturaPago').addEventListener('click', () => {
         document.getElementById('inputFotoPago').click();
@@ -206,20 +205,17 @@ function configurarEventos() {
     document.getElementById('btnCerrarConfirmarPago').addEventListener('click', cerrarModalConfirmarPago);
     document.getElementById('btnCancelarConfirmarPago').addEventListener('click', cerrarModalConfirmarPago);
     document.getElementById('btnGuardarPago').addEventListener('click', guardarPagoDesdeCaptura);
-    document.getElementById('pagoMontoBs').addEventListener('input', actualizarEquivalentePago);
 
     document.getElementById('btnCerrarEditarPago').addEventListener('click', cerrarModalEditarPago);
     document.getElementById('btnCancelarEditarPago').addEventListener('click', cerrarModalEditarPago);
     document.getElementById('btnGuardarEditarPago').addEventListener('click', guardarEditarPago);
     document.getElementById('btnEliminarPagoDesdeModal').addEventListener('click', eliminarPagoDesdeModal);
-    document.getElementById('editPagoMontoBs').addEventListener('input', actualizarEquivalenteEditPago);
 
     // NUEVO PAGO MANUAL
     document.getElementById('btnNuevoPagoManual').addEventListener('click', abrirModalNuevoPago);
     document.getElementById('btnCerrarNuevoPago').addEventListener('click', cerrarModalNuevoPago);
     document.getElementById('btnCancelarNuevoPago').addEventListener('click', cerrarModalNuevoPago);
     document.getElementById('btnGuardarNuevoPago').addEventListener('click', guardarNuevoPago);
-    document.getElementById('nuevoPagoMontoBs').addEventListener('input', actualizarEquivalenteNuevoPago);
 
     // IMPORTAR PDFs BANESCO
     document.getElementById('btnImportarPdfPago').addEventListener('click', abrirModalImportarPdf);
@@ -256,11 +252,77 @@ function configurarEventos() {
     document.getElementById('btnCancelarMargenMasivo').addEventListener('click', cerrarModalMargenMasivo);
     document.getElementById('btnAplicarMargenMasivo').addEventListener('click', aplicarMargenMasivo);
 
+    // ========== v8.3 - TOGGLES USD/Bs ==========
+    configurarToggleMoneda('checkUSDFactura', 'formMonto', 'prefijoMontoFactura', 'equivalenteBs', 'formMontoBs', 'formMontoUSD');
+    configurarToggleMoneda('checkUSDNuevoPago', 'nuevoPagoMonto', 'prefijoNuevoPago', 'nuevoPagoEquivalente', 'nuevoPagoMontoBs', 'nuevoPagoMontoUSD');
+    configurarToggleMoneda('checkUSDEeditPago', 'editPagoMonto', 'prefijoEditPago', 'editPagoEquivalente', 'editPagoMontoBs', 'editPagoMontoUSD');
+    configurarToggleMoneda('checkUSDConfirmarPago', 'pagoMonto', 'prefijoConfirmarPago', 'pagoEquivalenteUSD', 'pagoMontoBs', 'pagoMontoUSD');
+
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) overlay.classList.add('hidden');
         });
     });
+}
+
+// ============================================
+// v8.3 - TOGGLE USD / Bs GENÉRICO
+// ============================================
+function configurarToggleMoneda(checkId, inputId, prefijoId, equivalId, hiddenBsId, hiddenUsdId, onChange) {
+    const check = document.getElementById(checkId);
+    const input = document.getElementById(inputId);
+    const prefijo = document.getElementById(prefijoId);
+    const equival = document.getElementById(equivalId);
+    const hiddenBs = document.getElementById(hiddenBsId);
+    const hiddenUsd = document.getElementById(hiddenUsdId);
+
+    if (!check || !input || !prefijo || !equival) {
+        console.warn(`⚠️ Toggle no configurado: ${checkId}`);
+        return;
+    }
+
+    const actualizar = () => {
+        const valor = parseFloat(input.value) || 0;
+        const esUSD = check.checked;
+
+        if (esUSD) {
+            const montoBs = valor * (tasaActual || 0);
+            prefijo.textContent = '$';
+            prefijo.classList.add('prefijo-usd');
+            prefijo.classList.remove('prefijo-bs');
+            equival.classList.add('equivalente-usd-mode');
+            equival.classList.remove('equivalente-bs-mode');
+            equival.innerHTML = `💱 Equivalente: <strong>Bs. ${formatearMontoBs(montoBs)}</strong> ${tasaActual ? `(Tasa: ${tasaActual.toFixed(2)})` : '⚠️ Sin tasa'}`;
+            
+            if (hiddenUsd) hiddenUsd.value = valor.toFixed(2);
+            if (hiddenBs) hiddenBs.value = montoBs.toFixed(2);
+        } else {
+            const montoUSD = tasaActual > 0 ? valor / tasaActual : 0;
+            prefijo.textContent = 'Bs.';
+            prefijo.classList.add('prefijo-bs');
+            prefijo.classList.remove('prefijo-usd');
+            equival.classList.add('equivalente-bs-mode');
+            equival.classList.remove('equivalente-usd-mode');
+            equival.innerHTML = `💱 Equivalente: <strong>$${formatearUSD(montoUSD)}</strong> ${tasaActual ? `(Tasa: ${tasaActual.toFixed(2)})` : '⚠️ Sin tasa'}`;
+            
+            if (hiddenBs) hiddenBs.value = valor.toFixed(2);
+            if (hiddenUsd) hiddenUsd.value = montoUSD.toFixed(2);
+        }
+
+        if (typeof onChange === 'function') onChange();
+    };
+
+    if (check._toggleListener) check.removeEventListener('change', check._toggleListener);
+    if (input._toggleListener) input.removeEventListener('input', input._toggleListener);
+
+    check._toggleListener = actualizar;
+    input._toggleListener = actualizar;
+
+    check.addEventListener('change', actualizar);
+    input.addEventListener('input', actualizar);
+
+    check._refresh = actualizar;
+    return actualizar;
 }
 
 function cambiarTab(tab) {
@@ -518,6 +580,7 @@ async function cargarTasa() {
 
     if (tasaSupabase && tasaEsReciente) {
         aplicarTasa(tasaSupabase, fechaSupabase, 'Supabase');
+        refrescarTogglesMoneda();
         return;
     }
 
@@ -594,6 +657,7 @@ async function cargarTasa() {
                 }
                 
                 aplicarTasa(resultado.tasa, fechaStr, api.name);
+                refrescarTogglesMoneda();
                 return;
             }
         } catch (e) {
@@ -604,6 +668,7 @@ async function cargarTasa() {
     if (tasaSupabase) {
         console.log('⚠️ Usando tasa de Supabase (aunque sea vieja)');
         aplicarTasa(tasaSupabase, fechaSupabase + ' (vieja)', 'Supabase (respaldo)');
+        refrescarTogglesMoneda();
         return;
     }
 
@@ -611,6 +676,7 @@ async function cargarTasa() {
         info.textContent = `💱 Tasa BCV: ${parseFloat(ultimaTasa).toFixed(2)} Bs/USD · ${ultimaFecha} (local)`;
         tasaActual = parseFloat(ultimaTasa);
         console.warn("⚠️ Usando tasa guardada localmente.");
+        refrescarTogglesMoneda();
     } else {
         info.textContent = '⚠️ Tasa BCV no disponible';
         console.error("❌ No hay tasa disponible");
@@ -636,16 +702,11 @@ function aplicarTasa(tasa, fechaStr, fuente) {
     }
 }
 
-function convertirBsAUSD() {
-    const montoBsInput = document.getElementById('formMontoBs');
-    const montoBs = parseFloat(montoBsInput.value) || 0;
-
-    if (montoBs > 0 && tasaActual) {
-        const montoUSD = montoBs / tasaActual;
-        document.getElementById('formMontoUSD').value = montoUSD.toFixed(2);
-        actualizarEquivalente();
-        mostrarToast(`💱 Convertido: ${formatearMontoBs(montoBs)} Bs → $${montoUSD.toFixed(2)}`, 'info');
-    }
+function refrescarTogglesMoneda() {
+    ['checkUSDFactura', 'checkUSDNuevoPago', 'checkUSDEeditPago', 'checkUSDConfirmarPago'].forEach(id => {
+        const check = document.getElementById(id);
+        if (check && check._refresh) check._refresh();
+    });
 }
 
 // ============================================
@@ -1657,18 +1718,16 @@ function actualizarEstadisticas() {
     const mesActual = hoy.getMonth();
     const anioActual = hoy.getFullYear();
 
-    let pend = 0, venc = 0, pag = 0;
-    let pendUSD = 0, pendBs = 0, vencUSD = 0, vencBs = 0, pagUSD = 0, pagBs = 0;
+    let pend = 0, venc = 0;
+    let pendUSD = 0, pendBs = 0, vencUSD = 0, vencBs = 0;
 
     datos.facturas.forEach(f => {
         const est = calcularEstatusReal(f);
         const usd = parseFloat(f.montoUSD) || 0;
         const bs = parsearMontoBs(f.montoBs);
 
-        if (est === 'Pagada') { pag++; pagUSD += usd; pagBs += bs; }
-        else if (est === 'Vencida') { venc++; vencUSD += usd; vencBs += bs; }
-        else { pend++; pendUSD += usd; pendBs += bs; }
-        // (pag, pagUSD, pagBs se siguen calculando por si acaso)
+        if (est === 'Vencida') { venc++; vencUSD += usd; vencBs += bs; }
+        else if (est === 'Pendiente') { pend++; pendUSD += usd; pendBs += bs; }
     });
 
     document.getElementById('statPendientes').textContent = pend;
@@ -1920,7 +1979,6 @@ function abrirModalEditarProducto(p) {
     document.getElementById('editUnidad').value = p.unidad || 'UND';
     document.getElementById('editStock').value = p.stock || 0;
     
-    // ✅ v8.2 - Mostrar precio BASE (sin IVA) en el input
     const tieneIva = !p.exento && p.iva > 0;
     const precioBase = tieneIva ? (p.precioCompraUSD / (1 + TASA_IVA / 100)) : p.precioCompraUSD;
     document.getElementById('editPrecioCompra').value = precioBase.toFixed(4);
@@ -2010,7 +2068,6 @@ async function guardarEditarProducto() {
 
     const unidad = document.getElementById('editUnidad').value.trim() || 'UND';
     const stock = parseFloat(document.getElementById('editStock').value) || 0;
-    // ✅ v8.2 - Este es el precio BASE (sin IVA)
     const precioBase = parseFloat(document.getElementById('editPrecioCompra').value) || 0;
     const margen = parseFloat(document.getElementById('editMargen').value) || 30;
     const tieneIva = document.getElementById('editTieneIva').checked;
@@ -2095,6 +2152,9 @@ function abrirModalFactura(factura = null) {
     facturaTemporalParaProductos = null;
     document.getElementById('previewProductos').classList.add('hidden');
 
+    const checkFact = document.getElementById('checkUSDFactura');
+    const inputMontoFact = document.getElementById('formMonto');
+
     if (factura) {
         titulo.textContent = '✏️ Editar Factura';
         const [d, m, y] = factura.fecha.split('/');
@@ -2103,8 +2163,12 @@ function abrirModalFactura(factura = null) {
         document.getElementById('formNumeroFactura').value = factura.numeroFactura === 'S/N' ? '' : (factura.numeroFactura || '');
         document.getElementById('formSinNumero').checked = factura.numeroFactura === 'S/N';
         document.getElementById('formNumeroFactura').disabled = factura.numeroFactura === 'S/N';
-        document.getElementById('formMontoUSD').value = factura.montoUSD || '';
-        document.getElementById('formMontoBs').value = factura.montoBs || '';
+        
+        // v8.3 - Por defecto cargar en USD
+        checkFact.checked = true;
+        const montoUSD = parseFloat(factura.montoUSD) || 0;
+        inputMontoFact.value = montoUSD > 0 ? montoUSD.toFixed(2) : '';
+        
         document.getElementById('formEstatus').value = factura.estatus || 'Pendiente';
         document.getElementById('formNotas').value = factura.notas || '';
     } else {
@@ -2114,13 +2178,16 @@ function abrirModalFactura(factura = null) {
         document.getElementById('formNumeroFactura').value = '';
         document.getElementById('formSinNumero').checked = false;
         document.getElementById('formNumeroFactura').disabled = false;
-        document.getElementById('formMontoUSD').value = '';
-        document.getElementById('formMontoBs').value = '';
+        
+        // v8.3 - Resetear toggle a USD por defecto
+        checkFact.checked = true;
+        inputMontoFact.value = '';
+        
         document.getElementById('formEstatus').value = 'Pendiente';
         document.getElementById('formNotas').value = '';
     }
 
-    actualizarEquivalente();
+    if (checkFact._refresh) checkFact._refresh();
     modal.classList.remove('hidden');
 }
 
@@ -2129,37 +2196,29 @@ function cerrarModalFactura() {
     facturaEditando = null;
 }
 
-function actualizarEquivalente() {
-    const monto = parseFloat(document.getElementById('formMontoUSD').value);
-    const equival = document.getElementById('equivalenteBs');
-    if (!isNaN(monto) && tasaActual) {
-        const bs = monto * tasaActual;
-        equival.innerHTML = `💱 Equivalente en Bs: <strong>${formatearMontoBs(bs)} Bs</strong> (Tasa: ${tasaActual.toFixed(2)})`;
-    } else {
-        equival.textContent = '💱 Equivalente en Bs: --';
-    }
-}
-
 async function guardarFactura() {
     const fecha = document.getElementById('formFecha').value;
     const proveedor = document.getElementById('formProveedor').value.trim();
     const numeroFactura = document.getElementById('formNumeroFactura').value.trim();
-    const montoUSD = document.getElementById('formMontoUSD').value.trim();
+    const esUSD = document.getElementById('checkUSDFactura').checked;
+    const montoIngresado = parseFloat(document.getElementById('formMonto').value) || 0;
     const estatus = document.getElementById('formEstatus').value;
     const notas = document.getElementById('formNotas').value.trim();
 
-    if (!fecha || !proveedor || !montoUSD) {
+    if (!fecha || !proveedor || montoIngresado <= 0) {
         mostrarToast('Fecha, Proveedor y Monto son obligatorios', 'error');
         return;
     }
 
-    const montoNum = parseFloat(montoUSD);
-    if (isNaN(montoNum)) {
-        mostrarToast('Monto inválido', 'error');
-        return;
+    let montoUSD, montoBs;
+    if (esUSD) {
+        montoUSD = montoIngresado;
+        montoBs = montoIngresado * (tasaActual || 0);
+    } else {
+        montoBs = montoIngresado;
+        montoUSD = tasaActual > 0 ? montoIngresado / tasaActual : 0;
     }
 
-    const montoBs = tasaActual ? (montoNum * tasaActual).toFixed(2) : null;
     const fechaFormato = fecha.split('-').reverse().join('/');
 
     const productosParaGuardar = facturaTemporalParaProductos 
@@ -2170,8 +2229,8 @@ async function guardarFactura() {
         fecha: fechaFormato,
         proveedor: proveedor,
         numero_factura: numeroFactura || 'S/N',
-        monto_usd: montoNum,
-        monto_bs: montoBs ? parseFloat(montoBs) : null,
+        monto_usd: parseFloat(montoUSD.toFixed(2)),
+        monto_bs: parseFloat(montoBs.toFixed(2)),
         tasa_bcv: tasaActual,
         estatus: estatus,
         notas: notas,
@@ -2288,7 +2347,7 @@ async function borrarTodosLosPagos() {
 function abrirModalNuevoPago() {
     document.getElementById('nuevoPagoBeneficiario').value = '';
     document.getElementById('nuevoPagoTipo').value = 'transferencia';
-    document.getElementById('nuevoPagoMontoBs').value = '';
+    document.getElementById('nuevoPagoMonto').value = '';
     document.getElementById('nuevoPagoReferencia').value = '';
     document.getElementById('nuevoPagoFecha').valueAsDate = new Date();
     document.getElementById('nuevoPagoBanco').value = '';
@@ -2297,26 +2356,17 @@ function abrirModalNuevoPago() {
     document.getElementById('nuevoPagoTelefonoReceptor').value = '';
     document.getElementById('nuevoPagoConcepto').value = '';
     document.getElementById('nuevoPagoNotas').value = '';
-    document.getElementById('nuevoPagoEquivalente').innerHTML = '💵 Equivalente USD: --';
+    
+    // v8.3 - Resetear toggle a USD por defecto
+    const checkNP = document.getElementById('checkUSDNuevoPago');
+    checkNP.checked = true;
+    if (checkNP._refresh) checkNP._refresh();
+    
     document.getElementById('modalNuevoPago').classList.remove('hidden');
 }
 
 function cerrarModalNuevoPago() {
     document.getElementById('modalNuevoPago').classList.add('hidden');
-}
-
-function actualizarEquivalenteNuevoPago() {
-    const montoBs = parseFloat(document.getElementById('nuevoPagoMontoBs').value) || 0;
-    const equival = document.getElementById('nuevoPagoEquivalente');
-    
-    if (montoBs > 0 && tasaActual) {
-        const usd = montoBs / tasaActual;
-        equival.innerHTML = `💵 Equivalente: <strong>$${usd.toFixed(2)}</strong> (Tasa: ${tasaActual.toFixed(2)} Bs/USD)`;
-    } else if (montoBs > 0 && !tasaActual) {
-        equival.innerHTML = `⚠️ Monto en Bs ingresado pero no hay tasa BCV`;
-    } else {
-        equival.innerHTML = `💵 Equivalente USD: --`;
-    }
 }
 
 async function guardarNuevoPago() {
@@ -2327,10 +2377,20 @@ async function guardarNuevoPago() {
     }
 
     const tipoPago = document.getElementById('nuevoPagoTipo').value;
-    const montoBs = parseFloat(document.getElementById('nuevoPagoMontoBs').value) || 0;
-    if (montoBs <= 0) {
+    const esUSD = document.getElementById('checkUSDNuevoPago').checked;
+    const montoIngresado = parseFloat(document.getElementById('nuevoPagoMonto').value) || 0;
+    if (montoIngresado <= 0) {
         mostrarToast('El monto debe ser mayor a 0', 'error');
         return;
+    }
+
+    let montoBs, montoUSD;
+    if (esUSD) {
+        montoUSD = montoIngresado;
+        montoBs = montoIngresado * (tasaActual || 0);
+    } else {
+        montoBs = montoIngresado;
+        montoUSD = tasaActual > 0 ? montoIngresado / tasaActual : 0;
     }
 
     const referencia = document.getElementById('nuevoPagoReferencia').value.trim();
@@ -2347,7 +2407,6 @@ async function guardarNuevoPago() {
     const concepto = document.getElementById('nuevoPagoConcepto').value.trim();
     const notas = document.getElementById('nuevoPagoNotas').value.trim();
 
-    const montoUSD = tasaActual ? (montoBs / tasaActual).toFixed(2) : null;
     const fechaFormato = fecha.split('-').reverse().join('/');
 
     const pagoDB = {
@@ -2355,8 +2414,8 @@ async function guardarNuevoPago() {
         numero_recibo: referencia || 'N/A',
         fecha: fechaFormato,
         beneficiario: beneficiario,
-        monto: montoBs,
-        monto_usd: montoUSD ? parseFloat(montoUSD) : null,
+        monto: parseFloat(montoBs.toFixed(2)),
+        monto_usd: parseFloat(montoUSD.toFixed(2)),
         tasa_bcv: tasaActual,
         concepto: concepto || (tipoPago === 'pago_movil' ? 'Pago Móvil' : 'Transferencia'),
         resultado: 'Operación Exitosa',
@@ -2372,7 +2431,6 @@ async function guardarNuevoPago() {
     try {
         const { error } = await supabaseClient.from('pagos').insert([pagoDB]);
         if (error) throw error;
-
         mostrarToast('✅ Pago guardado correctamente', 'success');
         cerrarModalNuevoPago();
         cargarDatos();
@@ -2463,11 +2521,8 @@ Reglas ESPECÍFICAS:
 - "monto_es_bs": true si el monto_total está en Bs, false si está en USD.
 - "tasa_bcv": si la factura menciona la tasa, inclúyela. Si no, null.
 - "productos": SOLO los productos con cantidad > 0 Y precio.
-  - "precio_unitario": precio BASE por unidad EN USD (SIN IVA). Es el precio que aparece en la columna de precio unitario de la factura.
-  - ⚠️ IMPORTANTE: "precio_unitario" debe ser el precio BASE SIN IVA, tal como aparece en la factura.
+  - "precio_unitario": precio BASE por unidad EN USD (SIN IVA).
   - "tiene_iva": true si el producto lleva IVA (16%), false si es exento.
-    - En facturas venezolanas, los productos exentos suelen estar marcados con "E" o "EXENTO" en la columna de IVA.
-    - Si no ves marca de exento, asume true.
 
 Si NO puedes leer algún campo, usa null.`;
 
@@ -2492,7 +2547,6 @@ Si NO puedes leer algún campo, usa null.`;
     });
 
     if (!response.ok) {
-        const error = await response.text();
         throw new Error(`Error API (${response.status}). Verifica tu API Key y saldo.`);
     }
 
@@ -2545,20 +2599,23 @@ function configurarFotoFactura() {
 
             if (datos.proveedor) document.getElementById('formProveedor').value = datos.proveedor;
             
+            // v8.3 - Ajustar el toggle según el tipo de monto detectado
+            const checkFact = document.getElementById('checkUSDFactura');
+            const inputMontoFact = document.getElementById('formMonto');
+            
             if (datos.monto_total) {
                 if (datos.monto_es_bs === true) {
-                    document.getElementById('formMontoBs').value = datos.monto_total;
-                    const tasaU = datos.tasa_bcv || tasaActual;
-                    if (tasaU) {
-                        const usd = datos.monto_total / tasaU;
-                        document.getElementById('formMontoUSD').value = usd.toFixed(2);
-                        estado.textContent = `💱 Monto en Bs detectado: ${formatearMontoBs(datos.monto_total)} → $${usd.toFixed(2)}`;
-                        estado.style.color = '#ffc107';
-                    }
+                    // El OCR detectó Bs → desmarcar el checkbox
+                    checkFact.checked = false;
+                    inputMontoFact.value = datos.monto_total;
+                    estado.textContent = `💱 Monto en Bs detectado: ${formatearMontoBs(datos.monto_total)}`;
+                    estado.style.color = '#ffc107';
                 } else {
-                    document.getElementById('formMontoUSD').value = parseFloat(datos.monto_total).toFixed(2);
+                    // El OCR detectó USD → marcar el checkbox
+                    checkFact.checked = true;
+                    inputMontoFact.value = parseFloat(datos.monto_total).toFixed(2);
                 }
-                actualizarEquivalente();
+                if (checkFact._refresh) checkFact._refresh();
             }
             
             if (datos.numero_factura) {
@@ -2668,7 +2725,6 @@ async function procesarCapturaPago(event) {
         }
 
         document.getElementById('pagoTipo').value = datos.tipo_pago === 'pago_movil' ? '📱 Pago Móvil' : '🏦 Transferencia';
-        document.getElementById('pagoMontoBs').value = datos.monto_bs || '';
         document.getElementById('pagoReferencia').value = datos.referencia || '';
         
         if (datos.fecha) {
@@ -2684,7 +2740,18 @@ async function procesarCapturaPago(event) {
         document.getElementById('pagoTelefonoReceptor').value = datos.telefono_receptor || '';
         document.getElementById('pagoNotas').value = '';
 
-        actualizarEquivalentePago();
+        // v8.3 - El OCR devuelve montoBs → desmarcar el checkbox
+        const checkCP = document.getElementById('checkUSDConfirmarPago');
+        const inputMontoCP = document.getElementById('pagoMonto');
+        
+        if (datos.monto_bs) {
+            checkCP.checked = false;
+            inputMontoCP.value = datos.monto_bs;
+        } else {
+            checkCP.checked = true;
+            inputMontoCP.value = '';
+        }
+        if (checkCP._refresh) checkCP._refresh();
 
         const resumen = document.getElementById('datosPagoExtraidos');
         let html = `<strong>Datos detectados:</strong><br>`;
@@ -2769,7 +2836,6 @@ Si un campo no aparece, pon null.`;
     });
 
     if (!response.ok) {
-        const error = await response.text();
         throw new Error(`Error API (${response.status}). Verifica tu API Key.`);
     }
 
@@ -2787,20 +2853,6 @@ Si un campo no aparece, pon null.`;
     }
 }
 
-function actualizarEquivalentePago() {
-    const montoBs = parseFloat(document.getElementById('pagoMontoBs').value) || 0;
-    const equival = document.getElementById('pagoEquivalenteUSD');
-    
-    if (montoBs > 0 && tasaActual) {
-        const usd = montoBs / tasaActual;
-        equival.innerHTML = `💵 Equivalente: <strong>$${usd.toFixed(2)}</strong> (Tasa: ${tasaActual.toFixed(2)} Bs/USD)`;
-    } else if (montoBs > 0 && !tasaActual) {
-        equival.innerHTML = `⚠️ Monto en Bs ingresado pero no hay tasa BCV`;
-    } else {
-        equival.innerHTML = `💵 Equivalente USD: --`;
-    }
-}
-
 function cerrarModalConfirmarPago() {
     document.getElementById('modalConfirmarPago').classList.add('hidden');
     document.getElementById('previewFotoPago').style.display = 'none';
@@ -2809,7 +2861,23 @@ function cerrarModalConfirmarPago() {
 async function guardarPagoDesdeCaptura() {
     const tipoPagoRaw = document.getElementById('pagoTipo').value;
     const tipoPago = tipoPagoRaw.includes('Pago Móvil') ? 'pago_movil' : 'transferencia';
-    const montoBs = parseFloat(document.getElementById('pagoMontoBs').value) || 0;
+    const esUSD = document.getElementById('checkUSDConfirmarPago').checked;
+    const montoIngresado = parseFloat(document.getElementById('pagoMonto').value) || 0;
+
+    if (montoIngresado <= 0) {
+        mostrarToast('El monto es obligatorio', 'error');
+        return;
+    }
+
+    let montoBs, montoUSD;
+    if (esUSD) {
+        montoUSD = montoIngresado;
+        montoBs = montoIngresado * (tasaActual || 0);
+    } else {
+        montoBs = montoIngresado;
+        montoUSD = tasaActual > 0 ? montoIngresado / tasaActual : 0;
+    }
+
     const referencia = document.getElementById('pagoReferencia').value.trim();
     const fecha = document.getElementById('pagoFecha').value;
     const banco = document.getElementById('pagoBanco').value.trim();
@@ -2818,17 +2886,11 @@ async function guardarPagoDesdeCaptura() {
     const telefonoReceptor = document.getElementById('pagoTelefonoReceptor').value.trim();
     const notas = document.getElementById('pagoNotas').value.trim();
 
-    if (montoBs <= 0) {
-        mostrarToast('El monto es obligatorio', 'error');
-        return;
-    }
-
     if (!fecha) {
         mostrarToast('La fecha es obligatoria', 'error');
         return;
     }
 
-    const montoUSD = tasaActual ? (montoBs / tasaActual).toFixed(2) : null;
     const fechaFormato = fecha.split('-').reverse().join('/');
     const beneficiario = nombreReceptor || (tipoPago === 'pago_movil' ? `Pago Móvil a ${telefonoReceptor || cedulaReceptor || banco}` : `Transferencia a ${banco}`);
 
@@ -2837,8 +2899,8 @@ async function guardarPagoDesdeCaptura() {
         numero_recibo: referencia || 'N/A',
         fecha: fechaFormato,
         beneficiario: beneficiario,
-        monto: montoBs,
-        monto_usd: montoUSD ? parseFloat(montoUSD) : null,
+        monto: parseFloat(montoBs.toFixed(2)),
+        monto_usd: parseFloat(montoUSD.toFixed(2)),
         tasa_bcv: tasaActual,
         concepto: tipoPago === 'pago_movil' ? 'Pago Móvil' : 'Transferencia',
         resultado: 'Operación Exitosa',
@@ -2854,7 +2916,6 @@ async function guardarPagoDesdeCaptura() {
     try {
         const { error } = await supabaseClient.from('pagos').insert([pagoDB]);
         if (error) throw error;
-
         mostrarToast('✅ Pago guardado correctamente', 'success');
         cerrarModalConfirmarPago();
         cargarDatos();
@@ -2863,6 +2924,7 @@ async function guardarPagoDesdeCaptura() {
         mostrarToast('Error: ' + error.message, 'error');
     }
 }
+
 
 // ============================================
 // MODAL EDITAR PAGO
