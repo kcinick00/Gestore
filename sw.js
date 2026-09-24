@@ -1,4 +1,4 @@
-// Service Worker para Gestore PWA v8.3
+// Service Worker para Gestore PWA v9
 const CACHE_NAME = 'gestore-v8.34';
 const URLS_TO_CACHE = [
     './',
