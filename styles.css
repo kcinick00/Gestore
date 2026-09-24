@@ -1771,3 +1771,305 @@ main {
 #checkUSDEditCaja:checked + label {
     color: var(--primary);
 }
+
+/* ============================================
+   v8.4 - Clases utilitarias para index.html limpio
+   ============================================ */
+
+/* Filas de botones reutilizables */
+.fila-botones-2 {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+.fila-botones-3 {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+/* Contenedor de toggles USD/Bs */
+.toggle-moneda-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding: 10px 14px;
+    background: var(--primary-light);
+    border-radius: var(--r-md);
+    border: 2px solid var(--primary);
+}
+.toggle-moneda-box input[type="checkbox"] {
+    transform: scale(1.4);
+    cursor: pointer;
+    accent-color: var(--primary);
+}
+.toggle-moneda-label {
+    margin: 0;
+    font-weight: 800;
+    color: var(--primary);
+    font-size: 14px;
+    text-transform: none;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+}
+.toggle-moneda-hint {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+/* Prefijos de input */
+.prefijo-usd { color: var(--primary); font-weight: 800; }
+.prefijo-bs  { color: var(--cyan);    font-weight: 800; font-size: 14px; }
+.prefijo-success { color: var(--success); font-weight: 800; }
+
+/* Inputs readonly con estilo verde */
+.input-readonly-verde {
+    background: rgba(16, 185, 129, 0.12);
+    color: var(--success);
+    font-weight: 800;
+}
+.input-readonly {
+    background: var(--bg);
+    color: var(--text);
+}
+
+/* Helper text bajo inputs */
+.helper-text {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+/* Cajas de info reutilizables */
+.info-box {
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.5;
+}
+.info-box-cyan    { background: rgba(6,182,212,0.08);  border-left: 4px solid #06b6d4; }
+.info-box-success { background: rgba(16,185,129,0.08); border-left: 4px solid var(--success); }
+.info-box-warning { background: rgba(245,158,11,0.1);  border-left: 4px solid var(--warning); font-size: 12px; }
+.info-box-naranja { background: rgba(255,107,0,0.08);  border-left: 4px solid #FF6B00; font-size: 12px; }
+#infoCalculo { display: none; margin-top: 10px; }
+
+/* Caja de IVA */
+.iva-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    background: rgba(6, 182, 212, 0.08);
+    border: 2px solid #06b6d4;
+    border-radius: var(--r-md);
+    margin-top: 4px;
+}
+.iva-box input[type="checkbox"] {
+    width: 24px; height: 24px;
+    cursor: pointer;
+    accent-color: #06b6d4;
+}
+.iva-box label {
+    margin: 0;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text);
+    cursor: pointer;
+    text-transform: none;
+    letter-spacing: -0.01em;
+}
+
+/* Headers de modales con color */
+.modal-header-cyan    { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+.modal-header-verde   { background: linear-gradient(135deg, #10b981, #059669); }
+.modal-header-naranja { background: linear-gradient(135deg, #FF6B00, #FF8534); }
+
+/* Botones primarios con color */
+.btn-primary-cyan    { background: linear-gradient(135deg, #06b6d4, #0891b2); box-shadow: 0 4px 12px rgba(6,182,212,0.3); }
+.btn-primary-verde   { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
+.btn-primary-naranja { background: linear-gradient(135deg, #FF6B00, #FF8534); box-shadow: 0 4px 12px rgba(255,107,0,0.3); }
+
+/* Botón icon-only (eliminar) */
+.btn-icon-only { flex: 0 0 auto; }
+
+/* Estados de foto */
+.estado-foto {
+    margin-top: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+}
+.preview-foto {
+    margin-top: 10px;
+    text-align: center;
+}
+.img-preview {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 12px;
+    border: 2px solid #06b6d4;
+}
+
+/* Preview de productos detectados */
+.preview-productos {
+    margin-top: 20px;
+    padding: 12px;
+    background: rgba(6, 182, 212, 0.08);
+    border-radius: 12px;
+    border-left: 4px solid #06b6d4;
+}
+.preview-productos-titulo {
+    margin-bottom: 8px;
+    color: #06b6d4;
+    font-size: 14px;
+    font-weight: 800;
+}
+.preview-productos-lista {
+    font-size: 12px;
+    color: var(--text);
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+/* Margen global en modal productos */
+.fila-margen-global {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.label-inline {
+    font-size: 12px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-secondary);
+    text-transform: none;
+}
+.input-margen-global {
+    width: 70px;
+    padding: 6px;
+    border: 2px solid #06b6d4;
+    border-radius: 6px;
+    font-size: 13px;
+    background: var(--surface);
+    color: var(--text);
+}
+.btn-aplicar-margen {
+    padding: 6px 12px;
+    background: #06b6d4;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* Wrapper de tabla de productos */
+.tabla-productos-wrapper {
+    max-height: 55vh;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+/* Zona peligrosa (borrar todos) */
+.zona-peligro {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 2px dashed var(--danger);
+    text-align: center;
+}
+.btn-borrar-todo {
+    background: linear-gradient(135deg, #F43F5E, #E53935);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 800;
+    font-size: 13px;
+    box-shadow: 0 4px 12px rgba(229, 57, 53, 0.3);
+    width: 100%;
+}
+
+/* Centrado con margen */
+.centrado-mb {
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+/* Resumen ventas */
+.resumen-ventas {
+    margin-top: 16px;
+    padding: 14px;
+    background: var(--surface);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-sm);
+    font-size: 13px;
+    color: var(--text);
+    text-align: center;
+    font-weight: 700;
+}
+
+/* Drop zone PDF */
+.drop-zone-pdf {
+    border: 3px dashed #FF6B00;
+    border-radius: var(--r-lg);
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    background: rgba(255, 107, 0, 0.04);
+    transition: all 0.2s;
+}
+.drop-zone-icon { font-size: 48px; margin-bottom: 12px; }
+.drop-zone-text { font-weight: 800; color: #FF6B00; font-size: 15px; margin-bottom: 6px; }
+.drop-zone-sub  { font-size: 12px; color: var(--text-tertiary); }
+
+/* Progreso PDF */
+.progreso-texto { font-size: 13px; font-weight: 700; color: #FF6B00; margin-bottom: 6px; }
+.progreso-barra-wrapper {
+    width: 100%;
+    height: 8px;
+    background: var(--bg-subtle);
+    border-radius: var(--r-full);
+    overflow: hidden;
+}
+.progreso-barra {
+    height: 100%;
+    background: linear-gradient(90deg, #FF6B00, #FF8534);
+    width: 0%;
+    transition: width 0.3s;
+}
+
+/* Textarea pegar ventas */
+.textarea-pegar {
+    width: 100%;
+    height: 180px;
+    font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+    font-size: 12px;
+    padding: 12px;
+    border: 2px solid var(--success);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+}
+.preview-pegar {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+/* Code inline */
+.code-inline {
+    background: var(--bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
