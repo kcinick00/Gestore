@@ -12,7 +12,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icons/icon-192.png">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <link rel="stylesheet" href="styles.css?v=8.2">
+    <link rel="stylesheet" href="styles.css?v=8.3">
 </head>
 <body>
     <!-- Header -->
@@ -21,7 +21,7 @@
             <div class="logo">
                 <span class="logo-icon">💰</span>
                 <span class="logo-text">Gestore</span>
-                <span class="version-badge">v8.2</span>
+                <span class="version-badge">v8.3</span>
             </div>
             <button class="btn-icon" id="btnRefresh" title="Actualizar">🔄</button>
         </div>
@@ -66,7 +66,6 @@
                     <div class="stat-sub" id="statVencidasUSD">$0.00</div>
                     <div class="stat-mini" id="statVencidasBs">0,00 Bs</div>
                 </div>
-
             </div>
 
             <div class="filtros">
@@ -284,22 +283,26 @@
                     <label for="formSinNumero">Sin número</label>
                 </div>
 
-                <label>Monto (USD):</label>
+                <!-- v8.3 - TOGGLE USD / Bs -->
+                <label>Moneda del monto:</label>
+                <div class="checkbox-inline" style="margin-bottom: 10px; padding: 10px 14px; background: var(--primary-light); border-radius: var(--r-md); border: 2px solid var(--primary);">
+                    <input type="checkbox" id="checkUSDFactura" checked style="transform: scale(1.4); cursor: pointer;">
+                    <label for="checkUSDFactura" style="margin: 0; font-weight: 800; color: var(--primary); font-size: 14px; text-transform: none; letter-spacing: -0.01em; cursor: pointer;">
+                        💵 Monto en USD <span style="font-weight: 500; color: var(--text-secondary);">(desmarcar para Bs)</span>
+                    </label>
+                </div>
+
+                <label id="labelMontoFactura">Monto:</label>
                 <div class="input-prefix">
-                    <span>$</span>
-                    <input type="number" id="formMontoUSD" step="0.01" placeholder="102.84" required inputmode="decimal">
+                    <span id="prefijoMontoFactura" style="color: var(--primary); font-weight: 800;">$</span>
+                    <input type="number" id="formMonto" step="0.01" placeholder="102.84" required inputmode="decimal">
                 </div>
 
-                <div class="equivalente-bs" id="equivalenteBs">💱 Equivalente en Bs: --</div>
+                <div class="equivalente-bs" id="equivalenteBs">💱 Equivalente: --</div>
 
-                <label>💱 O si tienes el monto en Bolívares:</label>
-                <div class="input-prefix" style="position: relative;">
-                    <span style="color: var(--success);">Bs</span>
-                    <input type="number" id="formMontoBs" step="0.01" placeholder="87150.73" style="padding-left: 50px;" inputmode="decimal">
-                </div>
-                <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">
-                    💡 Si ingresas el monto en Bs, se convierte automáticamente a USD con la tasa del día.
-                </div>
+                <!-- Inputs ocultos -->
+                <input type="hidden" id="formMontoUSD" value="">
+                <input type="hidden" id="formMontoBs" value="">
 
                 <label>Estatus:</label>
                 <select id="formEstatus">
@@ -441,15 +444,27 @@
                 <label>Tipo de Pago:</label>
                 <input type="text" id="pagoTipo" readonly style="background: var(--bg); color: var(--text);">
 
-                <label>Monto (Bs):</label>
+                <!-- v8.3 - TOGGLE USD / Bs -->
+                <label>Moneda del monto:</label>
+                <div class="checkbox-inline" style="margin-bottom: 10px; padding: 10px 14px; background: var(--primary-light); border-radius: var(--r-md); border: 2px solid var(--primary);">
+                    <input type="checkbox" id="checkUSDConfirmarPago" checked style="transform: scale(1.4); cursor: pointer;">
+                    <label for="checkUSDConfirmarPago" style="margin: 0; font-weight: 800; color: var(--primary); font-size: 14px; text-transform: none; cursor: pointer;">
+                        💵 Monto en USD <span style="font-weight: 500; color: var(--text-secondary);">(desmarcar para Bs)</span>
+                    </label>
+                </div>
+
+                <label>Monto:</label>
                 <div class="input-prefix">
-                    <span style="color: var(--success);">Bs</span>
-                    <input type="number" id="pagoMontoBs" step="0.01" style="padding-left: 50px;" inputmode="decimal">
+                    <span id="prefijoConfirmarPago" style="color: var(--primary); font-weight: 800;">$</span>
+                    <input type="number" id="pagoMonto" step="0.01" inputmode="decimal">
                 </div>
 
                 <div id="pagoEquivalenteUSD" style="background: rgba(6, 182, 212, 0.08); border-left: 4px solid #06b6d4; padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 14px; font-weight: 700; color: #0891b2;">
-                    💵 Equivalente USD: --
+                    💱 Equivalente: --
                 </div>
+
+                <input type="hidden" id="pagoMontoBs" value="">
+                <input type="hidden" id="pagoMontoUSD" value="">
 
                 <label>Referencia / N° Operación:</label>
                 <input type="text" id="pagoReferencia" placeholder="Ej: 123456789" autocomplete="off">
@@ -500,15 +515,27 @@
                     <option value="pago_movil">📱 Pago Móvil</option>
                 </select>
 
-                <label>Monto (Bs):</label>
+                <!-- v8.3 - TOGGLE USD / Bs -->
+                <label>Moneda del monto:</label>
+                <div class="checkbox-inline" style="margin-bottom: 10px; padding: 10px 14px; background: var(--primary-light); border-radius: var(--r-md); border: 2px solid var(--primary);">
+                    <input type="checkbox" id="checkUSDNuevoPago" checked style="transform: scale(1.4); cursor: pointer;">
+                    <label for="checkUSDNuevoPago" style="margin: 0; font-weight: 800; color: var(--primary); font-size: 14px; text-transform: none; cursor: pointer;">
+                        💵 Monto en USD <span style="font-weight: 500; color: var(--text-secondary);">(desmarcar para Bs)</span>
+                    </label>
+                </div>
+
+                <label>Monto:</label>
                 <div class="input-prefix">
-                    <span style="color: var(--success);">Bs</span>
-                    <input type="number" id="nuevoPagoMontoBs" step="0.01" style="padding-left: 50px;" inputmode="decimal" required>
+                    <span id="prefijoNuevoPago" style="color: var(--primary); font-weight: 800;">$</span>
+                    <input type="number" id="nuevoPagoMonto" step="0.01" inputmode="decimal" required>
                 </div>
 
                 <div id="nuevoPagoEquivalente" style="background: rgba(6, 182, 212, 0.08); border-left: 4px solid #06b6d4; padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 14px; font-weight: 700; color: #0891b2;">
-                    💵 Equivalente USD: --
+                    💱 Equivalente: --
                 </div>
+
+                <input type="hidden" id="nuevoPagoMontoBs" value="">
+                <input type="hidden" id="nuevoPagoMontoUSD" value="">
 
                 <label>Referencia / N° Operación:</label>
                 <input type="text" id="nuevoPagoReferencia" placeholder="Ej: 123456789" autocomplete="off">
@@ -608,15 +635,27 @@
                     <option value="pago_movil">📱 Pago Móvil</option>
                 </select>
 
-                <label>Monto (Bs):</label>
+                <!-- v8.3 - TOGGLE USD / Bs -->
+                <label>Moneda del monto:</label>
+                <div class="checkbox-inline" style="margin-bottom: 10px; padding: 10px 14px; background: var(--primary-light); border-radius: var(--r-md); border: 2px solid var(--primary);">
+                    <input type="checkbox" id="checkUSDEeditPago" checked style="transform: scale(1.4); cursor: pointer;">
+                    <label for="checkUSDEeditPago" style="margin: 0; font-weight: 800; color: var(--primary); font-size: 14px; text-transform: none; cursor: pointer;">
+                        💵 Monto en USD <span style="font-weight: 500; color: var(--text-secondary);">(desmarcar para Bs)</span>
+                    </label>
+                </div>
+
+                <label>Monto:</label>
                 <div class="input-prefix">
-                    <span style="color: var(--success);">Bs</span>
-                    <input type="number" id="editPagoMontoBs" step="0.01" style="padding-left: 50px;" inputmode="decimal">
+                    <span id="prefijoEditPago" style="color: var(--primary); font-weight: 800;">$</span>
+                    <input type="number" id="editPagoMonto" step="0.01" inputmode="decimal">
                 </div>
 
                 <div id="editPagoEquivalente" style="background: rgba(6, 182, 212, 0.08); border-left: 4px solid #06b6d4; padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 14px; font-weight: 700; color: #0891b2;">
-                    💵 Equivalente USD: --
+                    💱 Equivalente: --
                 </div>
+
+                <input type="hidden" id="editPagoMontoBs" value="">
+                <input type="hidden" id="editPagoMontoUSD" value="">
 
                 <label>Referencia / N° Operación:</label>
                 <input type="text" id="editPagoReferencia" autocomplete="off">
@@ -774,7 +813,7 @@
     <script src="libs/pdf.min.js"></script>
     <script src="tasas-bcv.js"></script>
     <script src="importar-pdf.js"></script>
-    <script src="app.js?v=8.2"></script>
+    <script src="app.js?v=8.3"></script>
 
     <script>
         if ('serviceWorker' in navigator) {
