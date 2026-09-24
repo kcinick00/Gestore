@@ -1991,8 +1991,8 @@ function abrirModalEditarProducto(p) {
     const precioBase = tieneIva ? (p.precioCompraUSD / (1 + TASA_IVA / 100)) : p.precioCompraUSD;
 
     // v8.4 - Cargar precio de compra en USD (por defecto marcado)
-    const checkCompra = document.getElementById('checkUSDEditCompra');
-    checkCompra.checked = true;
+    const checkCompra = document.getElementById('checkUSDPrecioCompra');
+    if (checkCompra) checkCompra.checked = true;
     document.getElementById('editPrecioCompra').value = precioBase.toFixed(4);
     
     document.getElementById('editMargen').value = p.margen || 30;
@@ -2005,7 +2005,7 @@ function abrirModalEditarProducto(p) {
     document.getElementById('editNotas').value = p.notas || '';
 
     setTimeout(() => {
-        if (checkCompra._refresh) checkCompra._refresh();
+        if (checkCompra && checkCompra._refresh) checkCompra._refresh();
         recalcularPrecioVenta();
     }, 50);
 
