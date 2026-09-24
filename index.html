@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-tema="paypal">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0070BA">
+    <meta name="color-scheme" content="light dark">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Gestore">
@@ -12,7 +13,25 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icons/icon-192.png">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <link rel="stylesheet" href="styles.css?v=8.3">
+    <link rel="stylesheet" href="styles.css?v=11.0">
+    <script>
+        // Aplicar tema ANTES de renderizar (evita flash)
+        (function() {
+            try {
+                var tema = localStorage.getItem('gestore_tema') || 'paypal';
+                document.documentElement.setAttribute('data-tema', tema);
+                var colores = {
+                    auto: '#0070BA',
+                    paypal: '#0070BA',
+                    artisan: '#C8442C',
+                    dark: '#0F0F0F',
+                    contraste: '#0040DD'
+                };
+                var meta = document.querySelector('meta[name="theme-color"]');
+                if (meta) meta.setAttribute('content', colores[tema] || '#0070BA');
+            } catch(e) {}
+        })();
+    </script>
 </head>
 <body>
     <!-- Header -->
@@ -21,8 +40,9 @@
             <div class="logo">
                 <span class="logo-icon">💰</span>
                 <span class="logo-text">Gestore</span>
-                <span class="version-badge">v8.3</span>
+                <span class="version-badge">v11.0</span>
             </div>
+            <button class="btn-icon" id="btnTema" title="Cambiar tema" aria-label="Cambiar tema de la app">🎨</button>
             <button class="btn-icon" id="btnRefresh" title="Actualizar">🔄</button>
         </div>
         <div class="tasa-info" id="tasaInfo">Consultando tasa BCV...</div>
@@ -134,7 +154,7 @@
             <div id="listaPagos" class="lista"></div>
 
             <div style="margin-top: 20px; padding-top: 16px; border-top: 2px dashed var(--danger); text-align: center;">
-                <button type="button" id="btnBorrarTodosPagos" style="background: linear-gradient(135deg, #F43F5E, #E53935); color: white; border: none; padding: 12px 20px; border-radius: 12px; cursor: pointer; font-weight: 800; font-size: 13px; box-shadow: 0 4px 12px rgba(229, 57, 53, 0.3); width: 100%;">
+                <button type="button" id="btnBorrarTodosPagos" style="background: var(--danger); color: white; border: none; padding: 12px 20px; border-radius: var(--r-md); cursor: pointer; font-weight: 800; font-size: 13px; box-shadow: var(--shadow-danger); width: 100%;">
                     🗑️ Borrar TODOS los pagos
                 </button>
             </div>
@@ -264,9 +284,9 @@
                         <button type="button" id="btnTomarFoto" class="btn btn-accion-cyan" style="flex: 1;">📷 Tomar Foto</button>
                         <button type="button" id="btnSubirGaleria" class="btn btn-accion-gris" style="flex: 1;">🖼️ Subir Imagen</button>
                     </div>
-                    <div id="estadoFoto" style="display: none; margin-top: 10px; font-size: 13px; color: #06b6d4; font-weight: 700; text-align: center;"></div>
+                    <div id="estadoFoto" style="display: none; margin-top: 10px; font-size: 13px; color: var(--info); font-weight: 700; text-align: center;"></div>
                     <div id="previewFoto" style="margin-top: 10px; display: none; text-align: center;">
-                        <img id="imgPreview" style="max-width: 100%; max-height: 200px; border-radius: 12px; border: 2px solid #06b6d4;">
+                        <img id="imgPreview" style="max-width: 100%; max-height: 200px; border-radius: var(--r-md); border: 2px solid var(--info);">
                     </div>
                 </div>
 
@@ -299,7 +319,6 @@
 
                 <div class="equivalente-bs" id="equivalenteBs">💱 Equivalente: --</div>
 
-                <!-- Inputs ocultos que se llenan automáticamente -->
                 <input type="hidden" id="formMontoUSD" value="">
                 <input type="hidden" id="formMontoBs" value="">
 
@@ -313,8 +332,8 @@
                 <label>Notas (opcional):</label>
                 <textarea id="formNotas" placeholder="Ej: Factura de leche pasteurizada..."></textarea>
 
-                <div id="previewProductos" class="hidden" style="margin-top: 20px; padding: 12px; background: rgba(6, 182, 212, 0.08); border-radius: 12px; border-left: 4px solid #06b6d4;">
-                    <h4 style="margin-bottom: 8px; color: #06b6d4; font-size: 14px; font-weight: 800;">📦 Productos detectados</h4>
+                <div id="previewProductos" class="hidden" style="margin-top: 20px; padding: 12px; background: var(--info-light); border-radius: var(--r-md); border-left: 4px solid var(--info);">
+                    <h4 style="margin-bottom: 8px; color: var(--info); font-size: 14px; font-weight: 800;">📦 Productos detectados</h4>
                     <div id="listaProductosPreview" style="font-size: 12px; color: var(--text); max-height: 150px; overflow-y: auto;"></div>
                 </div>
             </div>
@@ -328,12 +347,12 @@
     <!-- Modal: Revisión de Productos -->
     <div class="modal-overlay hidden" id="modalProductos">
         <div class="modal" style="max-height: 95vh;">
-            <div class="modal-header" style="background: linear-gradient(135deg, #06b6d4, #0891b2);">
+            <div class="modal-header">
                 <h3>📦 Revisar Productos</h3>
                 <button class="btn-cerrar" id="btnCerrarProductos">✕</button>
             </div>
             <div class="modal-body" style="padding: 12px;">
-                <div style="background: rgba(245, 158, 11, 0.1); border-left: 4px solid var(--warning); padding: 10px; border-radius: 8px; margin-bottom: 12px; font-size: 12px; color: var(--text);">
+                <div style="background: var(--warning-light); border-left: 4px solid var(--warning); padding: 10px; border-radius: var(--r-sm); margin-bottom: 12px; font-size: 12px; color: var(--text);">
                     💡 Revisa y ajusta los productos detectados. El <strong>margen</strong> se aplica a todos, pero puedes cambiarlo individual.
                     <br>💡 <strong>Unid/Caja</strong>: si la factura vino por caja, el precio se divide automáticamente.
                     <br>💡 <strong>¿IVA?</strong>: marca si el producto lleva IVA 16%. El precio de venta se recalcula al instante.
@@ -341,18 +360,18 @@
 
                 <div style="display: flex; gap: 8px; margin-bottom: 12px; align-items: center; flex-wrap: wrap;">
                     <label style="font-size: 12px; font-weight: 700; margin: 0; color: var(--text-secondary);">Margen global (%):</label>
-                    <input type="number" id="margenGlobal" value="30" step="1" min="0" max="500" style="width: 70px; padding: 6px; border: 2px solid #06b6d4; border-radius: 6px; font-size: 13px; background: var(--surface); color: var(--text);" inputmode="decimal">
-                    <button type="button" id="btnAplicarMargenGlobal" style="padding: 6px 12px; background: #06b6d4; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 700;">
+                    <input type="number" id="margenGlobal" value="30" step="1" min="0" max="500" style="width: 70px; padding: 6px; border: 2px solid var(--info); border-radius: var(--r-xs); font-size: 13px; background: var(--surface); color: var(--text);" inputmode="decimal">
+                    <button type="button" id="btnAplicarMargenGlobal" class="btn btn-accion-azul" style="flex: 0 0 auto; padding: 6px 12px; font-size: 12px;">
                         Aplicar a todos
                     </button>
                 </div>
 
-                <div id="tablaProductosEdit" style="max-height: 55vh; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px;">
+                <div id="tablaProductosEdit" style="max-height: 55vh; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--r-sm);">
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-cancelar" id="btnCancelarProductos">Cancelar</button>
-                <button class="btn btn-primary" id="btnConfirmarProductos" style="background: linear-gradient(135deg, #06b6d4, #0891b2); box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);">
+                <button class="btn btn-primary" id="btnConfirmarProductos">
                     ✅ Confirmar
                 </button>
             </div>
@@ -362,7 +381,7 @@
     <!-- Modal: Editar Producto -->
     <div class="modal-overlay hidden" id="modalEditarProducto">
         <div class="modal">
-            <div class="modal-header" style="background: linear-gradient(135deg, #06b6d4, #0891b2);">
+            <div class="modal-header">
                 <h3>✏️ Editar Producto</h3>
                 <button class="btn-cerrar" id="btnCerrarEditarProducto">✕</button>
             </div>
@@ -412,8 +431,8 @@
                 <input type="number" id="editMargen" step="1" min="0" max="500" inputmode="decimal">
 
                 <label>¿Este producto lleva IVA (16%)?</label>
-                <div style="display: flex; align-items: center; gap: 12px; padding: 14px; background: rgba(6, 182, 212, 0.08); border: 2px solid #06b6d4; border-radius: var(--r-md); margin-top: 4px;">
-                    <input type="checkbox" id="editTieneIva" style="width: 24px; height: 24px; cursor: pointer; accent-color: #06b6d4;">
+                <div style="display: flex; align-items: center; gap: 12px; padding: 14px; background: var(--info-light); border: 2px solid var(--info); border-radius: var(--r-md); margin-top: 4px;">
+                    <input type="checkbox" id="editTieneIva" style="width: 24px; height: 24px; cursor: pointer; accent-color: var(--info);">
                     <label for="editTieneIva" style="margin: 0; font-weight: 700; font-size: 14px; color: var(--text); cursor: pointer; text-transform: none; letter-spacing: -0.01em;">
                         ✅ Aplicar IVA 16% al costo
                     </label>
@@ -425,10 +444,10 @@
                 <label>Precio de Venta (USD) - calculado automáticamente:</label>
                 <div class="input-prefix">
                     <span>$</span>
-                    <input type="number" id="editPrecioVenta" step="0.01" readonly style="background: rgba(16, 185, 129, 0.12); color: var(--success); font-weight: 800;">
+                    <input type="number" id="editPrecioVenta" step="0.01" readonly style="background: var(--success-light); color: var(--success-dark); font-weight: 800;">
                 </div>
 
-                <div id="infoCalculo" style="background: rgba(6, 182, 212, 0.08); border-left: 4px solid #06b6d4; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 12px; line-height: 1.5; display: none; color: var(--text);"></div>
+                <div id="infoCalculo" style="background: var(--info-light); border-left: 4px solid var(--info); padding: 10px; border-radius: var(--r-sm); margin-top: 10px; font-size: 12px; line-height: 1.5; display: none; color: var(--text);"></div>
 
                 <label>Notas (opcional):</label>
                 <textarea id="editNotas"></textarea>
@@ -436,7 +455,7 @@
             <div class="modal-footer">
                 <button class="btn btn-danger" id="btnEliminarEditarProducto" style="flex: 0 0 auto;">🗑️</button>
                 <button class="btn btn-cancelar" id="btnCancelarEditarProducto">Cancelar</button>
-                <button class="btn btn-primary" id="btnGuardarEditarProducto" style="background: linear-gradient(135deg, #06b6d4, #0891b2); box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);">💾 Guardar</button>
+                <button class="btn btn-primary" id="btnGuardarEditarProducto">💾 Guardar</button>
             </div>
         </div>
     </div>
@@ -444,15 +463,15 @@
     <!-- Modal: Confirmar Pago desde Captura -->
     <div class="modal-overlay hidden" id="modalConfirmarPago">
         <div class="modal">
-            <div class="modal-header" style="background: linear-gradient(135deg, #10b981, #059669);">
+            <div class="modal-header">
                 <h3>💸 Confirmar Pago</h3>
                 <button class="btn-cerrar" id="btnCerrarConfirmarPago">✕</button>
             </div>
             <div class="modal-body">
-                <div id="datosPagoExtraidos" style="background: rgba(16, 185, 129, 0.08); border-left: 4px solid var(--success); padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; color: var(--text);"></div>
+                <div id="datosPagoExtraidos" style="background: var(--success-light); border-left: 4px solid var(--success); padding: 12px; border-radius: var(--r-sm); margin-bottom: 15px; font-size: 13px; color: var(--text);"></div>
 
                 <label>Tipo de Pago:</label>
-                <input type="text" id="pagoTipo" readonly style="background: var(--bg); color: var(--text);">
+                <input type="text" id="pagoTipo" readonly style="background: var(--bg-soft); color: var(--text);">
 
                 <label>Moneda del monto:</label>
                 <div class="checkbox-inline toggle-moneda">
@@ -468,7 +487,7 @@
                     <input type="number" id="pagoMonto" step="0.01" inputmode="decimal">
                 </div>
 
-                <div id="pagoEquivalenteUSD" style="background: rgba(6, 182, 212, 0.08); border-left: 4px solid #06b6d4; padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 14px; font-weight: 700; color: #0891b2;">
+                <div id="pagoEquivalenteUSD" class="equivalente-bs" style="font-size: 14px;">
                     💱 Equivalente: --
                 </div>
 
@@ -497,12 +516,12 @@
                 <textarea id="pagoNotas" placeholder="Observaciones..."></textarea>
 
                 <div id="previewFotoPago" style="margin-top: 15px; text-align: center; display: none;">
-                    <img id="imgPreviewPago" style="max-width: 100%; max-height: 200px; border-radius: 12px; border: 2px solid var(--success);">
+                    <img id="imgPreviewPago" style="max-width: 100%; max-height: 200px; border-radius: var(--r-md); border: 2px solid var(--success);">
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-cancelar" id="btnCancelarConfirmarPago">Cancelar</button>
-                <button class="btn btn-primary" id="btnGuardarPago" style="background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">💾 Guardar Pago</button>
+                <button class="btn btn-primary" id="btnGuardarPago">💾 Guardar Pago</button>
             </div>
         </div>
     </div>
@@ -510,7 +529,7 @@
     <!-- Modal: Nuevo Pago Manual -->
     <div class="modal-overlay hidden" id="modalNuevoPago">
         <div class="modal">
-            <div class="modal-header" style="background: linear-gradient(135deg, #2196F3, #0070BA);">
+            <div class="modal-header">
                 <h3>➕ Nuevo Pago Manual</h3>
                 <button class="btn-cerrar" id="btnCerrarNuevoPago">✕</button>
             </div>
@@ -538,7 +557,7 @@
                     <input type="number" id="nuevoPagoMonto" step="0.01" inputmode="decimal" required>
                 </div>
 
-                <div id="nuevoPagoEquivalente" style="background: rgba(6, 182, 212, 0.08); border-left: 4px solid #06b6d4; padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 14px; font-weight: 700; color: #0891b2;">
+                <div id="nuevoPagoEquivalente" class="equivalente-bs" style="font-size: 14px;">
                     💱 Equivalente: --
                 </div>
 
@@ -579,12 +598,12 @@
     <!-- Modal: Importar PDF Banesco -->
     <div class="modal-overlay hidden" id="modalImportarPdf">
         <div class="modal">
-            <div class="modal-header" style="background: linear-gradient(135deg, #FF6B00, #FF8534);">
+            <div class="modal-header">
                 <h3>📄 Importar PDFs de Banesco</h3>
                 <button class="btn-cerrar" id="btnCerrarImportarPdf">✕</button>
             </div>
             <div class="modal-body">
-                <div style="background: rgba(255, 107, 0, 0.08); border-left: 4px solid #FF6B00; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 12px; color: var(--text);">
+                <div style="background: var(--warning-light); border-left: 4px solid var(--warning); padding: 12px; border-radius: var(--r-sm); margin-bottom: 15px; font-size: 12px; color: var(--text);">
                     <strong>Instrucciones:</strong><br>
                     1. Descarga los PDFs de transferencias desde Banesco.<br>
                     2. Selecciona uno o varios PDFs aquí.<br>
@@ -596,9 +615,9 @@
 
                 <input type="file" id="inputPdfsBanesco" accept=".pdf,application/pdf" multiple style="display: none;">
 
-                <div id="dropZonePdf" style="border: 3px dashed #FF6B00; border-radius: var(--r-lg); padding: 40px 20px; text-align: center; cursor: pointer; background: rgba(255, 107, 0, 0.04); transition: all 0.2s;">
+                <div id="dropZonePdf" style="border: 3px dashed var(--warning); border-radius: var(--r-lg); padding: 40px 20px; text-align: center; cursor: pointer; background: var(--warning-light); transition: all 0.2s;">
                     <div style="font-size: 48px; margin-bottom: 12px;">📄</div>
-                    <div style="font-weight: 800; color: #FF6B00; font-size: 15px; margin-bottom: 6px;">
+                    <div style="font-weight: 800; color: var(--warning-dark); font-size: 15px; margin-bottom: 6px;">
                         Toca para seleccionar PDFs
                     </div>
                     <div style="font-size: 12px; color: var(--text-tertiary);">
@@ -607,11 +626,11 @@
                 </div>
 
                 <div id="progresoPdf" style="display: none; margin-top: 15px;">
-                    <div style="font-size: 13px; font-weight: 700; color: #FF6B00; margin-bottom: 6px;" id="progresoPdfTexto">
+                    <div style="font-size: 13px; font-weight: 700; color: var(--warning-dark); margin-bottom: 6px;" id="progresoPdfTexto">
                         Procesando...
                     </div>
                     <div style="width: 100%; height: 8px; background: var(--bg-subtle); border-radius: var(--r-full); overflow: hidden;">
-                        <div id="progresoPdfBarra" style="height: 100%; background: linear-gradient(90deg, #FF6B00, #FF8534); width: 0%; transition: width 0.3s;"></div>
+                        <div id="progresoPdfBarra" style="height: 100%; background: var(--warning); width: 0%; transition: width 0.3s;"></div>
                     </div>
                 </div>
 
@@ -619,7 +638,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-cancelar" id="btnCancelarImportarPdf">Cerrar</button>
-                <button class="btn btn-primary" id="btnImportarPdfGuardar" style="background: linear-gradient(135deg, #FF6B00, #FF8534); box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);" disabled>
+                <button class="btn btn-primary" id="btnImportarPdfGuardar" disabled>
                     💾 Guardar Pagos
                 </button>
             </div>
@@ -629,7 +648,7 @@
     <!-- Modal: Editar Pago -->
     <div class="modal-overlay hidden" id="modalEditarPago">
         <div class="modal">
-            <div class="modal-header" style="background: linear-gradient(135deg, #10b981, #059669);">
+            <div class="modal-header">
                 <h3>✏️ Editar Pago</h3>
                 <button class="btn-cerrar" id="btnCerrarEditarPago">✕</button>
             </div>
@@ -657,7 +676,7 @@
                     <input type="number" id="editPagoMonto" step="0.01" inputmode="decimal">
                 </div>
 
-                <div id="editPagoEquivalente" style="background: rgba(6, 182, 212, 0.08); border-left: 4px solid #06b6d4; padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 14px; font-weight: 700; color: #0891b2;">
+                <div id="editPagoEquivalente" class="equivalente-bs" style="font-size: 14px;">
                     💱 Equivalente: --
                 </div>
 
@@ -691,7 +710,7 @@
             <div class="modal-footer">
                 <button class="btn btn-danger" id="btnEliminarPagoDesdeModal" style="flex: 0 0 auto;">🗑️</button>
                 <button class="btn btn-cancelar" id="btnCancelarEditarPago">Cancelar</button>
-                <button class="btn btn-primary" id="btnGuardarEditarPago" style="background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">💾 Guardar</button>
+                <button class="btn btn-primary" id="btnGuardarEditarPago">💾 Guardar</button>
             </div>
         </div>
     </div>
@@ -699,12 +718,12 @@
     <!-- Modal: Margen Masivo -->
     <div class="modal-overlay hidden" id="modalMargenMasivo">
         <div class="modal">
-            <div class="modal-header" style="background: linear-gradient(135deg, #FFA000, #FF6B00);">
+            <div class="modal-header">
                 <h3>📊 Aplicar Margen Masivo</h3>
                 <button class="btn-cerrar" id="btnCerrarMargenMasivo">✕</button>
             </div>
             <div class="modal-body">
-                <div style="background: rgba(255, 160, 0, 0.1); border-left: 4px solid #FFA000; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; color: var(--text);">
+                <div style="background: var(--warning-light); border-left: 4px solid var(--warning); padding: 12px; border-radius: var(--r-sm); margin-bottom: 15px; font-size: 13px; color: var(--text);">
                     ⚠️ Esto aplicará el nuevo margen a <b>TODOS los productos</b> del inventario y recalculará sus precios de venta.
                 </div>
 
@@ -717,7 +736,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-cancelar" id="btnCancelarMargenMasivo">Cancelar</button>
-                <button class="btn btn-primary" id="btnAplicarMargenMasivo" style="background: linear-gradient(135deg, #FFA000, #FF6B00); box-shadow: 0 4px 12px rgba(255, 160, 0, 0.3);">✅ Aplicar a Todos</button>
+                <button class="btn btn-primary" id="btnAplicarMargenMasivo">✅ Aplicar a Todos</button>
             </div>
         </div>
     </div>
@@ -737,7 +756,7 @@
     <!-- Modal: Nueva / Editar Venta Diaria -->
     <div class="modal-overlay hidden" id="modalVentaDiaria">
         <div class="modal">
-            <div class="modal-header" style="background: linear-gradient(135deg, #10b981, #059669);">
+            <div class="modal-header">
                 <h3 id="tituloModalVenta">➕ Nueva Venta Diaria</h3>
                 <button class="btn-cerrar" id="btnCerrarVenta">✕</button>
             </div>
@@ -763,14 +782,14 @@
                     <input type="number" id="ventaPuntoUsd" step="0.01" min="0" value="0" inputmode="decimal">
                 </div>
 
-                <div id="ventaInfoTasa" style="background: rgba(6, 182, 212, 0.08); border-left: 4px solid #06b6d4; padding: 12px; border-radius: 8px; margin-top: 12px; font-size: 13px; color: var(--text);">
+                <div id="ventaInfoTasa" style="background: var(--info-light); border-left: 4px solid var(--info); padding: 12px; border-radius: var(--r-sm); margin-top: 12px; font-size: 13px; color: var(--text);">
                     💵 Todos los montos se ingresan en USD
                 </div>
 
                 <label>Total del día (USD):</label>
                 <div class="input-prefix">
                     <span style="color: var(--success);">$</span>
-                    <input type="number" id="ventaTotal" step="0.01" readonly style="padding-left: 32px; background: rgba(16, 185, 129, 0.12); color: var(--success); font-weight: 800;">
+                    <input type="number" id="ventaTotal" step="0.01" readonly style="padding-left: 32px; background: var(--success-light); color: var(--success-dark); font-weight: 800;">
                 </div>
 
                 <label>Notas (opcional):</label>
@@ -779,7 +798,7 @@
             <div class="modal-footer">
                 <button class="btn btn-danger" id="btnEliminarVenta" style="flex: 0 0 auto; display:none;">🗑️</button>
                 <button class="btn btn-cancelar" id="btnCancelarVenta">Cancelar</button>
-                <button class="btn btn-primary" id="btnGuardarVenta" style="background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">💾 Guardar</button>
+                <button class="btn btn-primary" id="btnGuardarVenta">💾 Guardar</button>
             </div>
         </div>
     </div>
@@ -787,15 +806,15 @@
     <!-- Modal: Pegar desde Excel -->
     <div class="modal-overlay hidden" id="modalPegarVentas">
         <div class="modal">
-            <div class="modal-header" style="background: linear-gradient(135deg, #10b981, #059669);">
+            <div class="modal-header">
                 <h3>📥 Pegar desde Excel</h3>
                 <button class="btn-cerrar" id="btnCerrarPegar">✕</button>
             </div>
             <div class="modal-body">
-                <div style="background: rgba(245, 158, 11, 0.1); border-left: 4px solid var(--warning); padding: 10px; border-radius: 8px; margin-bottom: 12px; font-size: 12px; color: var(--text);">
+                <div style="background: var(--warning-light); border-left: 4px solid var(--warning); padding: 10px; border-radius: var(--r-sm); margin-bottom: 12px; font-size: 12px; color: var(--text);">
                     <strong>Instrucciones:</strong><br>
                     1. En Excel selecciona las filas (sin encabezados) con:<br>
-                    <code style="background: var(--bg); padding: 2px 6px; border-radius: 4px;">Fecha · Efectivo $ · Zelle $ · Punto $</code><br>
+                    <code style="background: var(--bg-soft); padding: 2px 6px; border-radius: 4px;">Fecha · Efectivo $ · Zelle $ · Punto $</code><br>
                     2. Copia con <b>Ctrl+C</b>.<br>
                     3. Pega abajo con <b>Ctrl+V</b>.<br>
                     4. Presiona <b>Procesar e Importar</b>.<br><br>
@@ -803,12 +822,28 @@
                     💵 <b>Todos los montos en USD</b>.<br>
                     📌 Si la fecha ya existe, se <b>actualiza</b>.
                 </div>
-                <textarea id="textoPegarVentas" style="width:100%; height:180px; font-family: 'SF Mono', Monaco, 'Courier New', monospace; font-size:12px; padding:12px; border:2px solid var(--success); border-radius:10px; background: var(--surface); color: var(--text);" placeholder="Pega aquí desde Excel..." autocomplete="off" spellcheck="false"></textarea>
+                <textarea id="textoPegarVentas" style="width:100%; height:180px; font-family: var(--font-mono); font-size:12px; padding:12px; border:2px solid var(--success); border-radius: var(--r-sm); background: var(--surface); color: var(--text);" placeholder="Pega aquí desde Excel..." autocomplete="off" spellcheck="false"></textarea>
                 <div id="previewPegarVentas" style="margin-top:12px; font-size:12px; color:var(--text-secondary); max-height:200px; overflow-y:auto;"></div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-cancelar" id="btnCancelarPegar">Cancelar</button>
-                <button class="btn btn-primary" id="btnProcesarPegar" style="background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">✅ Procesar e Importar</button>
+                <button class="btn btn-primary" id="btnProcesarPegar">✅ Procesar e Importar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Selector de Tema -->
+    <div class="modal-overlay hidden" id="modalTema">
+        <div class="modal" style="max-width: 520px;">
+            <div class="modal-header">
+                <h3>🎨 Elegir tema</h3>
+                <button class="btn-cerrar" onclick="cerrarModalTema()" aria-label="Cerrar">✕</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:14px; color:var(--text-secondary); margin-bottom:18px; line-height:1.5;">
+                    Personaliza la apariencia de la app. Tu elección se guarda automáticamente.
+                </p>
+                <div class="temas-grid" id="temasGrid"></div>
             </div>
         </div>
     </div>
@@ -820,7 +855,7 @@
     <script src="libs/pdf.min.js"></script>
     <script src="tasas-bcv.js"></script>
     <script src="importar-pdf.js"></script>
-    <script src="app.js?v=8.3"></script>
+    <script src="app.js?v=11.0"></script>
 
     <script>
         if ('serviceWorker' in navigator) {
