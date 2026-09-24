@@ -334,6 +334,21 @@ function configurarToggleMoneda(checkId, inputId, prefijoId, equivalId, hiddenBs
     return actualizar;
 }
 
+// ============================================
+// v8.3 - Leer el monto de un toggle USD/Bs ya existente en USD
+// ============================================
+function leerMontoToggle(checkId, inputId) {
+    const check = document.getElementById(checkId);
+    const input = document.getElementById(inputId);
+    const valor = parseFloat(input ? input.value : 0) || 0;
+    const esUSD = check ? check.checked : true;
+
+    const montoUSD = esUSD ? valor : (tasaActual > 0 ? valor / tasaActual : 0);
+    const montoBs = esUSD ? valor * (tasaActual || 0) : valor;
+
+    return { montoUSD, montoBs };
+}
+
 function cambiarTab(tab) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
@@ -2098,17 +2113,8 @@ async function guardarEditarProducto() {
     const stock = parseFloat(document.getElementById('editStock').value) || 0;
 
     // v8.4 - Obtener el valor REAL en USD (sin importar la moneda en que se ingresó)
-    const esUSDCompra = document.getElementById('checkUSDEditCompra').checked;
-    const valorIngresadoCompra = parseFloat(document.getElementById('editPrecioCompra').value) || 0;
-    const precioBaseUSD = esUSDCompra 
-        ? valorIngresadoCompra 
-        : (tasaActual > 0 ? valorIngresadoCompra / tasaActual : 0);
-
-    const esUSDCaja = document.getElementById('checkUSDEditCaja').checked;
-    const valorIngresadoCaja = parseFloat(document.getElementById('editPrecioCaja').value) || 0;
-    const precioCajaUSD = esUSDCaja 
-        ? valorIngresadoCaja 
-        : (tasaActual > 0 ? valorIngresadoCaja / tasaActual : 0);
+    const { montoUSD: precioBaseUSD } = leerMontoToggle('checkUSDEditCompra', 'editPrecioCompra');
+    const { montoUSD: precioCajaUSD } = leerMontoToggle('checkUSDEditCaja', 'editPrecioCaja');
 
     const margen = parseFloat(document.getElementById('editMargen').value) || 30;
     const tieneIva = document.getElementById('editTieneIva').checked;
