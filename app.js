@@ -1,6 +1,9 @@
 // ============================================
-// GESTORE PWA - v8.3
+// GESTORE PWA - v8.4
 // Changelog:
+// v8.4 - Un solo toggle USD/Bs en Editar Producto (precio de compra)
+//        - Precio de caja SIEMPRE en USD (campo opcional)
+//        - Toggle compacto (ver styles.css)
 // v8.3 - Toggle USD/Bs en todos los modales de monto
 //        - Checkbox "Monto en USD" (por defecto marcado)
 //        - Al desmarcar, el usuario ingresa Bs y se convierte a USD
@@ -50,7 +53,7 @@ let ventaEditando = null;
 // INICIALIZACIÓN
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("🚀 Gestore PWA v8.3 iniciado");
+    console.log("🚀 Gestore PWA v8.4 iniciado");
     configurarEventos();
     cargarTasa();
     cargarDatos();
@@ -177,10 +180,10 @@ function configurarEventos() {
     document.getElementById('editUnidadesCaja').addEventListener('change', recalcularPrecioVenta);
     document.getElementById('editTieneIva').addEventListener('change', recalcularPrecioVenta);
     
+    // v8.4 - Precio de caja siempre en USD. Al escribir, sincroniza el precio de compra (USD)
     document.getElementById('editPrecioCaja').addEventListener('input', () => {
         const precioCaja = parseFloat(document.getElementById('editPrecioCaja').value) || 0;
         if (precioCaja > 0) {
-            // v8.5 - La caja siempre es USD; solo sincronizamos el valor al precio de compra
             const checkCompra = document.getElementById('checkUSDEditCompra');
             checkCompra.checked = true;
             document.getElementById('editPrecioCompra').value = precioCaja;
@@ -262,9 +265,8 @@ function configurarEventos() {
     configurarToggleMoneda('checkUSDEeditPago', 'editPagoMonto', 'prefijoEditPago', 'editPagoEquivalente', 'editPagoMontoBs', 'editPagoMontoUSD');
     configurarToggleMoneda('checkUSDConfirmarPago', 'pagoMonto', 'prefijoConfirmarPago', 'pagoEquivalenteUSD', 'pagoMontoBs', 'pagoMontoUSD');
 
-    // ========== v8.5 - TOGGLE USD/Bs EN EDITAR PRODUCTO (solo precio de compra) ==========
+    // ========== v8.4 - TOGGLE USD/Bs EN EDITAR PRODUCTO (solo precio de compra) ==========
     configurarToggleMoneda('checkUSDEditCompra', 'editPrecioCompra', 'prefijoEditCompra', 'editCompraEquivalente', 'editPrecioCompraBs', 'editPrecioCompraUSD', recalcularPrecioVenta);
-    // v8.5 - El toggle de precio de caja fue eliminado: la caja siempre se ingresa en USD
 
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
@@ -711,7 +713,7 @@ function aplicarTasa(tasa, fechaStr, fuente) {
 }
 
 function refrescarTogglesMoneda() {
-    ['checkUSDFactura', 'checkUSDNuevoPago', 'checkUSDEeditPago', 'checkUSDConfirmarPago'].forEach(id => {
+    ['checkUSDFactura', 'checkUSDNuevoPago', 'checkUSDEeditPago', 'checkUSDConfirmarPago', 'checkUSDEditCompra'].forEach(id => {
         const check = document.getElementById(id);
         if (check && check._refresh) check._refresh();
     });
@@ -1425,8 +1427,7 @@ async function guardarVentaDiaria() {
             if (error) throw error;
             mostrarToast('✅ Venta actualizada', 'success');
         } else {
-            const { data: existente } = await supabaseClient
-                .from('ventas_diarias')
+            const { data: existente } = await supabaseClient                .from('ventas_diarias')
                 .select('id')
                 .eq('fecha', fechaISO)
                 .maybeSingle();
@@ -1977,7 +1978,7 @@ function abrirDetallePago(p) {
 }
 
 // ============================================
-// MODAL EDITAR PRODUCTO (con precio BASE)
+// MODAL EDITAR PRODUCTO (v8.4 - un solo toggle)
 // ============================================
 function abrirModalEditarProducto(p) {
     productoEditando = p;
@@ -1990,22 +1991,22 @@ function abrirModalEditarProducto(p) {
     const tieneIva = !p.exento && p.iva > 0;
     const precioBase = tieneIva ? (p.precioCompraUSD / (1 + TASA_IVA / 100)) : p.precioCompraUSD;
 
-    // v8.4 - Cargar precio de compra en USD (por defecto marcado)
-    const checkCompra = document.getElementById('checkUSDPrecioCompra');
-    if (checkCompra) checkCompra.checked = true;
+    // v8.4 - Precio de compra: toggle USD/Bs (por defecto marcado = USD)
+    const checkCompra = document.getElementById('checkUSDEditCompra');
+    checkCompra.checked = true;
     document.getElementById('editPrecioCompra').value = precioBase.toFixed(4);
     
     document.getElementById('editMargen').value = p.margen || 30;
     document.getElementById('editTieneIva').checked = tieneIva;
     document.getElementById('editUnidadesCaja').value = p.unidadesCaja || 0;
 
-    // v8.5 - Precio de caja siempre en USD (sin toggle)
+    // v8.4 - Precio de caja: SIEMPRE en USD, sin toggle
     document.getElementById('editPrecioCaja').value = p.precioCajaUSD || 0;
 
     document.getElementById('editNotas').value = p.notas || '';
 
     setTimeout(() => {
-        if (checkCompra && checkCompra._refresh) checkCompra._refresh();
+        if (checkCompra._refresh) checkCompra._refresh();
         recalcularPrecioVenta();
     }, 50);
 
@@ -2027,7 +2028,7 @@ function recalcularPrecioVenta() {
 
     if (!precioCompraInput || !margenInput || !unidadesCajaInput || !precioVentaInput) return;
 
-    // v8.4 - Convertir el valor ingresado a USD según el toggle
+    // v8.4 - Convertir el valor ingresado a USD según el toggle (solo precio de compra)
     const esUSDCompra = document.getElementById('checkUSDEditCompra').checked;
     const valorIngresado = parseFloat(precioCompraInput.value) || 0;
     const precioBaseUSD = esUSDCompra 
@@ -2093,14 +2094,14 @@ async function guardarEditarProducto() {
     const unidad = document.getElementById('editUnidad').value.trim() || 'UND';
     const stock = parseFloat(document.getElementById('editStock').value) || 0;
 
-    // v8.4 - Obtener el valor REAL en USD (sin importar la moneda en que se ingresó)
+    // v8.4 - Obtener el valor REAL en USD del precio de compra (según toggle)
     const esUSDCompra = document.getElementById('checkUSDEditCompra').checked;
     const valorIngresadoCompra = parseFloat(document.getElementById('editPrecioCompra').value) || 0;
     const precioBaseUSD = esUSDCompra 
         ? valorIngresadoCompra 
         : (tasaActual > 0 ? valorIngresadoCompra / tasaActual : 0);
 
-    // v8.5 - Precio de caja siempre en USD (sin toggle)
+    // v8.4 - Precio de caja SIEMPRE en USD
     const precioCajaUSD = parseFloat(document.getElementById('editPrecioCaja').value) || 0;
 
     const margen = parseFloat(document.getElementById('editMargen').value) || 30;
