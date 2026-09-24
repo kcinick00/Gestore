@@ -3,19 +3,13 @@
 // Changelog:
 // v8.4 - Un solo toggle USD/Bs en Editar Producto (precio de compra)
 //        - Precio de caja SIEMPRE en USD (campo opcional)
-//        - Toggle compacto (ver styles.css)
+//        - IDs alineados con index.html: checkUSDPrecioCompra / prefijoPrecioCompra / equivalentePrecioCompra
 // v8.3 - Toggle USD/Bs en todos los modales de monto
-//        - Checkbox "Monto en USD" (por defecto marcado)
-//        - Al desmarcar, el usuario ingresa Bs y se convierte a USD
-//        - Se guardan AMBOS valores (monto_usd y monto_bs) en Supabase
-// v8.2 - FIX: El input "Precio de Compra" muestra el precio BASE (sin IVA)
-// v8.1 - Checkbox "¿Tiene IVA?" reemplaza input de texto
-// v8.0 - Portadas todas las funciones de la extensión
 // ============================================
 
 const SUPABASE_URL = "https://kpsurjxypipxtjizlyon.supabase.co";
 const SUPABASE_KEY = "sb_publishable_sA8BVuihO3RaIcZrqTPzyA_HkYahfV5";
-const TASA_IVA = 16; // IVA fijo al 16%
+const TASA_IVA = 16;
 
 let supabaseClient;
 try {
@@ -29,9 +23,6 @@ try {
     console.error("❌ Error al crear cliente Supabase:", e);
 }
 
-// ============================================
-// ESTADO GLOBAL
-// ============================================
 const DIAS_VENCIMIENTO = 10;
 
 let datos = { facturas: [], pagos: [], productos: [], ventas_diarias: [] };
@@ -49,9 +40,6 @@ let productoEditando = null;
 let pagoEditando = null;
 let ventaEditando = null;
 
-// ============================================
-// INICIALIZACIÓN
-// ============================================
 document.addEventListener('DOMContentLoaded', () => {
     console.log("🚀 Gestore PWA v8.4 iniciado");
     configurarEventos();
@@ -184,7 +172,7 @@ function configurarEventos() {
     document.getElementById('editPrecioCaja').addEventListener('input', () => {
         const precioCaja = parseFloat(document.getElementById('editPrecioCaja').value) || 0;
         if (precioCaja > 0) {
-            const checkCompra = document.getElementById('checkUSDEditCompra');
+            const checkCompra = document.getElementById('checkUSDPrecioCompra');
             checkCompra.checked = true;
             document.getElementById('editPrecioCompra').value = precioCaja;
             if (checkCompra._refresh) checkCompra._refresh();
@@ -218,20 +206,17 @@ function configurarEventos() {
     document.getElementById('btnGuardarEditarPago').addEventListener('click', guardarEditarPago);
     document.getElementById('btnEliminarPagoDesdeModal').addEventListener('click', eliminarPagoDesdeModal);
 
-    // NUEVO PAGO MANUAL
     document.getElementById('btnNuevoPagoManual').addEventListener('click', abrirModalNuevoPago);
     document.getElementById('btnCerrarNuevoPago').addEventListener('click', cerrarModalNuevoPago);
     document.getElementById('btnCancelarNuevoPago').addEventListener('click', cerrarModalNuevoPago);
     document.getElementById('btnGuardarNuevoPago').addEventListener('click', guardarNuevoPago);
 
-    // IMPORTAR PDFs BANESCO
     document.getElementById('btnImportarPdfPago').addEventListener('click', abrirModalImportarPdf);
     document.getElementById('btnCerrarImportarPdf').addEventListener('click', cerrarModalImportarPdf);
     document.getElementById('btnCancelarImportarPdf').addEventListener('click', cerrarModalImportarPdf);
     document.getElementById('btnImportarPdfGuardar').addEventListener('click', guardarPagosImportadosPdf);
     configurarDropZonePdf();
 
-    // BORRAR TODOS LOS PAGOS
     document.getElementById('btnBorrarTodosPagos').addEventListener('click', borrarTodosLosPagos);
 
     // ========== VENTAS DIARIAS ==========
@@ -253,20 +238,19 @@ function configurarEventos() {
     document.getElementById('btnProcesarPegar').addEventListener('click', procesarPegadoVentas);
     document.getElementById('textoPegarVentas').addEventListener('input', previewPegadoVentas);
 
-    // MARGEN MASIVO
     document.getElementById('cardMargenPromedio').addEventListener('click', abrirModalMargenMasivo);
     document.getElementById('btnCerrarMargenMasivo').addEventListener('click', cerrarModalMargenMasivo);
     document.getElementById('btnCancelarMargenMasivo').addEventListener('click', cerrarModalMargenMasivo);
     document.getElementById('btnAplicarMargenMasivo').addEventListener('click', aplicarMargenMasivo);
 
-    // ========== v8.3 - TOGGLES USD/Bs ==========
+    // ========== TOGGLES USD/Bs ==========
     configurarToggleMoneda('checkUSDFactura', 'formMonto', 'prefijoMontoFactura', 'equivalenteBs', 'formMontoBs', 'formMontoUSD');
     configurarToggleMoneda('checkUSDNuevoPago', 'nuevoPagoMonto', 'prefijoNuevoPago', 'nuevoPagoEquivalente', 'nuevoPagoMontoBs', 'nuevoPagoMontoUSD');
     configurarToggleMoneda('checkUSDEeditPago', 'editPagoMonto', 'prefijoEditPago', 'editPagoEquivalente', 'editPagoMontoBs', 'editPagoMontoUSD');
     configurarToggleMoneda('checkUSDConfirmarPago', 'pagoMonto', 'prefijoConfirmarPago', 'pagoEquivalenteUSD', 'pagoMontoBs', 'pagoMontoUSD');
 
-    // ========== v8.4 - TOGGLE USD/Bs EN EDITAR PRODUCTO (solo precio de compra) ==========
-    configurarToggleMoneda('checkUSDEditCompra', 'editPrecioCompra', 'prefijoEditCompra', 'editCompraEquivalente', 'editPrecioCompraBs', 'editPrecioCompraUSD', recalcularPrecioVenta);
+    // v8.4 - Toggle USD/Bs SOLO para precio de compra (IDs alineados con index.html)
+    configurarToggleMoneda('checkUSDPrecioCompra', 'editPrecioCompra', 'prefijoPrecioCompra', 'equivalentePrecioCompra', null, null, recalcularPrecioVenta);
 
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
@@ -276,7 +260,7 @@ function configurarEventos() {
 }
 
 // ============================================
-// v8.3 - TOGGLE USD / Bs GENÉRICO
+// TOGGLE USD / Bs GENÉRICO
 // ============================================
 function configurarToggleMoneda(checkId, inputId, prefijoId, equivalId, hiddenBsId, hiddenUsdId, onChange) {
     const check = document.getElementById(checkId);
@@ -345,22 +329,16 @@ function cambiarTab(tab) {
     document.getElementById('fabNuevaFactura').classList.toggle('hidden', tab !== 'facturas');
 }
 
-// ============================================
-// CARGAR DATOS
-// ============================================
 async function cargarDatos() {
     if (!supabaseClient) return;
-
     try {
         console.log("📥 Cargando datos desde Supabase...");
-
         const [facturasResp, pagosResp, productosResp, ventasResp] = await Promise.all([
             supabaseClient.from('facturas').select('*'),
             supabaseClient.from('pagos').select('*'),
             supabaseClient.from('productos').select('*'),
             supabaseClient.from('ventas_diarias').select('*').order('fecha', { ascending: false })
         ]);
-
         if (facturasResp.error) throw facturasResp.error;
         if (pagosResp.error) throw pagosResp.error;
         if (productosResp.error) throw productosResp.error;
@@ -472,9 +450,6 @@ function dbToVentaDiaria(row) {
     };
 }
 
-// ============================================
-// HELPERS DE FECHA
-// ============================================
 function fechaLatinaToISO(fechaStr) {
     if (!fechaStr) return null;
     const partes = String(fechaStr).split('/');
@@ -534,9 +509,6 @@ function claveMes(fechaStr) {
     return `${date.getFullYear()}-${m}`;
 }
 
-// ============================================
-// TASA BCV
-// ============================================
 async function cargarTasa() {
     const info = document.getElementById('tasaInfo');
     info.textContent = 'Consultando tasa BCV...';
@@ -553,7 +525,6 @@ async function cargarTasa() {
     let fechaSupabase = null;
 
     try {
-        console.log('🌐 Leyendo tasa desde Supabase...');
         const { data, error } = await supabaseClient
             .from('tasa_bcv')
             .select('*')
@@ -563,7 +534,6 @@ async function cargarTasa() {
         if (!error && data && data.tasa && data.tasa > 0) {
             tasaSupabase = parseFloat(data.tasa);
             fechaSupabase = data.fecha || 'Sin fecha';
-            console.log(`✅ Tasa desde Supabase: ${tasaSupabase} (${fechaSupabase})`);
         }
     } catch (e) {
         console.warn('⚠️ Error leyendo Supabase:', e.message);
@@ -576,16 +546,8 @@ async function cargarTasa() {
             const [dia, mes, anio] = fechaParte.trim().split('/').map(Number);
             const fechaTasa = new Date(anio, mes - 1, dia);
             const diffDias = Math.floor((new Date() - fechaTasa) / (1000 * 60 * 60 * 24));
-            
-            if (diffDias <= 2) {
-                tasaEsReciente = true;
-                console.log(`✅ Tasa de Supabase es reciente (${diffDias} días)`);
-            } else {
-                console.log(`⚠️ Tasa de Supabase es vieja (${diffDias} días). Intentando APIs...`);
-            }
-        } catch (e) {
-            console.warn('⚠️ No se pudo parsear la fecha:', e.message);
-        }
+            if (diffDias <= 2) tasaEsReciente = true;
+        } catch (e) {}
     }
 
     if (tasaSupabase && tasaEsReciente) {
@@ -594,78 +556,38 @@ async function cargarTasa() {
         return;
     }
 
-    console.log('🌐 Consultando APIs directas (sin proxy)...');
-    
     const apis = [
         { 
             name: 'DolarAPI', 
             url: 'https://ve.dolarapi.com/v1/dolares/oficial',
-            parse: (d) => {
-                if (d && d.promedio) {
-                    return { 
-                        tasa: parseFloat(d.promedio), 
-                        fecha: d.fechaActualizacion ? new Date(d.fechaActualizacion) : new Date() 
-                    };
-                }
-                return null;
-            }
+            parse: (d) => d && d.promedio ? { tasa: parseFloat(d.promedio), fecha: d.fechaActualizacion ? new Date(d.fechaActualizacion) : new Date() } : null
         },
         { 
             name: 'CriptoYa', 
             url: 'https://criptoya.com/api/dolaroficial',
-            parse: (d) => {
-                if (d && d.bcv && d.bcv.price) {
-                    return { 
-                        tasa: parseFloat(d.bcv.price), 
-                        fecha: new Date() 
-                    };
-                }
-                return null;
-            }
+            parse: (d) => d && d.bcv && d.bcv.price ? { tasa: parseFloat(d.bcv.price), fecha: new Date() } : null
         }
     ];
 
     for (const api of apis) {
         try {
-            console.log(`🌐 Probando ${api.name}...`);
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 8000);
-            
-            const resp = await fetch(api.url, { 
-                signal: controller.signal,
-                cache: 'no-cache'
-            });
+            const resp = await fetch(api.url, { signal: controller.signal, cache: 'no-cache' });
             clearTimeout(timeoutId);
-            
             if (!resp.ok) continue;
             const data = await resp.json();
             const resultado = api.parse(data);
             
             if (resultado && resultado.tasa > 0) {
                 const fechaStr = resultado.fecha.toLocaleString('es-VE', { 
-                    day: '2-digit', 
-                    month: '2-digit', 
-                    year: 'numeric',
-                    hour: '2-digit', 
-                    minute: '2-digit' 
+                    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' 
                 });
-                
-                console.log(`✅ ${api.name}: ${resultado.tasa} (${fechaStr})`);
-                
                 try {
-                    await supabaseClient
-                        .from('tasa_bcv')
-                        .upsert({
-                            id: 1,
-                            tasa: resultado.tasa,
-                            fecha: fechaStr,
-                            updated_at: new Date().toISOString()
-                        });
-                    console.log(`✅ Tasa actualizada en Supabase`);
-                } catch (e) {
-                    console.warn('⚠️ No se pudo actualizar Supabase:', e.message);
-                }
-                
+                    await supabaseClient.from('tasa_bcv').upsert({
+                        id: 1, tasa: resultado.tasa, fecha: fechaStr, updated_at: new Date().toISOString()
+                    });
+                } catch (e) {}
                 aplicarTasa(resultado.tasa, fechaStr, api.name);
                 refrescarTogglesMoneda();
                 return;
@@ -676,7 +598,6 @@ async function cargarTasa() {
     }
 
     if (tasaSupabase) {
-        console.log('⚠️ Usando tasa de Supabase (aunque sea vieja)');
         aplicarTasa(tasaSupabase, fechaSupabase + ' (vieja)', 'Supabase (respaldo)');
         refrescarTogglesMoneda();
         return;
@@ -685,18 +606,15 @@ async function cargarTasa() {
     if (ultimaTasa && ultimaFecha) {
         info.textContent = `💱 Tasa BCV: ${parseFloat(ultimaTasa).toFixed(2)} Bs/USD · ${ultimaFecha} (local)`;
         tasaActual = parseFloat(ultimaTasa);
-        console.warn("⚠️ Usando tasa guardada localmente.");
         refrescarTogglesMoneda();
     } else {
         info.textContent = '⚠️ Tasa BCV no disponible';
-        console.error("❌ No hay tasa disponible");
     }
 }
 
 function aplicarTasa(tasa, fechaStr, fuente) {
     const info = document.getElementById('tasaInfo');
     const ultimaTasa = localStorage.getItem('ultimaTasaBCV');
-    
     const tasaAnterior = ultimaTasa ? parseFloat(ultimaTasa) : null;
     const cambio = tasaAnterior && Math.abs(tasaAnterior - tasa) > 0.01;
 
@@ -707,21 +625,16 @@ function aplicarTasa(tasa, fechaStr, fuente) {
     info.textContent = `💱 Tasa BCV: ${tasaActual.toFixed(2)} Bs/USD · ${fechaStr}`;
     console.log(`✅ Tasa final (${fuente}): ${tasaActual} (${fechaStr})`);
     
-    if (cambio) {
-        mostrarToast(`💱 Nueva tasa BCV: ${tasaActual.toFixed(2)} Bs/USD`, 'info');
-    }
+    if (cambio) mostrarToast(`💱 Nueva tasa BCV: ${tasaActual.toFixed(2)} Bs/USD`, 'info');
 }
 
 function refrescarTogglesMoneda() {
-    ['checkUSDFactura', 'checkUSDNuevoPago', 'checkUSDEeditPago', 'checkUSDConfirmarPago', 'checkUSDEditCompra'].forEach(id => {
+    ['checkUSDFactura', 'checkUSDNuevoPago', 'checkUSDEeditPago', 'checkUSDConfirmarPago', 'checkUSDPrecioCompra'].forEach(id => {
         const check = document.getElementById(id);
         if (check && check._refresh) check._refresh();
     });
 }
 
-// ============================================
-// CÁLCULO DE ESTATUS
-// ============================================
 function calcularEstatusReal(f) {
     if (f.estatus === 'Pagada') return 'Pagada';
     const [dia, mes, anio] = f.fecha.split('/').map(Number);
@@ -735,9 +648,6 @@ function diasDesdeFactura(f) {
     return Math.floor((new Date() - new Date(anio, mes - 1, dia)) / (1000 * 60 * 60 * 24));
 }
 
-// ============================================
-// FORMATOS
-// ============================================
 function formatearMontoBs(montoBs) {
     if (!montoBs) return "0,00";
     let str = String(montoBs).trim();
@@ -794,16 +704,11 @@ function normalizarNombre(nombre) {
         .trim();
 }
 
-// ============================================
-// ORDENAR LISTA
-// ============================================
 function ordenarLista(lista, campo, direccion) {
     if (!direccion) return lista;
     const mult = direccion === 'asc' ? 1 : -1;
-
     return [...lista].sort((a, b) => {
         let valA, valB;
-
         if (campo === 'fecha') {
             valA = parsearFecha(a.fecha).getTime();
             valB = parsearFecha(b.fecha).getTime();
@@ -821,7 +726,6 @@ function ordenarLista(lista, campo, direccion) {
             valB = (b[campo] || '').toLowerCase();
             return valA.localeCompare(valB) * mult;
         }
-
         if (valA < valB) return -1 * mult;
         if (valA > valB) return 1 * mult;
         return 0;
@@ -838,9 +742,6 @@ function ordenarFacturas(lista, campo, direccion) {
     return ordenadas;
 }
 
-// ============================================
-// RENDERIZAR FACTURAS
-// ============================================
 function renderizarFacturas() {
     const lista = document.getElementById('listaFacturas');
     let filtradas = [...datos.facturas];
@@ -915,9 +816,6 @@ function renderizarFacturas() {
     });
 }
 
-// ============================================
-// RENDERIZAR PAGOS
-// ============================================
 function renderizarPagos() {
     const lista = document.getElementById('listaPagos');
     let filtrados = [...datos.pagos];
@@ -966,9 +864,6 @@ function renderizarPagos() {
     });
 }
 
-// ============================================
-// RENDERIZAR PRODUCTOS
-// ============================================
 function renderizarProductos() {
     const lista = document.getElementById('listaProductos');
     let filtrados = [...datos.productos];
@@ -1022,9 +917,6 @@ function renderizarProductos() {
     });
 }
 
-// ============================================
-// RENDERIZAR VENTAS
-// ============================================
 function renderizarVentas() {
     const lista = document.getElementById('listaVentas');
     if (!lista) return;
@@ -1256,9 +1148,6 @@ function renderizarVentasAgrupada(lista, filtradas, tipo) {
     });
 }
 
-// ============================================
-// ESTADÍSTICAS VENTAS - BADGES
-// ============================================
 function actualizarEstadisticasVentas() {
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
@@ -1335,9 +1224,6 @@ function actualizarEstadisticasVentas() {
     }
 }
 
-// ============================================
-// MODAL NUEVA / EDITAR VENTA
-// ============================================
 function abrirModalVenta(venta) {
     ventaEditando = venta;
     const titulo = document.getElementById('tituloModalVenta');
@@ -1427,7 +1313,8 @@ async function guardarVentaDiaria() {
             if (error) throw error;
             mostrarToast('✅ Venta actualizada', 'success');
         } else {
-            const { data: existente } = await supabaseClient                .from('ventas_diarias')
+            const { data: existente } = await supabaseClient
+                .from('ventas_diarias')
                 .select('id')
                 .eq('fecha', fechaISO)
                 .maybeSingle();
@@ -1474,9 +1361,6 @@ async function eliminarVentaDiaria() {
     }
 }
 
-// ============================================
-// PEGAR DESDE EXCEL
-// ============================================
 function abrirModalPegarVentas() {
     document.getElementById('textoPegarVentas').value = '';
     document.getElementById('previewPegarVentas').innerHTML = '';
@@ -1668,9 +1552,6 @@ async function procesarPegadoVentas() {
     }
 }
 
-// ============================================
-// EXPORTAR VENTAS
-// ============================================
 function exportarVentasCSV() {
     if (datos.ventas_diarias.length === 0) { alert("No hay ventas para exportar."); return; }
     const sep = ';';
@@ -1719,9 +1600,6 @@ function exportarVentasExcel() {
     mostrarToast('✅ Excel descargado', 'success');
 }
 
-// ============================================
-// ESTADÍSTICAS (Facturas, Pagos, Inventario)
-// ============================================
 function actualizarEstadisticas() {
     const hoy = new Date();
     const mesActual = hoy.getMonth();
@@ -1792,9 +1670,6 @@ function actualizarBadge() {
     }
 }
 
-// ============================================
-// MARGEN MASIVO
-// ============================================
 function abrirModalMargenMasivo() {
     if (datos.productos.length === 0) {
         mostrarToast('No hay productos en el inventario', 'error');
@@ -1865,9 +1740,6 @@ async function aplicarMargenMasivo() {
     cargarDatos();
 }
 
-// ============================================
-// DETALLE FACTURA
-// ============================================
 function abrirDetalleFactura(f) {
     const estatusReal = calcularEstatusReal(f);
     const dias = diasDesdeFactura(f);
@@ -1925,9 +1797,6 @@ function abrirDetalleFactura(f) {
     document.getElementById('modalDetalle').classList.remove('hidden');
 }
 
-// ============================================
-// DETALLE PAGO
-// ============================================
 function abrirDetallePago(p) {
     let extraInfo = '';
     
@@ -1978,7 +1847,7 @@ function abrirDetallePago(p) {
 }
 
 // ============================================
-// MODAL EDITAR PRODUCTO (v8.4 - un solo toggle)
+// MODAL EDITAR PRODUCTO (v8.4)
 // ============================================
 function abrirModalEditarProducto(p) {
     productoEditando = p;
@@ -1992,8 +1861,8 @@ function abrirModalEditarProducto(p) {
     const precioBase = tieneIva ? (p.precioCompraUSD / (1 + TASA_IVA / 100)) : p.precioCompraUSD;
 
     // v8.4 - Precio de compra: toggle USD/Bs (por defecto marcado = USD)
-    const checkCompra = document.getElementById('checkUSDEditCompra');
-    checkCompra.checked = true;
+    const checkCompra = document.getElementById('checkUSDPrecioCompra');
+    if (checkCompra) checkCompra.checked = true;
     document.getElementById('editPrecioCompra').value = precioBase.toFixed(4);
     
     document.getElementById('editMargen').value = p.margen || 30;
@@ -2006,7 +1875,7 @@ function abrirModalEditarProducto(p) {
     document.getElementById('editNotas').value = p.notas || '';
 
     setTimeout(() => {
-        if (checkCompra._refresh) checkCompra._refresh();
+        if (checkCompra && checkCompra._refresh) checkCompra._refresh();
         recalcularPrecioVenta();
     }, 50);
 
@@ -2028,8 +1897,9 @@ function recalcularPrecioVenta() {
 
     if (!precioCompraInput || !margenInput || !unidadesCajaInput || !precioVentaInput) return;
 
-    // v8.4 - Convertir el valor ingresado a USD según el toggle (solo precio de compra)
-    const esUSDCompra = document.getElementById('checkUSDEditCompra').checked;
+    // v8.4 - Convertir el valor ingresado a USD según el toggle
+    const checkCompra = document.getElementById('checkUSDPrecioCompra');
+    const esUSDCompra = checkCompra ? checkCompra.checked : true;
     const valorIngresado = parseFloat(precioCompraInput.value) || 0;
     const precioBaseUSD = esUSDCompra 
         ? valorIngresado 
@@ -2095,7 +1965,8 @@ async function guardarEditarProducto() {
     const stock = parseFloat(document.getElementById('editStock').value) || 0;
 
     // v8.4 - Obtener el valor REAL en USD del precio de compra (según toggle)
-    const esUSDCompra = document.getElementById('checkUSDEditCompra').checked;
+    const checkCompra = document.getElementById('checkUSDPrecioCompra');
+    const esUSDCompra = checkCompra ? checkCompra.checked : true;
     const valorIngresadoCompra = parseFloat(document.getElementById('editPrecioCompra').value) || 0;
     const precioBaseUSD = esUSDCompra 
         ? valorIngresadoCompra 
@@ -2198,7 +2069,6 @@ function abrirModalFactura(factura = null) {
         document.getElementById('formSinNumero').checked = factura.numeroFactura === 'S/N';
         document.getElementById('formNumeroFactura').disabled = factura.numeroFactura === 'S/N';
         
-        // v8.3 - Por defecto cargar en USD
         checkFact.checked = true;
         const montoUSD = parseFloat(factura.montoUSD) || 0;
         inputMontoFact.value = montoUSD > 0 ? montoUSD.toFixed(2) : '';
@@ -2213,7 +2083,6 @@ function abrirModalFactura(factura = null) {
         document.getElementById('formSinNumero').checked = false;
         document.getElementById('formNumeroFactura').disabled = false;
         
-        // v8.3 - Resetear toggle a USD por defecto
         checkFact.checked = true;
         inputMontoFact.value = '';
         
@@ -2292,9 +2161,6 @@ async function guardarFactura() {
     }
 }
 
-// ============================================
-// ACCIONES
-// ============================================
 async function marcarPagada(factura) {
     if (!confirm(`¿Marcar como PAGADA la factura de ${factura.proveedor}?`)) return;
     try {
@@ -2337,6 +2203,136 @@ async function eliminarPago(pago) {
         mostrarToast('Error: ' + error.message, 'error');
     }
 }
+
+async function borrarTodosLosPagos() {
+    const total = datos.pagos.length;
+    if (total === 0) {
+        mostrarToast('No hay pagos para borrar', 'info');
+        return;
+    }
+
+    const confirmacion1 = confirm(`⚠️ ¿Estás SEGURO de borrar TODOS los ${total} pagos?\n\nEsta acción NO se puede deshacer.`);
+    if (!confirmacion1) return;
+
+    const texto = prompt(`Para confirmar, escribe la palabra BORRAR (en mayúsculas):`);
+    if (texto !== 'BORRAR') {
+        mostrarToast('Cancelado', 'info');
+        return;
+    }
+
+    mostrarToast('⏳ Borrando todos los pagos...', 'info');
+
+    try {
+        const { error } = await supabaseClient
+            .from('pagos')
+            .delete()
+            .neq('id', 0);
+
+        if (error) throw error;
+
+        mostrarToast(`✅ ${total} pagos eliminados`, 'success');
+        cargarDatos();
+    } catch (error) {
+        console.error('Error al borrar pagos:', error);
+        mostrarToast('Error: ' + error.message, 'error');
+    }
+}
+
+function abrirModalNuevoPago() {
+    document.getElementById('nuevoPagoBeneficiario').value = '';
+    document.getElementById('nuevoPagoTipo').value = 'transferencia';
+    document.getElementById('nuevoPagoMonto').value = '';
+    document.getElementById('nuevoPagoReferencia').value = '';
+    document.getElementById('nuevoPagoFecha').valueAsDate = new Date();
+    document.getElementById('nuevoPagoBanco').value = '';
+    document.getElementById('nuevoPagoNombreReceptor').value = '';
+    document.getElementById('nuevoPagoCedulaReceptor').value = '';
+    document.getElementById('nuevoPagoTelefonoReceptor').value = '';
+    document.getElementById('nuevoPagoConcepto').value = '';
+    document.getElementById('nuevoPagoNotas').value = '';
+    
+    const checkNP = document.getElementById('checkUSDNuevoPago');
+    checkNP.checked = true;
+    if (checkNP._refresh) checkNP._refresh();
+    
+    document.getElementById('modalNuevoPago').classList.remove('hidden');
+}
+
+function cerrarModalNuevoPago() {
+    document.getElementById('modalNuevoPago').classList.add('hidden');
+}
+
+async function guardarNuevoPago() {
+    const beneficiario = document.getElementById('nuevoPagoBeneficiario').value.trim();
+    if (!beneficiario) {
+        mostrarToast('El beneficiario es obligatorio', 'error');
+        return;
+    }
+
+    const tipoPago = document.getElementById('nuevoPagoTipo').value;
+    const esUSD = document.getElementById('checkUSDNuevoPago').checked;
+    const montoIngresado = parseFloat(document.getElementById('nuevoPagoMonto').value) || 0;
+    if (montoIngresado <= 0) {
+        mostrarToast('El monto debe ser mayor a 0', 'error');
+        return;
+    }
+
+    let montoBs, montoUSD;
+    if (esUSD) {
+        montoUSD = montoIngresado;
+        montoBs = montoIngresado * (tasaActual || 0);
+    } else {
+        montoBs = montoIngresado;
+        montoUSD = tasaActual > 0 ? montoIngresado / tasaActual : 0;
+    }
+
+    const referencia = document.getElementById('nuevoPagoReferencia').value.trim();
+    const fecha = document.getElementById('nuevoPagoFecha').value;
+    if (!fecha) {
+        mostrarToast('La fecha es obligatoria', 'error');
+        return;
+    }
+
+    const banco = document.getElementById('nuevoPagoBanco').value.trim();
+    const nombreReceptor = document.getElementById('nuevoPagoNombreReceptor').value.trim();
+    const cedulaReceptor = document.getElementById('nuevoPagoCedulaReceptor').value.trim();
+    const telefonoReceptor = document.getElementById('nuevoPagoTelefonoReceptor').value.trim();
+    const concepto = document.getElementById('nuevoPagoConcepto').value.trim();
+    const notas = document.getElementById('nuevoPagoNotas').value.trim();
+
+    const fechaFormato = fecha.split('-').reverse().join('/');
+
+    const pagoDB = {
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        numero_recibo: referencia || 'N/A',
+        fecha: fechaFormato,
+        beneficiario: beneficiario,
+        monto: parseFloat(montoBs.toFixed(2)),
+        monto_usd: parseFloat(montoUSD.toFixed(2)),
+        tasa_bcv: tasaActual,
+        concepto: concepto || (tipoPago === 'pago_movil' ? 'Pago Móvil' : 'Transferencia'),
+        resultado: 'Operación Exitosa',
+        notas: notas,
+        tipo_pago: tipoPago,
+        banco_receptor: banco || null,
+        cedula_receptor: cedulaReceptor || null,
+        telefono_receptor: telefonoReceptor || null,
+        nombre_receptor: nombreReceptor || null,
+        created_at: new Date().toISOString()
+    };
+
+    try {
+        const { error } = await supabaseClient.from('pagos').insert([pagoDB]);
+        if (error) throw error;
+        mostrarToast('✅ Pago guardado correctamente', 'success');
+        cerrarModalNuevoPago();
+        cargarDatos();
+    } catch (error) {
+        console.error('Error al guardar pago:', error);
+        mostrarToast('Error: ' + error.message, 'error');
+    }
+}
+
 
 // ============================================
 // BORRAR TODOS LOS PAGOS
