@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es" data-tema="paypal">
+<html lang="es" data-tema="delico">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#0070BA">
+    <meta name="theme-color" content="#2E7D46">
     <meta name="color-scheme" content="light dark">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -13,14 +13,18 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icons/icon-192.png">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <link rel="stylesheet" href="styles.css?v=11.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700;800&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=12.0">
     <script>
         // Aplicar tema ANTES de renderizar (evita flash)
         (function() {
             try {
-                var tema = localStorage.getItem('gestore_tema') || 'paypal';
+                var tema = localStorage.getItem('gestore_tema') || 'delico';
                 document.documentElement.setAttribute('data-tema', tema);
                 var colores = {
+                    delico: '#2E7D46',
                     auto: '#0070BA',
                     paypal: '#0070BA',
                     artisan: '#C8442C',
@@ -28,7 +32,7 @@
                     contraste: '#0040DD'
                 };
                 var meta = document.querySelector('meta[name="theme-color"]');
-                if (meta) meta.setAttribute('content', colores[tema] || '#0070BA');
+                if (meta) meta.setAttribute('content', colores[tema] || '#2E7D46');
             } catch(e) {}
         })();
     </script>
@@ -40,7 +44,7 @@
             <div class="logo">
                 <span class="logo-icon">💰</span>
                 <span class="logo-text">Gestore</span>
-                <span class="version-badge">v11.0</span>
+                <span class="version-badge">v12.0</span>
             </div>
             <button class="btn-icon" id="btnTema" title="Cambiar tema" aria-label="Cambiar tema de la app">🎨</button>
             <button class="btn-icon" id="btnRefresh" title="Actualizar">🔄</button>
@@ -138,7 +142,7 @@
 
             <div style="margin-bottom: 12px; text-align: center;">
                 <input type="file" id="inputFotoPago" accept="image/*" style="display:none;">
-                <div id="estadoFotoPago" style="display: none; margin-top: 10px; font-size: 13px; color: #10b981; font-weight: 700;"></div>
+                <div id="estadoFotoPago" style="display: none; margin-top: 10px; font-size: 13px; color: var(--success); font-weight: 700;"></div>
             </div>
 
             <div class="filtros">
@@ -855,7 +859,7 @@
     <script src="libs/pdf.min.js"></script>
     <script src="tasas-bcv.js"></script>
     <script src="importar-pdf.js"></script>
-    <script src="app.js?v=11.0"></script>
+    <script src="app.js?v=12.0"></script>
 
     <script>
         if ('serviceWorker' in navigator) {

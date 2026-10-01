@@ -2115,3 +2115,281 @@ input[readonly], input:disabled {
         font-size: 7px;
     }
 }
+
+/* ============================================
+   TEMA 6: RICO DELICO (crema, verde bosque y dorado)
+   Inspirado en kcinick00.github.io/ricodelico
+   ============================================ */
+[data-tema="delico"] {
+    --bg: #F5F0DC;
+    --bg-soft: #EDE6CC;
+    --bg-subtle: #E6DDBE;
+    --surface: #FFFBEE;
+    --surface-hover: #FFF6DC;
+    --surface-elevated: #FFFBEE;
+    --border: #D9CFA8;
+    --border-subtle: #E6DDBE;
+    --border-strong: #C4B78A;
+    --text: #1F3A25;
+    --text-secondary: #5B6B5E;
+    --text-tertiary: #7E8B7F;
+    --text-quaternary: #A3AC9F;
+    --text-inverse: #FFFBEE;
+    --primary: #2E7D46;
+    --primary-hover: #22623A;
+    --primary-dark: #22623A;
+    --primary-light: rgba(46, 125, 70, 0.10);
+    --primary-glow: rgba(46, 125, 70, 0.35);
+    --primary-contrast: #FFFBEE;
+    --accent: #E5A52E;
+    --accent-dark: #B98318;
+    --accent-light: rgba(229, 165, 46, 0.15);
+    --accent-contrast: #1F3A25;
+    --success: #2E7D46;
+    --success-dark: #22623A;
+    --success-light: rgba(46, 125, 70, 0.10);
+    --success-contrast: #FFFBEE;
+    --danger: #C0392B;
+    --danger-dark: #A02D21;
+    --danger-light: rgba(192, 57, 43, 0.10);
+    --danger-contrast: #FFFBEE;
+    --warning: #E5A52E;
+    --warning-dark: #A8750F;
+    --warning-light: rgba(229, 165, 46, 0.15);
+    --warning-contrast: #1F3A25;
+    --info: #C98436;
+    --info-dark: #9C6322;
+    --info-light: rgba(201, 132, 54, 0.12);
+    --info-contrast: #FFFBEE;
+    --shadow-xs: 0 1px 3px rgba(31, 58, 37, 0.08);
+    --shadow-sm: 0 2px 8px rgba(31, 58, 37, 0.12);
+    --shadow-md: 0 8px 24px rgba(31, 58, 37, 0.15);
+    --shadow-lg: 0 12px 32px rgba(31, 58, 37, 0.18);
+    --shadow-xl: 0 20px 48px rgba(31, 58, 37, 0.22);
+    --shadow-primary: 0 8px 24px rgba(46, 125, 70, 0.30);
+    --shadow-danger: 0 8px 24px rgba(192, 57, 43, 0.28);
+    --shadow-accent: 0 8px 24px rgba(229, 165, 46, 0.30);
+    --r-xs: 6px;
+    --r-sm: 10px;
+    --r-md: 18px;
+    --r-lg: 18px;
+    --r-xl: 24px;
+    --r-2xl: 32px;
+    --font-display: 'Bebas Neue', 'Inter', sans-serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+    --font-script: 'Caveat', cursive;
+}
+
+[data-tema="delico"] body { letter-spacing: 0; }
+
+/* Header */
+[data-tema="delico"] .topbar {
+    background: rgba(245, 240, 220, 0.88);
+    padding-top: max(14px, env(safe-area-inset-top));
+}
+[data-tema="delico"] .logo-text {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 30px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+[data-tema="delico"] .version-badge {
+    font-family: var(--font-script);
+    font-size: 17px;
+    font-weight: 700;
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--primary);
+    letter-spacing: 0;
+}
+[data-tema="delico"] .btn-icon {
+    background: transparent;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+}
+[data-tema="delico"] .btn-icon:hover { background: var(--surface); }
+
+/* Pestañas */
+[data-tema="delico"] .tabs {
+    background: linear-gradient(180deg, rgba(245,240,220,.97) 75%, rgba(245,240,220,.9) 100%);
+    gap: 6px;
+}
+[data-tema="delico"] .tab,
+[data-tema="delico"] .chip {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 16px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 8px 14px;
+    opacity: .9;
+}
+[data-tema="delico"] .chip { font-size: 14px; padding: 7px 13px; }
+[data-tema="delico"] .tab:hover:not(.active),
+[data-tema="delico"] .chip:hover {
+    background: var(--surface);
+    transform: translateY(-2px);
+    opacity: 1;
+}
+[data-tema="delico"] .tab.active,
+[data-tema="delico"] .chip.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--primary-contrast);
+    opacity: 1;
+    box-shadow: 0 4px 12px var(--primary-glow);
+}
+[data-tema="delico"] .badge { font-family: var(--font-mono); letter-spacing: 0; }
+
+/* Tarjetas */
+[data-tema="delico"] .stat-card,
+[data-tema="delico"] .stat-venta-card,
+[data-tema="delico"] .card-item {
+    border: 2px solid var(--border);
+    box-shadow: var(--shadow-sm);
+}
+[data-tema="delico"] .stat-venta-card { border-radius: 14px; }
+[data-tema="delico"] .stat-card:hover,
+[data-tema="delico"] .stat-venta-card:hover,
+[data-tema="delico"] .card-item:hover {
+    border-color: var(--primary);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+[data-tema="delico"] .stat-label,
+[data-tema="delico"] .stat-venta-label {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 15px;
+    letter-spacing: 1.5px;
+}
+[data-tema="delico"] .stat-venta-label { font-size: 13px; letter-spacing: 1px; }
+[data-tema="delico"] .stat-value { letter-spacing: -0.02em; }
+[data-tema="delico"] .card-titulo {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 22px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    line-height: 1.05;
+}
+[data-tema="delico"] .card-estatus {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 13px;
+    letter-spacing: 1px;
+    border-radius: 8px;
+}
+[data-tema="delico"] .card-monto { color: var(--primary); }
+
+/* Buscador / selects: iconos en verde */
+[data-tema="delico"] .input-buscar {
+    border-width: 2px;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%232E7D46' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='8' r='6'/%3E%3Cpath d='m16 16-4-4'/%3E%3C/svg%3E");
+}
+[data-tema="delico"] .select-filtro {
+    border-width: 2px;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%232E7D46' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 3 3 3-3'/%3E%3C/svg%3E");
+}
+[data-tema="delico"] input,
+[data-tema="delico"] select,
+[data-tema="delico"] textarea {
+    background-color: var(--surface);
+    color: var(--text);
+}
+
+/* Estado vacío */
+[data-tema="delico"] .vacio p,
+[data-tema="delico"] .vacio {
+    font-family: var(--font-body);
+}
+
+/* Botón flotante */
+[data-tema="delico"] .fab {
+    border-radius: 18px;
+    font-weight: 700;
+    box-shadow: 0 8px 24px rgba(46,125,70,.35), 0 0 0 4px var(--primary-light);
+}
+
+/* Modales */
+[data-tema="delico"] .modal-overlay { background: rgba(31, 58, 37, 0.55); }
+[data-tema="delico"] .modal {
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-bottom: none;
+}
+[data-tema="delico"] .modal-header { background: var(--bg); }
+[data-tema="delico"] .modal-header h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 28px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    line-height: 1;
+}
+[data-tema="delico"] .btn-cerrar { border-radius: 10px; border-width: 1.5px; background: transparent; }
+[data-tema="delico"] .modal-body label {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 15px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+[data-tema="delico"] .modal-body .checkbox-inline label {
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+}
+[data-tema="delico"] .modal-body input,
+[data-tema="delico"] .modal-body select,
+[data-tema="delico"] .modal-body textarea { border-width: 2px; }
+[data-tema="delico"] .modal-footer { background: var(--bg); }
+
+/* Botones principales */
+[data-tema="delico"] .btn {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 19px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    border-radius: 14px;
+    padding: 12px 20px;
+}
+[data-tema="delico"] .btn-primary:hover { transform: translateY(-2px); }
+
+/* Toast */
+[data-tema="delico"] .toast {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 17px;
+    letter-spacing: 1.5px;
+    border-radius: 14px;
+}
+[data-tema="delico"] .toast.info { background: var(--text); border-color: var(--text); }
+
+/* Selector de temas */
+[data-tema="delico"] .tema-option { border-width: 2px; }
+[data-tema="delico"] .tema-nombre {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 18px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+/* Scrollbars */
+[data-tema="delico"] * { scrollbar-color: var(--border) transparent; }
+
+.preview-delico span:nth-child(1) { background: #2E7D46; }
+.preview-delico span:nth-child(2) { background: #E5A52E; }
+.preview-delico span:nth-child(3) { background: #F5F0DC; }
+.preview-delico span:nth-child(4) { background: #1F3A25; }

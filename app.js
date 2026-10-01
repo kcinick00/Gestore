@@ -892,11 +892,11 @@ function renderizarProductos() {
             <div class="card-item" data-id="${p.id}">
                 <div class="card-header">
                     <div class="card-titulo">${escapeHtml(p.nombre)}</div>
-                    <span class="card-estatus" style="background:#e7f3ff; color:#0056b3;">${p.stock} ${p.unidad}</span>
+                    <span class="card-estatus" style="background:var(--primary-light); color:var(--primary-dark);">${p.stock} ${p.unidad}</span>
                 </div>
                 <div class="card-info">
                     <span class="card-fecha">💵 Compra: $${p.precioCompraUSD.toFixed(2)}</span>
-                    <span class="card-fecha" style="color:#28a745; font-weight:700;">💰 Venta: $${p.precioVentaUSD.toFixed(2)}</span>
+                    <span class="card-fecha" style="color:var(--success); font-weight:700;">💰 Venta: $${p.precioVentaUSD.toFixed(2)}</span>
                 </div>
                 <div class="card-info">
                     <span class="card-fecha">📊 Margen: ${p.margen}%</span>
@@ -966,7 +966,7 @@ function renderizarVentas() {
         sumTotal += tot;
     });
     document.getElementById('resumenVentas').innerHTML = 
-        `📊 <b>${filtradas.length}</b> registros · Ef: <b>${formatearUSD(sumEfectivo)}</b> · Ze: <b>${formatearUSD(sumZelle)}</b> · Pu: <b>${formatearUSD(sumPuntoUsd)}</b> · <b style="color:#28a745;">TOTAL: ${formatearUSD(sumTotal)}</b>`;
+        `📊 <b>${filtradas.length}</b> registros · Ef: <b>${formatearUSD(sumEfectivo)}</b> · Ze: <b>${formatearUSD(sumZelle)}</b> · Pu: <b>${formatearUSD(sumPuntoUsd)}</b> · <b style="color:var(--success);">TOTAL: ${formatearUSD(sumTotal)}</b>`;
 }
 
 function renderizarVentasDiaria(lista, filtradas) {
@@ -992,7 +992,7 @@ function renderizarVentasDiaria(lista, filtradas) {
             <div class="card-item estatus-Pagada" data-id-venta="${v.id}">
                 <div class="card-header">
                     <div class="card-titulo">📅 ${v.fecha}</div>
-                    <span class="card-estatus" style="background:#d4edda; color:#155724; font-weight:700;">${formatearUSD(tot)}</span>
+                    <span class="card-estatus" style="background:var(--success-light); color:var(--success-dark); font-weight:700;">${formatearUSD(tot)}</span>
                 </div>
                 <div class="card-info">
                     <span class="card-fecha">💵 Ef: <b>${formatearUSD(ef)}</b></span>
@@ -1075,7 +1075,7 @@ function renderizarVentasAgrupada(lista, filtradas, tipo) {
             <div class="card-item estatus-Pagada" data-grupo="${idx}" style="cursor:pointer;">
                 <div class="card-header">
                     <div class="card-titulo">${etiqueta}</div>
-                    <span class="card-estatus" style="background:#d4edda; color:#155724; font-weight:700; font-size:12px;">${formatearUSD(g.total)}</span>
+                    <span class="card-estatus" style="background:var(--success-light); color:var(--success-dark); font-weight:700; font-size:12px;">${formatearUSD(g.total)}</span>
                 </div>
                 <div class="card-info">
                     <span class="card-fecha">💵 Ef: <b>${formatearUSD(g.efectivo)}</b></span>
@@ -1102,10 +1102,10 @@ function renderizarVentasAgrupada(lista, filtradas, tipo) {
             const tot = parseFloat(v.total_usd) || (ef + ze + pu);
 
             html += `
-                <div class="card-item" style="padding: 10px; background: #fafafa;" data-id-venta="${v.id}">
+                <div class="card-item" style="padding: 10px; background: var(--bg-soft);" data-id-venta="${v.id}">
                     <div class="card-header" style="margin-bottom:4px;">
                         <div class="card-titulo" style="font-size:13px;">↳ ${v.fecha}</div>
-                        <span class="card-estatus" style="background:#d4edda; color:#155724; font-weight:700; font-size:11px;">${formatearUSD(tot)}</span>
+                        <span class="card-estatus" style="background:var(--success-light); color:var(--success-dark); font-weight:700; font-size:11px;">${formatearUSD(tot)}</span>
                     </div>
                     <div class="card-info" style="font-size:11px;">
                         <span class="card-fecha">Ef: <b>${formatearUSD(ef)}</b></span>
@@ -1420,12 +1420,12 @@ function previewPegadoVentas() {
     const filas = texto.split('\n').map(l => l.trim()).filter(l => l);
     let html = `<strong>Vista previa (${filas.length} filas):</strong><br>`;
     html += `<table style="width:100%; border-collapse:collapse; font-size:11px; margin-top:6px;">
-        <tr style="background:#e9ecef;"><th style="padding:4px; border:1px solid #ccc;">Fecha</th><th style="padding:4px; border:1px solid #ccc;">Efec.</th><th style="padding:4px; border:1px solid #ccc;">Zelle</th><th style="padding:4px; border:1px solid #ccc;">Punto $</th></tr>`;
+        <tr style="background:var(--bg-subtle);"><th style="padding:4px; border:1px solid var(--border);">Fecha</th><th style="padding:4px; border:1px solid var(--border);">Efec.</th><th style="padding:4px; border:1px solid var(--border);">Zelle</th><th style="padding:4px; border:1px solid var(--border);">Punto $</th></tr>`;
     
     filas.slice(0, 20).forEach(fila => {
         const partes = fila.split('\t');
         if (partes.length < 4) {
-            html += `<tr><td colspan="4" style="padding:4px; border:1px solid #ccc; color:#dc3545;">⚠️ Fila inválida</td></tr>`;
+            html += `<tr><td colspan="4" style="padding:4px; border:1px solid var(--border); color:var(--danger);">⚠️ Fila inválida</td></tr>`;
             return;
         }
         const fecha = parsearFechaExcel(partes[0]);
@@ -1434,15 +1434,15 @@ function previewPegadoVentas() {
         const pu = parsearMontoExcel(partes[3]);
         
         html += `<tr>
-            <td style="padding:4px; border:1px solid #ccc;">${fecha || `<span style="color:#dc3545;">❌ ${escapeHtml(partes[0])}</span>`}</td>
-            <td style="padding:4px; border:1px solid #ccc;">$${ef.toFixed(2)}</td>
-            <td style="padding:4px; border:1px solid #ccc;">$${ze.toFixed(2)}</td>
-            <td style="padding:4px; border:1px solid #ccc;">$${pu.toFixed(2)}</td>
+            <td style="padding:4px; border:1px solid var(--border);">${fecha || `<span style="color:var(--danger);">❌ ${escapeHtml(partes[0])}</span>`}</td>
+            <td style="padding:4px; border:1px solid var(--border);">$${ef.toFixed(2)}</td>
+            <td style="padding:4px; border:1px solid var(--border);">$${ze.toFixed(2)}</td>
+            <td style="padding:4px; border:1px solid var(--border);">$${pu.toFixed(2)}</td>
         </tr>`;
     });
     
     if (filas.length > 20) {
-        html += `<tr><td colspan="4" style="padding:4px; text-align:center; color:#6c757d;">... y ${filas.length - 20} filas más</td></tr>`;
+        html += `<tr><td colspan="4" style="padding:4px; text-align:center; color:var(--text-secondary);">... y ${filas.length - 20} filas más</td></tr>`;
     }
     
     html += `</table>`;
@@ -1751,9 +1751,9 @@ function abrirDetalleFactura(f) {
                 <div class="detalle-label">Productos (${f.productos.length})</div>
                 <div class="detalle-valor" style="font-size: 12px; margin-top: 6px;">
                     ${f.productos.map(p => `
-                        <div style="padding: 6px 8px; background:#f8f9fa; border-radius:4px; margin-bottom:4px; display:flex; justify-content:space-between;">
+                        <div style="padding: 6px 8px; background:var(--bg-soft); border-radius:4px; margin-bottom:4px; display:flex; justify-content:space-between;">
                             <span>${escapeHtml(p.nombre)}</span>
-                            <span style="color:#6c757d;">${p.cantidad} × $${parseFloat(p.precio_unitario || 0).toFixed(2)}</span>
+                            <span style="color:var(--text-secondary);">${p.cantidad} × $${parseFloat(p.precio_unitario || 0).toFixed(2)}</span>
                         </div>
                     `).join('')}
                 </div>
@@ -2686,9 +2686,9 @@ function configurarFotoFactura() {
                 const previewProd = document.getElementById('previewProductos');
                 const listaPrev = document.getElementById('listaProductosPreview');
                 listaPrev.innerHTML = productosDetectados.map(p => 
-                    `<div style="padding:4px 0; border-bottom:1px solid #e0e0e0; display:flex; justify-content:space-between;">
+                    `<div style="padding:4px 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between;">
                         <span>${escapeHtml(p.nombre)}</span>
-                        <span style="color:#666;">${p.cantidad} × $${p.precio_unitario.toFixed(4)} ${p.tiene_iva ? '(IVA 16%)' : '(Exento)'}</span>
+                        <span style="color:var(--text-secondary);">${p.cantidad} × $${p.precio_unitario.toFixed(4)} ${p.tiene_iva ? '(IVA 16%)' : '(Exento)'}</span>
                     </div>`
                 ).join('');
                 previewProd.classList.remove('hidden');
@@ -2792,7 +2792,7 @@ async function procesarCapturaPago(event) {
         if (datos.nombre_receptor) html += `👤 Receptor: ${datos.nombre_receptor}<br>`;
         if (datos.cedula_receptor) html += `🆔 Cédula/RIF: ${datos.cedula_receptor}<br>`;
         if (datos.telefono_receptor) html += `📱 Teléfono: ${datos.telefono_receptor}<br>`;
-        html += `<br><em style="color:#28a745;">✅ Revisa y guarda</em>`;
+        html += `<br><em style="color:var(--success);">✅ Revisa y guarda</em>`;
         resumen.innerHTML = html;
 
         document.getElementById('modalConfirmarPago').classList.remove('hidden');
@@ -3430,7 +3430,7 @@ async function procesarArchivosPdfPwa(files) {
         const validos = pagos.filter(p => !p.error && p.confianza !== 'baja').length;
         const conError = pagos.filter(p => p.error).length;
 
-        let html = `<div style="background: rgba(255, 107, 0, 0.08); border-left: 4px solid #FF6B00; padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+        let html = `<div style="background: var(--accent-light); border-left: 4px solid var(--accent); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
             <strong>📊 Resultado:</strong> ${pagos.length} PDFs procesados<br>
             ✅ ${validos} válidos · ❌ ${conError} con error
         </div>`;
@@ -3445,9 +3445,9 @@ async function procesarArchivosPdfPwa(files) {
                 <div style="font-weight: 700; color: ${color}; margin-bottom: 4px;">${icono} ${escapeHtml(p.archivo)}</div>`;
 
             if (p.error) {
-                html += `<div style="color: #dc3545;">${escapeHtml(p.error)}</div>`;
+                html += `<div style="color: var(--danger);">${escapeHtml(p.error)}</div>`;
             } else if (p.esDuplicado) {
-                html += `<div style="color: #ffc107;">⚠️ Ya existe un pago similar</div>`;
+                html += `<div style="color: var(--warning);">⚠️ Ya existe un pago similar</div>`;
                 html += `<div>📅 ${p.fecha} · 💵 ${formatearMontoBs(p.montoBs)} Bs · 👤 ${escapeHtml(p.beneficiario || 'N/A')}</div>`;
             } else {
                 html += `<div>📅 ${p.fecha} · 💵 ${formatearMontoBs(p.montoBs)} Bs${p.montoUSD ? ` ($${p.montoUSD.toFixed(2)})` : ''}</div>`;
@@ -3539,6 +3539,14 @@ function mostrarToast(mensaje, tipo = 'info') {
 
 const TEMAS = [
     {
+        id: 'delico',
+        nombre: 'Rico Delico',
+        emoji: '🥪',
+        preview: 'preview-delico',
+        color: '#2E7D46',
+        descripcion: 'Crema, verde y dorado'
+    },
+    {
         id: 'auto',
         nombre: 'Automático',
         emoji: '🌗',
@@ -3581,7 +3589,7 @@ const TEMAS = [
 ];
 
 const TEMA_KEY = 'gestore_tema';
-const TEMA_DEFAULT = 'paypal';
+const TEMA_DEFAULT = 'delico';
 
 function getTemaGuardado() {
     try {
