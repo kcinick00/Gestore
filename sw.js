@@ -1,5 +1,5 @@
 // Service Worker para Gestore PWA v9
-const CACHE_NAME = 'gestore-v12.5';
+const CACHE_NAME = 'gestore-v12.7';
 const URLS_TO_CACHE = [
     './',
     './index.html',
@@ -43,8 +43,16 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
+    // Primero la red (así siempre llegan las versiones nuevas); si no hay internet, la caché
     event.respondWith(
-        caches.match(event.request)
-            .then(response => response || fetch(event.request))
+        fetch(event.request)
+            .then(resp => {
+                if (resp && resp.ok && event.request.method === 'GET' && event.request.url.startsWith(self.location.origin)) {
+                    const copia = resp.clone();
+                    caches.open(CACHE_NAME).then(c => c.put(event.request, copia));
+                }
+                return resp;
+            })
+            .catch(() => caches.match(event.request))
     );
 });

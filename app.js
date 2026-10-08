@@ -212,6 +212,7 @@ function configurarEventos() {
         });
     });
     document.getElementById('btnMargenesTipo').addEventListener('click', abrirModalMargenesTipo);
+    document.getElementById('btnNuevoProducto').addEventListener('click', abrirModalNuevoProducto);
     document.getElementById('btnModoSeleccion').addEventListener('click', () => {
         modoSeleccion = !modoSeleccion;
         if (!modoSeleccion) seleccionProductos.clear();
@@ -2052,6 +2053,7 @@ function abrirDetallePago(p) {
 function abrirModalEditarProducto(p) {
     productoEditando = p;
     console.log("📝 Editando producto:", p.nombre);
+    configurarModalProductoNuevo(false);
 
     document.getElementById('editNombre').value = p.nombre || '';
     document.getElementById('editUnidad').value = p.unidad || 'UND';
@@ -2079,6 +2081,42 @@ function abrirModalEditarProducto(p) {
     setTimeout(() => {
         if (checkCompra && checkCompra._refresh) checkCompra._refresh();
         recalcularPrecioVenta();
+    }, 50);
+
+    document.getElementById('modalEditarProducto').classList.remove('hidden');
+}
+
+// ===== Ingreso manual de un producto nuevo (reusa el modal de edición) =====
+function configurarModalProductoNuevo(esNuevo) {
+    const titulo = document.getElementById('tituloModalProducto');
+    if (titulo) titulo.textContent = esNuevo ? '➕ Nuevo Producto' : '✏️ Editar Producto';
+    ['btnEliminarEditarProducto', 'btnEtiquetaEditarProducto'].forEach(id => {
+        const b = document.getElementById(id);
+        if (b) b.style.display = esNuevo ? 'none' : '';
+    });
+}
+
+function abrirModalNuevoProducto() {
+    productoEditando = { esNuevo: true, id: null, nombre: '' };
+    configurarModalProductoNuevo(true);
+
+    document.getElementById('editNombre').value = '';
+    document.getElementById('editUnidad').value = 'UND';
+    document.getElementById('editStock').value = 0;
+    const checkCompra = document.getElementById('checkUSDPrecioCompra');
+    if (checkCompra) checkCompra.checked = true;
+    document.getElementById('editPrecioCompra').value = '';
+    document.getElementById('editMargen').value = MARGEN_DEFECTO_TIPO;
+    document.getElementById('editTieneIva').checked = false;
+    document.getElementById('editUnidadesCaja').value = 0;
+    document.getElementById('editPrecioCaja').value = 0;
+    document.getElementById('editNotas').value = '';
+    seleccionarTipoEnModal('viveres');
+
+    setTimeout(() => {
+        if (checkCompra && checkCompra._refresh) checkCompra._refresh();
+        recalcularPrecioVenta();
+        document.getElementById('editNombre').focus();
     }, 50);
 
     document.getElementById('modalEditarProducto').classList.remove('hidden');
@@ -2299,6 +2337,51 @@ async function guardarEditarProducto() {
 
     const costoConIva = precioBasePorUnidad * (1 + iva / 100);
     const precioVenta = costoConIva * (1 + margen / 100);
+
+    if (productoEditando.esNuevo) {
+        if (precioBaseUSD <= 0) {
+            mostrarToast('Ingresa el precio de compra', 'error');
+            return;
+        }
+        const norm = normalizarNombre(nombre);
+        if (datos.productos.some(x => x.nombreNormalizado === norm) &&
+            !confirm(`Ya existe un producto llamado "${nombre}". ¿Crearlo de todos modos?`)) {
+            return;
+        }
+        try {
+            const fila = {
+                id: Date.now() + Math.floor(Math.random() * 100000),
+                nombre: nombre,
+                nombre_normalizado: norm,
+                unidad: unidad,
+                stock: stock,
+                precio_compra_usd: parseFloat(precioBaseUSD.toFixed(4)),
+                margen: margen,
+                precio_venta_usd: parseFloat(precioVenta.toFixed(4)),
+                iva: iva,
+                exento: exento,
+                unidades_caja: unidadesCaja,
+                precio_caja_usd: parseFloat(precioCajaUSD.toFixed(4)),
+                notas: notas,
+                tipo: tipo || null,
+                created_at: new Date().toISOString()
+            };
+            let { error } = await supabaseClient.from('productos').insert([fila]);
+            if (error && /tipo/i.test(error.message || '')) {
+                delete fila.tipo;
+                ({ error } = await supabaseClient.from('productos').insert([fila]));
+                if (!error) mostrarToast('⚠️ Creado sin tipo: ejecuta migracion_tipos.sql en Supabase', 'error');
+            }
+            if (error) throw error;
+            mostrarToast('✅ Producto agregado al inventario', 'success');
+            cerrarModalEditarProducto();
+            cargarDatos();
+        } catch (error) {
+            console.error('Error al crear producto:', error);
+            mostrarToast('Error al crear: ' + error.message, 'error');
+        }
+        return;
+    }
 
     try {
         const cambios = {

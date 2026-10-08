@@ -204,6 +204,7 @@
                 <button class="chip" data-tipo="frescos">🥬 Frescos</button>
                 <button class="chip" data-tipo="sin_tipo">Sin tipo</button>
             </div>
+            <button class="btn btn-primary" id="btnNuevoProducto" style="width:100%; margin-bottom:10px;">➕ Nuevo producto</button>
             <div style="display:flex; gap:8px; margin-bottom:10px;">
                 <button class="btn btn-secondary" id="btnMargenesTipo" style="flex:1;">⚙️ Márgenes por tipo</button>
                 <button class="btn btn-secondary" id="btnModoSeleccion" style="flex:1;">☑️ Seleccionar varios</button>
@@ -417,7 +418,7 @@
     <div class="modal-overlay hidden" id="modalEditarProducto">
         <div class="modal">
             <div class="modal-header">
-                <h3>✏️ Editar Producto</h3>
+                <h3 id="tituloModalProducto">✏️ Editar Producto</h3>
                 <button class="btn-cerrar" id="btnCerrarEditarProducto">✕</button>
             </div>
             <div class="modal-body">
@@ -927,8 +928,8 @@
     <script src="libs/pdf.min.js"></script>
     <script src="tasas-bcv.js"></script>
     <script src="importar-pdf.js"></script>
-    <script src="etiqueta.js?v=1"></script>
-    <script src="app.js?v=12.5"></script>
+    <script src="etiqueta.js?v=2"></script>
+    <script src="app.js?v=12.7"></script>
 
     <script>
         if ('serviceWorker' in navigator) {
