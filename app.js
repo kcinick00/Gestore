@@ -29,10 +29,27 @@ let datos = { facturas: [], pagos: [], productos: [], ventas_diarias: [] };
 let filtros = { 
     facturas: { texto: '', estatus: 'activas', orden: 'fecha', direccion: 'asc' },
     pagos: { texto: '', orden: 'fecha', direccion: 'desc' },
-    productos: { texto: '', orden: 'nombre', direccion: 'asc' },
+    productos: { texto: '', orden: 'nombre', direccion: 'asc', tipo: 'todos' },
     ventas: { texto: '', mes: 'todos', vista: 'diaria', orden: 'fecha', direccion: 'desc' }
 };
 let tasaActual = null;
+
+// ===== Tipos de producto y margen por tipo =====
+const TIPOS_PRODUCTO = [
+    { id: 'viveres',  nombre: 'Víveres',  emoji: '🛒' },
+    { id: 'quesos',   nombre: 'Quesos',   emoji: '🧀' },
+    { id: 'jamones',  nombre: 'Jamones',  emoji: '🍖' },
+    { id: 'ahumados', nombre: 'Ahumados', emoji: '🥓' },
+    { id: 'frescos',  nombre: 'Frescos',  emoji: '🥬' }
+];
+const MARGEN_DEFECTO_TIPO = 30;
+let margenesTipo = {};
+
+function infoTipo(id) { return TIPOS_PRODUCTO.find(t => t.id === id) || null; }
+function margenDeTipo(tipo) {
+    const m = margenesTipo[tipo];
+    return (m === undefined || m === null || isNaN(m)) ? MARGEN_DEFECTO_TIPO : m;
+}
 
 let productosDetectados = [];
 let facturaTemporalParaProductos = null;
@@ -164,6 +181,20 @@ function configurarEventos() {
     document.getElementById('editPrecioCompra').addEventListener('change', recalcularPrecioVenta);
     document.getElementById('editMargen').addEventListener('input', recalcularPrecioVenta);
     document.getElementById('editMargen').addEventListener('change', recalcularPrecioVenta);
+    document.querySelectorAll('#editTipoGrupo .chk-tipo').forEach(chk => chk.addEventListener('change', onCambioTipo));
+
+    document.querySelectorAll('#chipsTipoProductos .chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            filtros.productos.tipo = chip.dataset.tipo;
+            document.querySelectorAll('#chipsTipoProductos .chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            renderizarProductos();
+        });
+    });
+    document.getElementById('btnMargenesTipo').addEventListener('click', abrirModalMargenesTipo);
+    document.getElementById('btnCerrarMargenesTipo').addEventListener('click', cerrarModalMargenesTipo);
+    document.getElementById('btnCancelarMargenesTipo').addEventListener('click', cerrarModalMargenesTipo);
+    document.getElementById('btnGuardarMargenesTipo').addEventListener('click', guardarMargenesTipo);
     document.getElementById('editUnidadesCaja').addEventListener('input', recalcularPrecioVenta);
     document.getElementById('editUnidadesCaja').addEventListener('change', recalcularPrecioVenta);
     document.getElementById('editTieneIva').addEventListener('change', recalcularPrecioVenta);
@@ -347,6 +378,7 @@ async function cargarDatos() {
         datos.facturas = (facturasResp.data || []).map(dbToFactura);
         datos.pagos = (pagosResp.data || []).map(dbToPago);
         datos.productos = (productosResp.data || []).map(dbToProducto);
+        await cargarMargenesTipo();
         datos.ventas_diarias = (ventasResp.data || []).map(dbToVentaDiaria);
 
         console.log(`✅ Cargados: ${datos.facturas.length} facturas, ${datos.pagos.length} pagos, ${datos.productos.length} productos, ${datos.ventas_diarias.length} ventas`);
@@ -362,6 +394,18 @@ async function cargarDatos() {
     } catch (error) {
         console.error('❌ Error al cargar:', error);
         mostrarToast('Error al cargar datos', 'error');
+    }
+}
+
+async function cargarMargenesTipo() {
+    try {
+        const { data, error } = await supabaseClient.from('margenes_tipo').select('*');
+        if (error) throw error;
+        const m = {};
+        (data || []).forEach(r => { m[r.tipo] = parseFloat(r.margen_pct); });
+        margenesTipo = m;
+    } catch (e) {
+        console.warn('⚠️ margenes_tipo no disponible (¿ejecutaste migracion_tipos.sql?):', e.message || e);
     }
 }
 
@@ -418,6 +462,7 @@ function dbToProducto(row) {
         precioCompraUSD: parseFloat(row.precio_compra_usd) || 0,
         precioVentaUSD: parseFloat(row.precio_venta_usd) || 0,
         margen: parseFloat(row.margen) || 30,
+        tipo: row.tipo || '',
         iva: parseFloat(row.iva) || 0,
         exento: row.exento || false,
         ultimoProveedor: row.ultimo_proveedor || '',
@@ -876,6 +921,12 @@ function renderizarProductos() {
         );
     }
 
+    if (filtros.productos.tipo === 'sin_tipo') {
+        filtrados = filtrados.filter(p => !p.tipo);
+    } else if (filtros.productos.tipo && filtros.productos.tipo !== 'todos') {
+        filtrados = filtrados.filter(p => p.tipo === filtros.productos.tipo);
+    }
+
     filtrados = ordenarLista(filtrados, filtros.productos.orden, filtros.productos.direccion);
 
     if (filtrados.length === 0) {
@@ -891,7 +942,7 @@ function renderizarProductos() {
         return `
             <div class="card-item" data-id="${p.id}">
                 <div class="card-header">
-                    <div class="card-titulo">${escapeHtml(p.nombre)}</div>
+                    <div class="card-titulo">${escapeHtml(p.nombre)}${p.tipo && infoTipo(p.tipo) ? ` <span class="tipo-badge">${infoTipo(p.tipo).emoji} ${infoTipo(p.tipo).nombre}</span>` : ''}</div>
                     <span class="card-estatus" style="background:var(--primary-light); color:var(--primary-dark);">${p.stock} ${p.unidad}</span>
                 </div>
                 <div class="card-info">
@@ -1676,9 +1727,15 @@ function abrirModalMargenMasivo() {
         return;
     }
     
+    const sinTipo = datos.productos.filter(p => !p.tipo);
+    if (sinTipo.length === 0) {
+        mostrarToast('Todos los productos tienen tipo. Usa "Márgenes por tipo".', 'info');
+        abrirModalMargenesTipo();
+        return;
+    }
     let suma = 0;
-    datos.productos.forEach(p => suma += (p.margen || 0));
-    const promedio = (suma / datos.productos.length).toFixed(1);
+    sinTipo.forEach(p => suma += (p.margen || 0));
+    const promedio = (suma / sinTipo.length).toFixed(1);
     
     document.getElementById('inputMargenMasivo').value = promedio;
     document.getElementById('modalMargenMasivo').classList.remove('hidden');
@@ -1696,7 +1753,9 @@ async function aplicarMargenMasivo() {
         return;
     }
 
-    if (!confirm(`⚠️ Aplicar margen ${nuevoMargen}% a TODOS los productos (${datos.productos.length})?\n\nEsta acción recalculará los precios de venta.`)) {
+    const objetivo = datos.productos.filter(p => !p.tipo);
+    const conTipo = datos.productos.length - objetivo.length;
+    if (!confirm(`⚠️ Aplicar margen ${nuevoMargen}% a ${objetivo.length} productos SIN tipo?\n\n${conTipo > 0 ? `(${conTipo} productos con tipo no se tocan: usan el margen de su tipo.)\n\n` : ''}Esta acción recalculará los precios de venta.`)) {
         return;
     }
 
@@ -1707,7 +1766,7 @@ async function aplicarMargenMasivo() {
     let actualizados = 0;
     let errores = 0;
 
-    for (const p of datos.productos) {
+    for (const p of objetivo) {
         try {
             const precioVenta = p.precioCompraUSD * (1 + nuevoMargen / 100);
 
@@ -1866,6 +1925,7 @@ function abrirModalEditarProducto(p) {
     document.getElementById('editPrecioCompra').value = precioBase.toFixed(4);
     
     document.getElementById('editMargen').value = p.margen || 30;
+    seleccionarTipoEnModal(p.tipo || '');
     document.getElementById('editTieneIva').checked = tieneIva;
     document.getElementById('editUnidadesCaja').value = p.unidadesCaja || 0;
 
@@ -1905,7 +1965,8 @@ function recalcularPrecioVenta() {
         ? valorIngresado 
         : (tasaActual > 0 ? valorIngresado / tasaActual : 0);
 
-    const margen = parseFloat(margenInput.value) || 0;
+    const tipoSel = obtenerTipoSeleccionado();
+    const margen = tipoSel ? margenDeTipo(tipoSel) : (parseFloat(margenInput.value) || 0);
     const unidadesCaja = parseFloat(unidadesCajaInput.value) || 0;
     const tieneIva = tieneIvaCheckbox ? tieneIvaCheckbox.checked : false;
     const ivaPct = tieneIva ? TASA_IVA : 0;
@@ -1952,6 +2013,112 @@ function recalcularPrecioVenta() {
     }
 }
 
+function obtenerTipoSeleccionado() {
+    const chk = document.querySelector('#editTipoGrupo .chk-tipo:checked');
+    return chk ? chk.dataset.tipo : '';
+}
+
+function seleccionarTipoEnModal(tipo) {
+    document.querySelectorAll('#editTipoGrupo .chk-tipo').forEach(chk => {
+        chk.checked = (chk.dataset.tipo === tipo);
+        chk.parentElement.classList.toggle('activo', chk.checked);
+    });
+    aplicarMargenDelTipo();
+}
+
+function aplicarMargenDelTipo() {
+    const tipo = obtenerTipoSeleccionado();
+    const input = document.getElementById('editMargen');
+    const info = document.getElementById('editMargenTipoInfo');
+    if (tipo) {
+        input.value = margenDeTipo(tipo);
+        input.readOnly = true;
+        input.style.opacity = '0.7';
+        const t = infoTipo(tipo);
+        info.textContent = `🔒 Margen de ${t.emoji} ${t.nombre}: ${margenDeTipo(tipo)}% (se cambia en "Márgenes por tipo").`;
+    } else {
+        input.readOnly = false;
+        input.style.opacity = '';
+        info.textContent = '💡 Sin tipo: escribes el margen a mano. Con tipo: usa el margen de ese tipo.';
+    }
+    recalcularPrecioVenta();
+}
+
+function onCambioTipo(e) {
+    const marcado = e.target.checked;
+    document.querySelectorAll('#editTipoGrupo .chk-tipo').forEach(chk => {
+        if (chk !== e.target) chk.checked = false;
+    });
+    seleccionarTipoEnModal(marcado ? e.target.dataset.tipo : '');
+}
+
+// ===== Modal: márgenes por tipo =====
+function abrirModalMargenesTipo() {
+    const cont = document.getElementById('listaMargenesTipo');
+    cont.innerHTML = TIPOS_PRODUCTO.map(t => {
+        const n = datos.productos.filter(p => p.tipo === t.id).length;
+        return `<div class="fila-margen-tipo">
+            <div class="nombre">${t.emoji} ${t.nombre}<span class="cuenta">${n} producto${n === 1 ? '' : 's'}</span></div>
+            <input type="number" step="1" min="0" max="500" inputmode="decimal" data-tipo="${t.id}" value="${margenDeTipo(t.id)}">
+            <span>%</span>
+        </div>`;
+    }).join('');
+    const sin = datos.productos.filter(p => !p.tipo).length;
+    document.getElementById('resumenSinTipo').textContent = `${sin} producto${sin === 1 ? '' : 's'} sin tipo (conservan su margen propio).`;
+    document.getElementById('modalMargenesTipo').classList.remove('hidden');
+}
+
+function cerrarModalMargenesTipo() {
+    document.getElementById('modalMargenesTipo').classList.add('hidden');
+}
+
+async function guardarMargenesTipo() {
+    const nuevos = {};
+    for (const inp of document.querySelectorAll('#listaMargenesTipo input')) {
+        const v = parseFloat(inp.value);
+        if (isNaN(v) || v < 0 || v > 500) {
+            mostrarToast('Margen inválido (0-500)', 'error');
+            return;
+        }
+        nuevos[inp.dataset.tipo] = v;
+    }
+
+    const btn = document.getElementById('btnGuardarMargenesTipo');
+    btn.disabled = true;
+    btn.textContent = '⏳ Guardando...';
+
+    try {
+        const filas = Object.keys(nuevos).map(t => ({ tipo: t, margen_pct: nuevos[t], updated_at: new Date().toISOString() }));
+        const { error } = await supabaseClient.from('margenes_tipo').upsert(filas, { onConflict: 'tipo' });
+        if (error) throw error;
+        margenesTipo = { ...margenesTipo, ...nuevos };
+
+        let actualizados = 0, errores = 0;
+        for (const p of datos.productos) {
+            if (!p.tipo || nuevos[p.tipo] === undefined) continue;
+            const m = nuevos[p.tipo];
+            const precioVenta = p.precioCompraUSD * (1 + m / 100);
+            const { error: e2 } = await supabaseClient.from('productos').update({
+                margen: m,
+                precio_venta_usd: parseFloat(precioVenta.toFixed(4)),
+                updated_at: new Date().toISOString()
+            }).eq('id', p.id);
+            if (e2) errores++; else actualizados++;
+        }
+
+        if (errores > 0) mostrarToast(`⚠️ ${actualizados} recalculados, ${errores} errores`, 'error');
+        else mostrarToast(`✅ Márgenes guardados. ${actualizados} productos recalculados`, 'success');
+        cerrarModalMargenesTipo();
+        cargarDatos();
+    } catch (e) {
+        console.error('Error al guardar márgenes por tipo:', e);
+        mostrarToast('Error: ' + (e.message || e) + ' (¿ejecutaste migracion_tipos.sql?)', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '💾 Guardar y recalcular';
+    }
+}
+
 async function guardarEditarProducto() {
     if (!productoEditando) return;
 
@@ -1975,7 +2142,8 @@ async function guardarEditarProducto() {
     // v8.4 - Precio de caja SIEMPRE en USD
     const precioCajaUSD = parseFloat(document.getElementById('editPrecioCaja').value) || 0;
 
-    const margen = parseFloat(document.getElementById('editMargen').value) || 30;
+    const tipo = obtenerTipoSeleccionado();
+    const margen = tipo ? margenDeTipo(tipo) : (parseFloat(document.getElementById('editMargen').value) || 30);
     const tieneIva = document.getElementById('editTieneIva').checked;
     const exento = !tieneIva;
     const iva = tieneIva ? TASA_IVA : 0;
@@ -1991,7 +2159,7 @@ async function guardarEditarProducto() {
     const precioVenta = costoConIva * (1 + margen / 100);
 
     try {
-        const { error } = await supabaseClient.from('productos').update({
+        const cambios = {
             nombre: nombre,
             nombre_normalizado: normalizarNombre(nombre),
             unidad: unidad,
@@ -2004,8 +2172,18 @@ async function guardarEditarProducto() {
             unidades_caja: unidadesCaja,
             precio_caja_usd: parseFloat(precioCajaUSD.toFixed(4)),
             notas: notas,
+            tipo: tipo || null,
             updated_at: new Date().toISOString()
-        }).eq('id', productoEditando.id);
+        };
+        let { error } = await supabaseClient.from('productos').update(cambios).eq('id', productoEditando.id);
+
+        // Si falta la columna "tipo", guardar sin ella y avisar
+        if (error && /tipo/i.test(error.message || '')) {
+            delete cambios.tipo;
+            const r2 = await supabaseClient.from('productos').update(cambios).eq('id', productoEditando.id);
+            error = r2.error;
+            if (!error) mostrarToast('⚠️ Guardado sin tipo: ejecuta migracion_tipos.sql en Supabase', 'error');
+        }
 
         if (error) throw error;
 
@@ -3274,11 +3452,15 @@ async function confirmarProductos() {
                 const existente = existentes[0];
                 const nuevoStock = parseFloat(existente.stock || 0) + parseFloat(prod.cantidad || 0);
 
+                // Si el producto ya tiene tipo, manda el margen de su tipo
+                const margenFinal = existente.tipo ? margenDeTipo(existente.tipo) : (prod.margen || 30);
+                const precioVentaFinal = costoConIva * (1 + margenFinal / 100);
+
                 const { error: errUpdate } = await supabaseClient.from('productos').update({
                     stock: nuevoStock,
                     precio_compra_usd: parseFloat(costoConIva.toFixed(4)),
-                    precio_venta_usd: parseFloat(precioVenta.toFixed(4)),
-                    margen: prod.margen || 30,
+                    precio_venta_usd: parseFloat(precioVentaFinal.toFixed(4)),
+                    margen: margenFinal,
                     iva: ivaPct,
                     exento: !prod.tiene_iva,
                     unidades_caja: prod.unidades_caja || 0,
