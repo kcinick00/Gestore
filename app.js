@@ -44,6 +44,9 @@ const TIPOS_PRODUCTO = [
 ];
 const MARGEN_DEFECTO_TIPO = 30;
 let margenesTipo = {};
+let modoSeleccion = false;
+const seleccionProductos = new Set();
+let idsVisibles = [];
 
 function infoTipo(id) { return TIPOS_PRODUCTO.find(t => t.id === id) || null; }
 function margenDeTipo(tipo) {
@@ -192,6 +195,16 @@ function configurarEventos() {
         });
     });
     document.getElementById('btnMargenesTipo').addEventListener('click', abrirModalMargenesTipo);
+    document.getElementById('btnModoSeleccion').addEventListener('click', () => {
+        modoSeleccion = !modoSeleccion;
+        if (!modoSeleccion) seleccionProductos.clear();
+        document.getElementById('btnModoSeleccion').textContent = modoSeleccion ? '✖️ Salir de selección' : '☑️ Seleccionar varios';
+        actualizarBarraSeleccion();
+        renderizarProductos();
+    });
+    document.getElementById('btnSeleccionarVisibles').addEventListener('click', () => { idsVisibles.forEach(id => seleccionProductos.add(id)); renderizarProductos(); });
+    document.getElementById('btnQuitarSeleccion').addEventListener('click', () => { seleccionProductos.clear(); renderizarProductos(); });
+    document.getElementById('btnAplicarTipoMasivo').addEventListener('click', aplicarTipoMasivo);
     document.getElementById('btnCerrarMargenesTipo').addEventListener('click', cerrarModalMargenesTipo);
     document.getElementById('btnCancelarMargenesTipo').addEventListener('click', cerrarModalMargenesTipo);
     document.getElementById('btnGuardarMargenesTipo').addEventListener('click', guardarMargenesTipo);
@@ -462,7 +475,7 @@ function dbToProducto(row) {
         precioCompraUSD: parseFloat(row.precio_compra_usd) || 0,
         precioVentaUSD: parseFloat(row.precio_venta_usd) || 0,
         margen: parseFloat(row.margen) || 30,
-        tipo: row.tipo || '',
+        tipo: row.tipo || 'viveres',
         iva: parseFloat(row.iva) || 0,
         exento: row.exento || false,
         ultimoProveedor: row.ultimo_proveedor || '',
@@ -934,15 +947,16 @@ function renderizarProductos() {
         return;
     }
 
+    idsVisibles = filtrados.map(p => p.id);
     lista.innerHTML = filtrados.map(p => {
         const infoCaja = p.unidadesCaja > 0 && p.precioCajaUSD > 0 
             ? `<span class="card-fecha">📦 Caja: $${p.precioCajaUSD.toFixed(2)} (${p.unidadesCaja} und)</span>` 
             : '';
         
         return `
-            <div class="card-item" data-id="${p.id}">
+            <div class="card-item" data-id="${p.id}" ${seleccionProductos.has(p.id) ? 'style="outline:3px solid var(--primary);"' : ''}>
                 <div class="card-header">
-                    <div class="card-titulo">${escapeHtml(p.nombre)}${p.tipo && infoTipo(p.tipo) ? ` <span class="tipo-badge">${infoTipo(p.tipo).emoji} ${infoTipo(p.tipo).nombre}</span>` : ''}</div>
+                    <div class="card-titulo">${modoSeleccion ? `<input type="checkbox" class="chk-sel" ${seleccionProductos.has(p.id) ? 'checked' : ''} style="width:20px;height:20px;margin-right:8px;vertical-align:middle;pointer-events:none;">` : ''}${escapeHtml(p.nombre)}${p.tipo && infoTipo(p.tipo) ? ` <span class="tipo-badge">${infoTipo(p.tipo).emoji} ${infoTipo(p.tipo).nombre}</span>` : ''}</div>
                     <span class="card-estatus" style="background:var(--primary-light); color:var(--primary-dark);">${p.stock} ${p.unidad}</span>
                 </div>
                 <div class="card-info">
@@ -959,10 +973,16 @@ function renderizarProductos() {
         `;
     }).join('');
 
+    actualizarBarraSeleccion();
     lista.querySelectorAll('.card-item').forEach(card => {
         card.addEventListener('click', () => {
             const id = parseInt(card.dataset.id);
             const producto = datos.productos.find(p => p.id === id);
+            if (modoSeleccion) {
+                if (seleccionProductos.has(id)) seleccionProductos.delete(id); else seleccionProductos.add(id);
+                renderizarProductos();
+                return;
+            }
             if (producto) abrirModalEditarProducto(producto);
         });
     });
@@ -1721,24 +1741,103 @@ function actualizarBadge() {
     }
 }
 
+function actualizarBarraSeleccion() {
+    document.getElementById('barraSeleccion').classList.toggle('hidden', !modoSeleccion);
+    document.getElementById('contadorSeleccion').textContent = seleccionProductos.size;
+}
+
+async function aplicarTipoMasivo() {
+    const valor = document.getElementById('tipoMasivoSelect').value;
+    const tipo = valor === 'sin_tipo' ? '' : valor;
+    const elegidos = datos.productos.filter(p => seleccionProductos.has(p.id));
+    if (elegidos.length === 0) { mostrarToast('Selecciona al menos un producto', 'error'); return; }
+    const nombre = tipo ? `${infoTipo(tipo).emoji} ${infoTipo(tipo).nombre} (margen ${margenDeTipo(tipo)}%)` : 'Sin tipo (conservan su margen)';
+    if (!confirm(`¿Cambiar ${elegidos.length} productos a ${nombre}?`)) return;
+
+    const btn = document.getElementById('btnAplicarTipoMasivo');
+    btn.disabled = true;
+    let ok = 0, errores = 0, sinColumna = false;
+    for (const p of elegidos) {
+        const margen = tipo ? margenDeTipo(tipo) : (p.margen || 30);
+        const cambios = {
+            tipo: tipo || null,
+            margen: margen,
+            precio_venta_usd: parseFloat((p.precioCompraUSD * (1 + margen / 100)).toFixed(4)),
+            updated_at: new Date().toISOString()
+        };
+        let { error } = await supabaseClient.from('productos').update(cambios).eq('id', p.id);
+        if (error && /tipo/i.test(error.message || '')) {
+            delete cambios.tipo;
+            ({ error } = await supabaseClient.from('productos').update(cambios).eq('id', p.id));
+            sinColumna = true;
+        }
+        if (error) errores++; else ok++;
+    }
+    btn.disabled = false;
+    if (sinColumna) mostrarToast('⚠️ No se guardó el tipo: ejecuta migracion_tipos.sql', 'error');
+    else if (errores) mostrarToast(`⚠️ ${ok} cambiados, ${errores} errores`, 'error');
+    else mostrarToast(`✅ ${ok} productos cambiados`, 'success');
+    seleccionProductos.clear();
+    actualizarBarraSeleccion();
+    cargarDatos();
+}
+
+function productosDeAlcance(alcance) {
+    if (alcance === 'todos') return [...datos.productos];
+    if (alcance === 'sin_tipo') return datos.productos.filter(p => !infoTipo(p.tipo));
+    return datos.productos.filter(p => p.tipo === alcance);
+}
+
+function nombreAlcance(alcance) {
+    if (alcance === 'todos') return 'todos los productos';
+    if (alcance === 'sin_tipo') return 'los productos sin tipo';
+    const t = infoTipo(alcance);
+    return t ? `${t.emoji} ${t.nombre}` : alcance;
+}
+
 function abrirModalMargenMasivo() {
     if (datos.productos.length === 0) {
         mostrarToast('No hay productos en el inventario', 'error');
         return;
     }
-    
-    const sinTipo = datos.productos.filter(p => !p.tipo);
-    if (sinTipo.length === 0) {
-        mostrarToast('Todos los productos tienen tipo. Usa "Márgenes por tipo".', 'info');
-        abrirModalMargenesTipo();
-        return;
-    }
-    let suma = 0;
-    sinTipo.forEach(p => suma += (p.margen || 0));
-    const promedio = (suma / sinTipo.length).toFixed(1);
-    
-    document.getElementById('inputMargenMasivo').value = promedio;
+    const sel = document.getElementById('selectAlcanceMasivo');
+    sel.innerHTML = `<option value="todos">🌎 Todos los productos (todos los tipos)</option>` +
+        TIPOS_PRODUCTO.map(t => {
+            const n = datos.productos.filter(p => p.tipo === t.id).length;
+            return `<option value="${t.id}">${t.emoji} Solo ${t.nombre} (${n}) · hoy ${margenDeTipo(t.id)}%</option>`;
+        }).join('') +
+        `<option value="sin_tipo">Sin tipo (${datos.productos.filter(p => !infoTipo(p.tipo)).length})</option>`;
+    sel.value = 'todos';
+    sel.onchange = alcanceMasivoCambio;
+    const lista = datos.productos;
+    const prom = lista.reduce((a, p) => a + (p.margen || 0), 0) / lista.length;
+    document.getElementById('inputMargenMasivo').value = prom.toFixed(1);
+    document.getElementById('inputMargenMasivo').oninput = previewMasivo;
+    previewMasivo();
     document.getElementById('modalMargenMasivo').classList.remove('hidden');
+}
+
+function alcanceMasivoCambio() {
+    const alcance = document.getElementById('selectAlcanceMasivo').value;
+    const lista = productosDeAlcance(alcance);
+    if (infoTipo(alcance)) {
+        document.getElementById('inputMargenMasivo').value = margenDeTipo(alcance);
+    } else if (lista.length > 0) {
+        document.getElementById('inputMargenMasivo').value = (lista.reduce((a, p) => a + (p.margen || 0), 0) / lista.length).toFixed(1);
+    }
+    previewMasivo();
+}
+
+function previewMasivo() {
+    const m = parseFloat(document.getElementById('inputMargenMasivo').value);
+    const alcance = document.getElementById('selectAlcanceMasivo').value;
+    const box = document.getElementById('previewMargenMasivo');
+    if (isNaN(m) || m < 0) return;
+    const lista = productosDeAlcance(alcance);
+    let antes = 0, despues = 0;
+    lista.forEach(p => { antes += p.precioVentaUSD || 0; despues += (p.precioCompraUSD || 0) * (1 + m / 100); });
+    const c = despues - antes;
+    box.innerHTML = `💡 ${lista.length} productos en ${nombreAlcance(alcance)}. Suma de ventas: $${antes.toFixed(2)} → $${despues.toFixed(2)} (<b>${c >= 0 ? '+' : ''}$${c.toFixed(2)}</b>)`;
 }
 
 function cerrarModalMargenMasivo() {
@@ -1747,15 +1846,21 @@ function cerrarModalMargenMasivo() {
 
 async function aplicarMargenMasivo() {
     const nuevoMargen = parseFloat(document.getElementById('inputMargenMasivo').value);
-    
+    const alcance = document.getElementById('selectAlcanceMasivo').value;
+
     if (isNaN(nuevoMargen) || nuevoMargen < 0 || nuevoMargen > 500) {
         mostrarToast('Margen inválido (0-500)', 'error');
         return;
     }
 
-    const objetivo = datos.productos.filter(p => !p.tipo);
-    const conTipo = datos.productos.length - objetivo.length;
-    if (!confirm(`⚠️ Aplicar margen ${nuevoMargen}% a ${objetivo.length} productos SIN tipo?\n\n${conTipo > 0 ? `(${conTipo} productos con tipo no se tocan: usan el margen de su tipo.)\n\n` : ''}Esta acción recalculará los precios de venta.`)) {
+    const objetivo = productosDeAlcance(alcance);
+    const tipos = alcance === 'todos' ? TIPOS_PRODUCTO.map(t => t.id) : (infoTipo(alcance) ? [alcance] : []);
+
+    if (objetivo.length === 0 && tipos.length === 0) {
+        mostrarToast('No hay productos para actualizar', 'error');
+        return;
+    }
+    if (!confirm(`⚠️ Aplicar margen ${nuevoMargen}% a ${nombreAlcance(alcance)}?\n\nSe recalculará el precio de venta de ${objetivo.length} productos.${tipos.length ? `\nEl margen ${tipos.length > 1 ? 'de todos los tipos' : 'de este tipo'} quedará en ${nuevoMargen}%.` : ''}`)) {
         return;
     }
 
@@ -1766,37 +1871,40 @@ async function aplicarMargenMasivo() {
     let actualizados = 0;
     let errores = 0;
 
-    for (const p of objetivo) {
-        try {
-            const precioVenta = p.precioCompraUSD * (1 + nuevoMargen / 100);
+    try {
+        if (tipos.length > 0) {
+            const filas = tipos.map(t => ({ tipo: t, margen_pct: nuevoMargen, updated_at: new Date().toISOString() }));
+            const { error } = await supabaseClient.from('margenes_tipo').upsert(filas, { onConflict: 'tipo' });
+            if (error) throw error;
+            tipos.forEach(t => { margenesTipo[t] = nuevoMargen; });
+        }
 
-            const { error } = await supabaseClient
-                .from('productos')
-                .update({
+        for (const p of objetivo) {
+            try {
+                const precioVenta = p.precioCompraUSD * (1 + nuevoMargen / 100);
+                const { error } = await supabaseClient.from('productos').update({
                     margen: nuevoMargen,
                     precio_venta_usd: parseFloat(precioVenta.toFixed(4)),
                     updated_at: new Date().toISOString()
-                })
-                .eq('id', p.id);
-
-            if (error) { errores++; } else { actualizados++; }
-        } catch (e) {
-            console.error('Error:', p.nombre, e);
-            errores++;
+                }).eq('id', p.id);
+                if (error) { errores++; } else { actualizados++; }
+            } catch (e) {
+                console.error('Error:', p.nombre, e);
+                errores++;
+            }
         }
+
+        if (errores > 0) mostrarToast(`⚠️ ${actualizados} actualizados, ${errores} errores`, 'error');
+        else mostrarToast(`✅ Margen ${nuevoMargen}% aplicado a ${actualizados} productos`, 'success');
+        cerrarModalMargenMasivo();
+        cargarDatos();
+    } catch (e) {
+        console.error(e);
+        mostrarToast('Error: ' + (e.message || e) + ' (¿ejecutaste migracion_tipos.sql?)', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '✅ Aplicar';
     }
-
-    btn.disabled = false;
-    btn.textContent = '✅ Aplicar a Todos';
-
-    if (errores > 0) {
-        mostrarToast(`⚠️ ${actualizados} actualizados, ${errores} errores`, 'error');
-    } else {
-        mostrarToast(`✅ Margen ${nuevoMargen}% aplicado a ${actualizados} productos`, 'success');
-    }
-
-    cerrarModalMargenMasivo();
-    cargarDatos();
 }
 
 function abrirDetalleFactura(f) {
@@ -2856,7 +2964,7 @@ function configurarFotoFactura() {
                     unidades_caja: unidadesCaja,
                     precio_caja: precioCaja,
                     tiene_iva: p.tiene_iva !== false,
-                    margen: 30
+                    margen: margenDeTipo('viveres')
                 };
             });
 
@@ -3474,7 +3582,7 @@ async function confirmarProductos() {
                 if (errUpdate) { errores++; }
                 else actualizados++;
             } else {
-                const { error: errInsert } = await supabaseClient.from('productos').insert([{
+                const filaNueva = {
                     id: Date.now() + Math.floor(Math.random() * 100000),
                     nombre: prod.nombre,
                     nombre_normalizado: nombreNorm,
@@ -3490,8 +3598,14 @@ async function confirmarProductos() {
                     ultimo_proveedor: proveedor,
                     ultima_factura: numeroFactura,
                     ultima_fecha: new Date().toLocaleDateString('es-VE'),
+                    tipo: 'viveres',
                     created_at: new Date().toISOString()
-                }]);
+                };
+                let { error: errInsert } = await supabaseClient.from('productos').insert([filaNueva]);
+                if (errInsert && /tipo/i.test(errInsert.message || '')) {
+                    delete filaNueva.tipo;
+                    ({ error: errInsert } = await supabaseClient.from('productos').insert([filaNueva]));
+                }
 
                 if (errInsert) { errores++; }
                 else agregados++;

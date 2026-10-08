@@ -204,7 +204,27 @@
                 <button class="chip" data-tipo="frescos">🥬 Frescos</button>
                 <button class="chip" data-tipo="sin_tipo">Sin tipo</button>
             </div>
-            <button class="btn btn-secondary" id="btnMargenesTipo" style="width:100%; margin-bottom:10px;">⚙️ Márgenes por tipo</button>
+            <div style="display:flex; gap:8px; margin-bottom:10px;">
+                <button class="btn btn-secondary" id="btnMargenesTipo" style="flex:1;">⚙️ Márgenes por tipo</button>
+                <button class="btn btn-secondary" id="btnModoSeleccion" style="flex:1;">☑️ Seleccionar varios</button>
+            </div>
+            <div id="barraSeleccion" class="hidden" style="background:var(--warning-light); border-left:4px solid var(--warning); padding:10px; border-radius:var(--r-sm); margin-bottom:10px; font-size:13px;">
+                <div style="margin-bottom:8px;"><b><span id="contadorSeleccion">0</span> seleccionados</b>
+                    <button class="btn btn-cancelar" id="btnSeleccionarVisibles" style="padding:4px 10px; margin-left:8px;">Todos los visibles</button>
+                    <button class="btn btn-cancelar" id="btnQuitarSeleccion" style="padding:4px 10px;">Ninguno</button>
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <select id="tipoMasivoSelect" style="flex:1;">
+                        <option value="viveres">🛒 Víveres</option>
+                        <option value="quesos">🧀 Quesos</option>
+                        <option value="jamones">🍖 Jamones</option>
+                        <option value="ahumados">🥓 Ahumados</option>
+                        <option value="frescos">🥬 Frescos</option>
+                        <option value="sin_tipo">Sin tipo</option>
+                    </select>
+                    <button class="btn btn-primary" id="btnAplicarTipoMasivo">✅ Cambiar tipo</button>
+                </div>
+            </div>
 
             <div id="listaProductos" class="lista"></div>
         </section>
@@ -751,19 +771,22 @@
             </div>
             <div class="modal-body">
                 <div style="background: var(--warning-light); border-left: 4px solid var(--warning); padding: 12px; border-radius: var(--r-sm); margin-bottom: 15px; font-size: 13px; color: var(--text);">
-                    ⚠️ Esto aplicará el nuevo margen a los productos <b>sin tipo</b> y recalculará sus precios de venta. Los que tienen tipo usan el margen de su tipo.
+                    ⚠️ Elige a qué tipo aplicar (o a todos). Se guarda el margen de ese tipo y se recalcula el precio de venta de sus productos.
                 </div>
+
+                <label>Aplicar a:</label>
+                <select id="selectAlcanceMasivo"></select>
 
                 <label>Nuevo margen (%):</label>
                 <input type="number" id="inputMargenMasivo" step="1" min="0" max="500" placeholder="Ej: 35" inputmode="decimal">
 
-                <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 8px;">
+                <div id="previewMargenMasivo" style="font-size: 12px; color: var(--text-tertiary); margin-top: 8px;">
                     💡 El precio de venta se recalcula como: <code>precio_compra × (1 + margen/100)</code>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-cancelar" id="btnCancelarMargenMasivo">Cancelar</button>
-                <button class="btn btn-primary" id="btnAplicarMargenMasivo">✅ Aplicar a Todos</button>
+                <button class="btn btn-primary" id="btnAplicarMargenMasivo">✅ Aplicar</button>
             </div>
         </div>
     </div>
