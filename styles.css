@@ -2393,14 +2393,3 @@ input[readonly], input:disabled {
 .preview-delico span:nth-child(2) { background: #E5A52E; }
 .preview-delico span:nth-child(3) { background: #F5F0DC; }
 .preview-delico span:nth-child(4) { background: #1F3A25; }
-
-
-/* ===== Tipos de producto ===== */
-.tipo-opcion { display:flex; align-items:center; gap:8px; padding:10px 12px; border:2px solid var(--border); border-radius:var(--r-md); cursor:pointer; font-size:14px; font-weight:600; text-transform:none; letter-spacing:0; margin:0; color:var(--text); }
-.tipo-opcion input { width:20px; height:20px; accent-color: var(--primary); cursor:pointer; }
-.tipo-opcion.activo { border-color:var(--primary); background:var(--primary-light); }
-.tipo-badge { font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--primary-light); color:var(--primary-dark, var(--primary)); }
-.fila-margen-tipo { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-.fila-margen-tipo .nombre { flex:1; font-weight:700; font-size:14px; }
-.fila-margen-tipo .cuenta { font-size:11px; color:var(--text-tertiary); display:block; font-weight:400; }
-.fila-margen-tipo input { width:90px; }

@@ -195,37 +195,6 @@
                 </div>
             </div>
 
-            <div class="filtros-chips" id="chipsTipoProductos" style="margin: 0 0 10px;">
-                <button class="chip active" data-tipo="todos">Todos</button>
-                <button class="chip" data-tipo="viveres">🛒 Víveres</button>
-                <button class="chip" data-tipo="quesos">🧀 Quesos</button>
-                <button class="chip" data-tipo="jamones">🍖 Jamones</button>
-                <button class="chip" data-tipo="ahumados">🥓 Ahumados</button>
-                <button class="chip" data-tipo="frescos">🥬 Frescos</button>
-                <button class="chip" data-tipo="sin_tipo">Sin tipo</button>
-            </div>
-            <div style="display:flex; gap:8px; margin-bottom:10px;">
-                <button class="btn btn-secondary" id="btnMargenesTipo" style="flex:1;">⚙️ Márgenes por tipo</button>
-                <button class="btn btn-secondary" id="btnModoSeleccion" style="flex:1;">☑️ Seleccionar varios</button>
-            </div>
-            <div id="barraSeleccion" class="hidden" style="background:var(--warning-light); border-left:4px solid var(--warning); padding:10px; border-radius:var(--r-sm); margin-bottom:10px; font-size:13px;">
-                <div style="margin-bottom:8px;"><b><span id="contadorSeleccion">0</span> seleccionados</b>
-                    <button class="btn btn-cancelar" id="btnSeleccionarVisibles" style="padding:4px 10px; margin-left:8px;">Todos los visibles</button>
-                    <button class="btn btn-cancelar" id="btnQuitarSeleccion" style="padding:4px 10px;">Ninguno</button>
-                </div>
-                <div style="display:flex; gap:8px;">
-                    <select id="tipoMasivoSelect" style="flex:1;">
-                        <option value="viveres">🛒 Víveres</option>
-                        <option value="quesos">🧀 Quesos</option>
-                        <option value="jamones">🍖 Jamones</option>
-                        <option value="ahumados">🥓 Ahumados</option>
-                        <option value="frescos">🥬 Frescos</option>
-                        <option value="sin_tipo">Sin tipo</option>
-                    </select>
-                    <button class="btn btn-primary" id="btnAplicarTipoMasivo">✅ Cambiar tipo</button>
-                </div>
-            </div>
-
             <div id="listaProductos" class="lista"></div>
         </section>
 
@@ -460,18 +429,6 @@
                 <div class="input-prefix">
                     <span>$</span>
                     <input type="number" id="editPrecioCaja" step="0.01" min="0" placeholder="0.00" inputmode="decimal">
-                </div>
-
-                <label>Tipo de producto (solo uno):</label>
-                <div id="editTipoGrupo" style="display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:4px;">
-                    <label class="tipo-opcion"><input type="checkbox" class="chk-tipo" data-tipo="viveres"> 🛒 Víveres</label>
-                    <label class="tipo-opcion"><input type="checkbox" class="chk-tipo" data-tipo="quesos"> 🧀 Quesos</label>
-                    <label class="tipo-opcion"><input type="checkbox" class="chk-tipo" data-tipo="jamones"> 🍖 Jamones</label>
-                    <label class="tipo-opcion"><input type="checkbox" class="chk-tipo" data-tipo="ahumados"> 🥓 Ahumados</label>
-                    <label class="tipo-opcion"><input type="checkbox" class="chk-tipo" data-tipo="frescos"> 🥬 Frescos</label>
-                </div>
-                <div id="editMargenTipoInfo" style="font-size:11px; color:var(--text-tertiary); margin-top:6px;">
-                    💡 Sin tipo: escribes el margen a mano. Con tipo: usa el margen de ese tipo.
                 </div>
 
                 <label>Margen de Ganancia (%):</label>
@@ -771,43 +728,19 @@
             </div>
             <div class="modal-body">
                 <div style="background: var(--warning-light); border-left: 4px solid var(--warning); padding: 12px; border-radius: var(--r-sm); margin-bottom: 15px; font-size: 13px; color: var(--text);">
-                    ⚠️ Elige a qué tipo aplicar (o a todos). Se guarda el margen de ese tipo y se recalcula el precio de venta de sus productos.
+                    ⚠️ Esto aplicará el nuevo margen a <b>TODOS los productos</b> del inventario y recalculará sus precios de venta.
                 </div>
-
-                <label>Aplicar a:</label>
-                <select id="selectAlcanceMasivo"></select>
 
                 <label>Nuevo margen (%):</label>
                 <input type="number" id="inputMargenMasivo" step="1" min="0" max="500" placeholder="Ej: 35" inputmode="decimal">
 
-                <div id="previewMargenMasivo" style="font-size: 12px; color: var(--text-tertiary); margin-top: 8px;">
+                <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 8px;">
                     💡 El precio de venta se recalcula como: <code>precio_compra × (1 + margen/100)</code>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-cancelar" id="btnCancelarMargenMasivo">Cancelar</button>
-                <button class="btn btn-primary" id="btnAplicarMargenMasivo">✅ Aplicar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: Márgenes por Tipo -->
-    <div class="modal-overlay hidden" id="modalMargenesTipo">
-        <div class="modal">
-            <div class="modal-header">
-                <h3>⚙️ Márgenes por Tipo</h3>
-                <button class="btn-cerrar" id="btnCerrarMargenesTipo">✕</button>
-            </div>
-            <div class="modal-body">
-                <div style="background: var(--warning-light); border-left: 4px solid var(--warning); padding: 12px; border-radius: var(--r-sm); margin-bottom: 15px; font-size: 13px; color: var(--text);">
-                    Al guardar se recalcula el precio de venta de todos los productos que tengan tipo.
-                </div>
-                <div id="listaMargenesTipo"></div>
-                <div id="resumenSinTipo" style="font-size:12px; color:var(--text-tertiary); margin-top:8px;"></div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-cancelar" id="btnCancelarMargenesTipo">Cancelar</button>
-                <button class="btn btn-primary" id="btnGuardarMargenesTipo">💾 Guardar y recalcular</button>
+                <button class="btn btn-primary" id="btnAplicarMargenMasivo">✅ Aplicar a Todos</button>
             </div>
         </div>
     </div>
