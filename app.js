@@ -48,6 +48,20 @@ let modoSeleccion = false;
 const seleccionProductos = new Set();
 let idsVisibles = [];
 
+// ===== Convención de precio de compra (igual que la extensión) =====
+// precio_compra_usd = precio BASE de compra, SIN IVA, tal como viene en la factura
+// (si se compra por caja, es el precio de la caja). El IVA y las unidades por caja
+// se aplican al calcular: costo unitario = base × (1 + IVA) ÷ unidades_caja.
+function costoUnitarioProducto(p) {
+    const base = parseFloat(p.precioCompraUSD) || 0;
+    const ivaPct = p.exento ? 0 : TASA_IVA;
+    const cj = p.unidadesCaja > 1 ? p.unidadesCaja : 1;
+    return base * (1 + ivaPct / 100) / cj;
+}
+function precioVentaProducto(p, margen) {
+    return costoUnitarioProducto(p) * (1 + margen / 100);
+}
+
 function infoTipo(id) { return TIPOS_PRODUCTO.find(t => t.id === id) || null; }
 function margenDeTipo(tipo) {
     const m = margenesTipo[tipo];
@@ -1762,7 +1776,7 @@ async function aplicarTipoMasivo() {
         const cambios = {
             tipo: tipo || null,
             margen: margen,
-            precio_venta_usd: parseFloat((p.precioCompraUSD * (1 + margen / 100)).toFixed(4)),
+            precio_venta_usd: parseFloat(precioVentaProducto(p, margen).toFixed(4)),
             updated_at: new Date().toISOString()
         };
         let { error } = await supabaseClient.from('productos').update(cambios).eq('id', p.id);
@@ -1835,7 +1849,7 @@ function previewMasivo() {
     if (isNaN(m) || m < 0) return;
     const lista = productosDeAlcance(alcance);
     let antes = 0, despues = 0;
-    lista.forEach(p => { antes += p.precioVentaUSD || 0; despues += (p.precioCompraUSD || 0) * (1 + m / 100); });
+    lista.forEach(p => { antes += p.precioVentaUSD || 0; despues += precioVentaProducto(p, m); });
     const c = despues - antes;
     box.innerHTML = `💡 ${lista.length} productos en ${nombreAlcance(alcance)}. Suma de ventas: $${antes.toFixed(2)} → $${despues.toFixed(2)} (<b>${c >= 0 ? '+' : ''}$${c.toFixed(2)}</b>)`;
 }
@@ -1881,7 +1895,7 @@ async function aplicarMargenMasivo() {
 
         for (const p of objetivo) {
             try {
-                const precioVenta = p.precioCompraUSD * (1 + nuevoMargen / 100);
+                const precioVenta = precioVentaProducto(p, nuevoMargen);
                 const { error } = await supabaseClient.from('productos').update({
                     margen: nuevoMargen,
                     precio_venta_usd: parseFloat(precioVenta.toFixed(4)),
@@ -2024,8 +2038,9 @@ function abrirModalEditarProducto(p) {
     document.getElementById('editUnidad').value = p.unidad || 'UND';
     document.getElementById('editStock').value = p.stock || 0;
     
-    const tieneIva = !p.exento && p.iva > 0;
-    const precioBase = tieneIva ? (p.precioCompraUSD / (1 + TASA_IVA / 100)) : p.precioCompraUSD;
+    // precio_compra_usd ya es el precio base (sin IVA): se muestra tal cual
+    const tieneIva = !p.exento;
+    const precioBase = p.precioCompraUSD;
 
     // v8.4 - Precio de compra: toggle USD/Bs (por defecto marcado = USD)
     const checkCompra = document.getElementById('checkUSDPrecioCompra');
@@ -2205,7 +2220,7 @@ async function guardarMargenesTipo() {
         for (const p of datos.productos) {
             if (!p.tipo || nuevos[p.tipo] === undefined) continue;
             const m = nuevos[p.tipo];
-            const precioVenta = p.precioCompraUSD * (1 + m / 100);
+            const precioVenta = precioVentaProducto(p, m);
             const { error: e2 } = await supabaseClient.from('productos').update({
                 margen: m,
                 precio_venta_usd: parseFloat(precioVenta.toFixed(4)),
@@ -2272,7 +2287,7 @@ async function guardarEditarProducto() {
             nombre_normalizado: normalizarNombre(nombre),
             unidad: unidad,
             stock: stock,
-            precio_compra_usd: parseFloat(costoConIva.toFixed(4)),
+            precio_compra_usd: parseFloat(precioBaseUSD.toFixed(4)),
             margen: margen,
             precio_venta_usd: parseFloat(precioVenta.toFixed(4)),
             iva: iva,
@@ -3566,7 +3581,7 @@ async function confirmarProductos() {
 
                 const { error: errUpdate } = await supabaseClient.from('productos').update({
                     stock: nuevoStock,
-                    precio_compra_usd: parseFloat(costoConIva.toFixed(4)),
+                    precio_compra_usd: parseFloat((parseFloat(prod.precio_unitario) || 0).toFixed(4)),
                     precio_venta_usd: parseFloat(precioVentaFinal.toFixed(4)),
                     margen: margenFinal,
                     iva: ivaPct,
@@ -3588,7 +3603,7 @@ async function confirmarProductos() {
                     nombre_normalizado: nombreNorm,
                     stock: prod.cantidad,
                     unidad: prod.unidad || 'UND',
-                    precio_compra_usd: parseFloat(costoConIva.toFixed(4)),
+                    precio_compra_usd: parseFloat((parseFloat(prod.precio_unitario) || 0).toFixed(4)),
                     precio_venta_usd: parseFloat(precioVenta.toFixed(4)),
                     margen: prod.margen || 30,
                     iva: ivaPct,
