@@ -74,7 +74,9 @@ let productoEditando = null;
 let pagoEditando = null;
 let ventaEditando = null;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // 🔐 Esperar a que haya sesión iniciada antes de cargar datos
+    if (window.GestoreAuth) await window.GestoreAuth.listo;
     console.log("🚀 Gestore PWA v8.4 iniciado");
     configurarEventos();
     cargarTasa();

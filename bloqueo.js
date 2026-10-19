@@ -260,6 +260,7 @@
             <div id="gb-menu">
                 <button id="gb-m-bloquear">🔒 Bloquear ahora</button>
                 <button id="gb-m-cambiar">🔑 Cambiar clave</button>
+                <button id="gb-m-salir">🚪 Cerrar sesión</button>
             </div>
             <button id="gb-m-toggle" title="Seguridad">🔒</button>`;
         document.body.appendChild(cont);
@@ -267,6 +268,9 @@
         cont.querySelector('#gb-m-toggle').addEventListener('click', () => menu.classList.toggle('abierto'));
         cont.querySelector('#gb-m-bloquear').addEventListener('click', () => bloquearAhora());
         cont.querySelector('#gb-m-cambiar').addEventListener('click', () => { menu.classList.remove('abierto'); cambiarClave(); });
+        cont.querySelector('#gb-m-salir').addEventListener('click', () => {
+            if (window.GestoreAuth && confirm('¿Cerrar sesión? Tendrás que volver a ingresar correo y contraseña.')) window.GestoreAuth.cerrarSesion();
+        });
     }
     function quitarBotonFlotante() {
         const c = document.getElementById('gb-flotante');
