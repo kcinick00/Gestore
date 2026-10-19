@@ -80,6 +80,9 @@
     #ga-overlay button { width: 100%; padding: 11px; border: none; border-radius: 8px; background: #6f42c1;
         color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; }
     #ga-overlay button:disabled { opacity: .6; cursor: default; }
+    #ga-salir { position: fixed; right: 8px; bottom: 8px; z-index: 2147481000; width: 34px; height: 34px; padding: 0;
+        border-radius: 50%; border: none; background: #1f2937; color: #fff; font-size: 15px; cursor: pointer; opacity: .6; }
+    #ga-salir:hover { opacity: 1; }
     #ga-overlay .ga-error { color: #dc3545; font-size: 13px; min-height: 18px; margin-bottom: 8px; }`;
     const style = document.createElement('style');
     style.textContent = css;
@@ -139,6 +142,16 @@
             await new Promise(() => {});  // no continuar mientras recarga
         }
         document.documentElement.classList.remove('ga-bloqueado');
+        cuandoBodyListo(() => {
+            const b = document.createElement('button');
+            b.id = 'ga-salir';
+            b.title = 'Cerrar sesión';
+            b.textContent = '🚪';
+            b.addEventListener('click', () => {
+                if (confirm('¿Cerrar sesión? Tendrás que volver a ingresar correo y contraseña.')) cerrarSesion();
+            });
+            document.body.appendChild(b);
+        });
     })();
 
     window.GestoreAuth = { listo, cerrarSesion };
